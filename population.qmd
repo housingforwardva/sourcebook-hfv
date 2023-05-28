@@ -92,6 +92,10 @@ pop_data_join <- pop_data |>
 # Data up-to-date as of: 5-22-2023
 
 write_rds(pop_data_join, "data/total_pop.rds")
+write_rds(pop_data_join, "shiny/total_pop/total_pop.rds")
+
+
+# 
 
 ```
 
@@ -158,6 +162,8 @@ change_data_join <- change_data |>
 # Data up-to-date as of: 5-22-23
 
 write_rds(change_data_join, "data/pop_change.rds")
+
+# Shiny Dashboard should show the changes over time utilizing a faceted bar chart for 2010 through 2022. Three different data viz should show data by state, CBSA, and locality. Filters are on the latter two, which allow you to switch to different geographies.
 
 ```
 
