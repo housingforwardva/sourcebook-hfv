@@ -21,6 +21,10 @@ cbsa_pop <- total_pop |>
   group_by(year, cbsa_title, counttype) |> 
   summarise(value = sum(value))
 
+state_pop <- total_pop |> 
+  group_by(year, counttype) |> 
+  summarise(value = sum(value))
+
 
 server <- function(input, output) {
   
@@ -39,7 +43,11 @@ server <- function(input, output) {
                      y = value,
                      fill = counttype)) +
       geom_col(position = "dodge") +
-      geom_col_interactive(position = "dodge")
+      geom_col_interactive(position = "dodge") +
+      theme_hfv() +
+      scale_fill_hfv() +
+      labs(title = "Local population",
+           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")
     
     girafe(ggobj = gg, 
            width_svg = 10, 
@@ -57,7 +65,9 @@ server <- function(input, output) {
                      y = value,
                      fill = counttype)) +
       geom_col(position = "dodge") +
-      geom_col_interactive(position = "dodge")
+      geom_col_interactive(position = "dodge") +
+      theme_hfv() +
+      scale_fill_hfv()
     
     girafe(ggobj = gg, 
            width_svg = 10, 
@@ -66,15 +76,33 @@ server <- function(input, output) {
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
              opts_toolbar(pngname = input$sel_cbsa)))
+  })
+  
+  output$state_plot <- renderGirafe({
     
+    gg <- ggplot(state_pop,
+                 aes(x = year,
+                     y = value,
+                     fill = counttype)) +
+      geom_col(position = "dodge") +
+      geom_col_interactive(position = "dodge") +
+      theme_hfv() +
+      scale_fill_hfv()
     
+    girafe(ggobj = gg, 
+           width_svg = 10, 
+           height_svg = 8,
+           options = list(
+             opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
+             opts_sizing(rescale = FALSE),
+             opts_toolbar(pngname = "state_pop"))) 
   })
 }
 
   ui <- fluidPage(
     sidebarLayout(mainPanel(
-      tabsetPanel(type = "tabs", id = "tabselected", selected = 2,
-        # tabPanel("Statewide", GirafeOutput("state_plot"), value =1),
+      tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
+        tabPanel("Statewide", girafeOutput("state_plot"), value =1),
         tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
         tabPanel("Locality", girafeOutput("local_plot"), value =3)
       )
