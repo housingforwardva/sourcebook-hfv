@@ -9,11 +9,17 @@ library(ggplot2)
 library(ggiraph)
 library(ggtext)
 library(glue)
+library(hdatools)
 
 
 total_pop <- read_rds("total_pop.rds")
 
+cbsa_list <- sort(unique(total_pop$cbsa_title))
 locality_list <- sort(unique(total_pop$name_long))
+
+cbsa_pop <- total_pop |> 
+  group_by(year, cbsa_title, counttype) |> 
+  summarise(value = sum(value))
 
 
 server <- function(input, output) {
@@ -22,7 +28,11 @@ server <- function(input, output) {
     filter(total_pop, name_long == input$sel_locality)
   })
   
-  output$pop_plot <- renderGirafe({
+  cbsa <- reactive({
+    filter(cbsa_pop, cbsa_title == input$sel_cbsa)
+  })
+  
+  output$local_plot <- renderGirafe({
     
     gg <- ggplot(locality(),
                  aes(x = year,
@@ -39,14 +49,46 @@ server <- function(input, output) {
       opts_sizing(rescale = FALSE),
       opts_toolbar(pngname = input$sel_locality)))
 })
+  
+  output$cbsa_plot <- renderGirafe({
+    
+    gg <- ggplot(cbsa(),
+                 aes(x = year,
+                     y = value,
+                     fill = counttype)) +
+      geom_col(position = "dodge") +
+      geom_col_interactive(position = "dodge")
+    
+    girafe(ggobj = gg, 
+           width_svg = 10, 
+           height_svg = 8,
+           options = list(
+             opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
+             opts_sizing(rescale = FALSE),
+             opts_toolbar(pngname = input$sel_cbsa)))
+    
+    
+  })
 }
 
   ui <- fluidPage(
     sidebarLayout(mainPanel(
-      girafeOutput("pop_plot")
+      tabsetPanel(type = "tabs", id = "tabselected", selected = 2,
+        # tabPanel("Statewide", GirafeOutput("state_plot"), value =1),
+        tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
+        tabPanel("Locality", girafeOutput("local_plot"), value =3)
+      )
     ),
     sidebarPanel(
-      wellPanel(
+      conditionalPanel(condition = "input.tabselected==2",
+                       selectInput(
+                         inputId = "sel_cbsa",
+                         label = "Select a CBSA",
+                         choices = cbsa_list
+                       ),
+                       style = "font-family: Verdana;"
+      ),
+      conditionalPanel(condition = "input.tabselected==3",
         selectInput(
           inputId = "sel_locality",
           label = "Select a locality",

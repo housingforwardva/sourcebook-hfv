@@ -58,7 +58,7 @@ pep_2020s <- get_estimates(
 ) |> 
   filter(year != 2020) |> # Remove non-Decennial 2020 count
   mutate(counttype = case_when( # Add descriptions to count types
-    variable == "POPESTIMATE" ~ "Population Estimate",
+    variable == "POPESTIMATE" ~ "Population estimate",
     TRUE ~ variable
   )) |> 
   select(GEOID,counttype, year, value) # Simplify data
@@ -93,9 +93,6 @@ pop_data_join <- pop_data |>
 
 write_rds(pop_data_join, "data/total_pop.rds")
 write_rds(pop_data_join, "shiny/total_pop/total_pop.rds")
-
-
-# 
 
 ```
 
