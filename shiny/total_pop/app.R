@@ -47,7 +47,9 @@ server <- function(input, output) {
       theme_hfv() +
       scale_fill_hfv() +
       labs(title = "Local population",
-           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")
+           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
+      scale_y_continuous(labels = number_format(big.mark = ","))
+    
     
     girafe(ggobj = gg, 
            width_svg = 10, 
@@ -67,7 +69,10 @@ server <- function(input, output) {
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv() +
-      scale_fill_hfv()
+      scale_fill_hfv() +
+      labs(title = "Core-based statistical area population",
+           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")) +
+    scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
            width_svg = 10, 
@@ -87,7 +92,11 @@ server <- function(input, output) {
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv() +
-      scale_fill_hfv()
+      scale_fill_hfv() +
+      labs(title = "Virginia population",
+           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
+      scale_y_continuous(labels = number_format(big.mark = ","))
+    
     
     girafe(ggobj = gg, 
            width_svg = 10, 
