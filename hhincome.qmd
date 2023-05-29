@@ -1,0 +1,90 @@
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(fredr)
+library(lubridate)
+
+
+cpi <- fredr(
+  series_id = "CPIAUCSL"
+) |> 
+  select(date, value) |> 
+  mutate(date = as.Date(date),
+         value = as.numeric(value),
+         year = year(date)) |> 
+  group_by(year) |> 
+  summarise(index = mean(value))
+
+adjustment <- function(x) {
+  transform(x, dollars21 = ((270.97142/index)*estimate))
+}
+
+
+years <- 2010:2021
+
+#  B25119: Median Household Income by Tenure
+
+# Load variable names for B25119 and clean at the same time.
+
+b25119_vars <- load_variables(2021, "acs5") |> 
+  filter(str_sub(name, end = 6) == "B25119")|> 
+  separate(label, into = c("est", "medincome", "total", "tenure"), sep = "!!") |> 
+  select(variable = name, tenure) |>
+  mutate(tenure = case_when(
+    tenure == "Owner occupied (dollars)" ~ "Homeowner",
+    tenure == "Renter occupied (dollars)" ~ "Renter",
+    TRUE ~ "All households"
+  ))
+
+# Median household income cannot be aggregated so you have to 
+# pull data for each geographic level.
+
+b25119_state <- map_dfr(years, function(yr){
+  acs_pull <- get_acs(
+    geography = "state",
+    table = "B25119",
+    survey = "acs5",
+    year = yr
+  ) |> 
+    mutate(year = yr) |> 
+    left_join(b25119_vars, by = "variable") |> 
+    select(variable, year, state = NAME, fips = GEOID, tenure, estimate, moe)
+})
+
+b25119_cbsa <- map_dfr(years, function(yr){
+  acs5_pull <- get_acs(
+    geography = "metropolitan statistical area/micropolitan statistical area",
+    table = "B25119",
+    survey = "acs5",
+    year = yr
+  ) |> 
+    mutate(year = yr) |> 
+    left_join(b25119_vars, by = "variable") |> 
+    select(variable, year, CBSA = NAME, fips = GEOID, tenure,
+           estimate, moe) |> 
+    filter(str_detect(CBSA, "VA"))
+})
+
+b25119_local <- map_dfr(years, function(yr){
+  acs_pull <- get_acs(
+    geography = "county",
+    state = "VA",
+    table = "B25119",
+    survey = "acs5",
+    year = yr
+  ) |> 
+    mutate(year = yr) |> 
+    left_join(b25119_vars, by = "variable") |> 
+    select(variable, year, CBSA = NAME, fips = GEOID, tenure,
+           estimate, moe)
+})
+
+
+med_inc_state <- b25119_state |> 
+  left_join(cpi, by = "year") 
+
+med_inc_state <- adjustment(med_inc_state)
+
+
+
+```
