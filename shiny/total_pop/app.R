@@ -10,6 +10,7 @@ library(ggiraph)
 library(ggtext)
 library(glue)
 library(hdatools)
+library(scales)
 
 
 total_pop <- read_rds("total_pop.rds")
@@ -71,7 +72,7 @@ server <- function(input, output) {
       theme_hfv() +
       scale_fill_hfv() +
       labs(title = "Core-based statistical area population",
-           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")) +
+           caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
     scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
