@@ -11,6 +11,7 @@ library(ggtext)
 library(glue)
 library(hdatools)
 library(scales)
+library(rsconnect)
 
 
 total_pop <- read_rds("total_pop.rds")
@@ -42,19 +43,21 @@ server <- function(input, output) {
     gg <- ggplot(locality(),
                  aes(x = year,
                      y = value,
-                     fill = counttype)) +
+                     fill = counttype,
+                     data_id = value,
+                     tooltip = number_format(big.mark = ",")(value))) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
-      labs(title = "Local population",
+      labs(title = paste0("Local population: ", input$sel_locality),
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
       scale_y_continuous(labels = number_format(big.mark = ","))
     
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 8, 
+           height_svg = 5,
     options = list(
       opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
       opts_sizing(rescale = FALSE),
@@ -66,7 +69,9 @@ server <- function(input, output) {
     gg <- ggplot(cbsa(),
                  aes(x = year,
                      y = value,
-                     fill = counttype)) +
+                     fill = counttype,
+                     data_id = value,
+                     tooltip = number_format(big.mark = ",")(value))) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
@@ -76,8 +81,8 @@ server <- function(input, output) {
     scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 8, 
+           height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
@@ -89,7 +94,9 @@ server <- function(input, output) {
     gg <- ggplot(state_pop,
                  aes(x = year,
                      y = value,
-                     fill = counttype)) +
+                     fill = counttype,
+                     data_id = value,
+                     tooltip = number_format(big.mark = ",")(value))) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
@@ -100,8 +107,8 @@ server <- function(input, output) {
     
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 8, 
+           height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),

@@ -1,0 +1,23 @@
+[
+  {
+    "objectID": "population.html#total-population",
+    "href": "population.html#total-population",
+    "title": "1  Population",
+    "section": "1.1 Total Population",
+    "text": "1.1 Total Population\nThis dashboard shows annual population counts and percent changes from 2010 to 2022. Data for 2010 and 2020 are from those years’ Decennial Census counts; all other years use estimates from the Census Bureau’s Population Estimates Program (PEP)."
+  },
+  {
+    "objectID": "population.html#components-of-population-change",
+    "href": "population.html#components-of-population-change",
+    "title": "1  Population",
+    "section": "1.2 Components of Population Change",
+    "text": "1.2 Components of Population Change\nThis dashboard breaks down annual population changes by three different components:\n\nNatural increases (births minus deaths),\nDomestic migration (net moves from in/out of state), and\nInternational migration (net moves from in/out of the country).\n\n\n\n\n\n1.2.1 Additional resources\nU.S. Census Bureau\nVirginia adds more than 600,000 people since 2010\nUVA Weldon Cooper Center\nState population growth slows, with most new residents in Northern Virginia\nComparing 2020 Virginia population projections to the Census count"
+  },
+  {
+    "objectID": "population.html#data-sources",
+    "href": "population.html#data-sources",
+    "title": "1  Population",
+    "section": "1.3 Data sources",
+    "text": "1.3 Data sources\nCensus Population Estimates Program (PEP)\nAnnual estimates of total population released by the U.S. Census Bureau. Available at locality level from 2010 to 2019. Estimates by age, race, and ethnicity also available, along with components of population change.\n2020 Decennial Census\nInitial data from the 2020 Decennial Census is available in the PL 94-171 Redistricting summary file. As of February 2022, we use this data to append 2020 population counts onto the PEP time series data through 2019. Complete 2010 to 2020 Intercensal Estimates will be published in late 2022."
+  }
+]
