@@ -45,7 +45,7 @@ server <- function(input, output) {
                      fill = counttype)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
-      theme_hfv() +
+      theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Local population",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
@@ -69,7 +69,7 @@ server <- function(input, output) {
                      fill = counttype)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
-      theme_hfv() +
+      theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Core-based statistical area population",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
@@ -92,7 +92,7 @@ server <- function(input, output) {
                      fill = counttype)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
-      theme_hfv() +
+      theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Virginia population",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
