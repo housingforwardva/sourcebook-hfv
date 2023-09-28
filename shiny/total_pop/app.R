@@ -30,6 +30,8 @@ state_pop <- total_pop |>
 
 server <- function(input, output) {
   
+  options(shiny.autoreload = TRUE)
+  
   locality <- reactive({
     filter(total_pop, name_long == input$sel_locality)
   })
@@ -56,7 +58,7 @@ server <- function(input, output) {
     
     
     girafe(ggobj = gg, 
-           width_svg = 8, 
+           width_svg = 7, 
            height_svg = 5,
     options = list(
       opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
@@ -81,7 +83,7 @@ server <- function(input, output) {
     scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
-           width_svg = 8, 
+           width_svg = 7, 
            height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
@@ -107,7 +109,7 @@ server <- function(input, output) {
     
     
     girafe(ggobj = gg, 
-           width_svg = 8, 
+           width_svg = 7, 
            height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
