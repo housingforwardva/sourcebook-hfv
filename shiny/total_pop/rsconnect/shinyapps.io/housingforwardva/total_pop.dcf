@@ -5,6 +5,6 @@ account: housingforwardva
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10024800
-bundleId: 7740049
+bundleId: 7740247
 url: https://housingforwardva.shinyapps.io/total_pop/
 version: 1
