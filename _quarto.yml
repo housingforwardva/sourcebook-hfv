@@ -38,40 +38,40 @@ book:
     - part: "DEMOGRAPHICS"
       chapters:
         - population.qmd # Total Population
-        - race.qmd # Race and Ethnicity
-        - age.qmd # Age
-        - hhtype.qmd # Household Type
-        - hhsize.qmd # Household Size
-    - part: "ECONOMICS"
-      chapters:
-        - hhincome.qmd # Household Income
-        - poverty.qmd # Poverty
-        - employment.qmd # Employment
-    - part: "INVENTORY"
-      chapters: 
-        - htype.qmd # Housing Type
-        - hage.qmd # Housing Age
-        - hchar.qmd # Housing Characteristics
-        - overcrowd.qmd # Overcrowding
-    - part: "HOMEOWNERSHIP"
-      chapters:
-        - horate.qmd # Homeownership Rate
-        - sales.qmd # Home Sales
-        - hpi.qmd # House Price Index
-        - mortgages.qmd # Mortgages
-    - part: "RENTAL"
-      chapters: 
-        - rent.qmd # Rent
-        - rvacancy.qmd # Rental Vacancy
-        - assisted.qmd # Assisted Rentals
-   - part: "AFFORDABILITY""
-      chapters:
-        - cb.qmd # Cost Burden
-        - gap.qmd # Rental Housing Gap
-        - ami.qmd # HUD AMI Limits
-   - part: "INSTABILITY"
-      chapters:
-        - pit.qmd # Homelessness
+    #     - race.qmd # Race and Ethnicity
+    #     - age.qmd # Age
+    #     - hhtype.qmd # Household Type
+    #     - hhsize.qmd # Household Size
+    # - part: "ECONOMICS"
+    #   chapters:
+    #     - hhincome.qmd # Household Income
+    #     - poverty.qmd # Poverty
+    #     - employment.qmd # Employment
+    # - part: "INVENTORY"
+    #   chapters: 
+    #     - htype.qmd # Housing Type
+    #     - hage.qmd # Housing Age
+    #     - hchar.qmd # Housing Characteristics
+    #     - overcrowd.qmd # Overcrowding
+    # - part: "HOMEOWNERSHIP"
+    #   chapters:
+    #     - horate.qmd # Homeownership Rate
+    #     - sales.qmd # Home Sales
+    #     - hpi.qmd # House Price Index
+    #     - mortgages.qmd # Mortgages
+    # - part: "RENTAL"
+    #   chapters: 
+    #     - rent.qmd # Rent
+    #     - rvacancy.qmd # Rental Vacancy
+    #     - assisted.qmd # Assisted Rentals
+    # - part: "AFFORDABILITY"
+    #   chapters:
+    #     - cb.qmd # Cost Burden
+    #     - gap.qmd # Rental Housing Gap
+    #     - ami.qmd # HUD AMI Limits
+    # - part: "INSTABILITY"
+    #   chapters:
+    #     - pit.qmd # Homelessness
 
 knitr:
   opts_chunk: 
