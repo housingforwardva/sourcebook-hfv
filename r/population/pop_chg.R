@@ -58,4 +58,4 @@ change_data_join <- change_data |>
 # Data up-to-date as of: 5-22-23
 
 # write_rds(change_data_join, "data/pop_change.rds")
-write_rds(change_data_join, "shiny/pop_change/pop_change.rds")
+write_rds(change_data_join, "data/pop_change.rds")
