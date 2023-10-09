@@ -17,7 +17,7 @@ This dashboard shows annual population counts and percent changes from 2010 to 2
 
 ```{=html}
 
-<iframe id="example1" src="https://housingforwardva.shinyapps.io/total_pop/" style="border: none; width: 800px; height: 500px" frameborder="0"></iframe>
+<iframe id="example1" src="https://housingforwardva.shinyapps.io/total_pop/" style="border: none; width: 700px; height: 550px" frameborder="0"></iframe>
 
 ```
 ## Components of Population Change
@@ -36,6 +36,8 @@ This dashboard breaks down annual population changes by three different componen
 # Shiny Dashboard should show the changes over time utilizing a faceted bar chart for 2010 through 2022. Three different data viz should show data by state, CBSA, and locality. Filters are on the latter two, which allow you to switch to different geographies.
 
 ```
+
+
 
 ### Additional resources
 

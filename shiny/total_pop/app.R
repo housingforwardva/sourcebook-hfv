@@ -12,6 +12,7 @@ library(glue)
 library(hdatools)
 library(scales)
 library(rsconnect)
+library(bslib)
 
 
 total_pop <- read_rds("total_pop.rds")
@@ -119,21 +120,41 @@ server <- function(input, output) {
 }
 
   ui <- fluidPage(
-    sidebarLayout(mainPanel(
+    tags$head(
+    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=FontName", type = "text/css"),
+    tags$style(HTML("
+
+      .selectize-input {
+        font-size: 10pt;
+      }
+      
+      .selectize-dropdown {
+        font-size: 10pt;
+      } 
+      
+      .centered-image-container {
+          display: flex;
+          justify-content: right;
+          align-items: right;
+      }
+
+    "))),
+    page_sidebar(mainPanel(
       tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
         tabPanel("Statewide", girafeOutput("state_plot"), value =1),
         tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
         tabPanel("Locality", girafeOutput("local_plot"), value =3)
       )
     ),
-    sidebarPanel(
+    sidebar = sidebar(
+      position = "right",
       conditionalPanel(condition = "input.tabselected==2",
                        selectInput(
                          inputId = "sel_cbsa",
                          label = "Select a CBSA",
                          choices = cbsa_list
                        ),
-                       style = "font-family: Verdana;"
+                       style = "font-family: Open Sans;"
       ),
       conditionalPanel(condition = "input.tabselected==3",
         selectInput(
@@ -141,9 +162,12 @@ server <- function(input, output) {
           label = "Select a locality",
           choices = locality_list
         ),
-        style = "font-family: Verdana;"
+        style = "font-family: Open Sans;"
       )
-    )
+    ),
+    hr(),
+    div(class = "centered-image-container",
+    img(src = "hfv_logo.png", width ="150px"))
   ))
 
 

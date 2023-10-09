@@ -1,5 +1,5 @@
-# This is a Shiny app that shows the components of population change for
-# Virginia geographies from 2010 to 2022 based on 
+# This is a Shiny app that shows the total population
+# of Virginia geographies from 2010 to 2022 based on 
 # Census Population Estimates Program and the Decennial
 # Census.
 
@@ -11,66 +11,62 @@ library(ggtext)
 library(glue)
 library(hdatools)
 library(scales)
-library(patchwork)
+library(rsconnect)
+library(shinyWidgets)
 
-pop_change <- read_rds("../../data/pop_change.rds")
 
-cbsa_list <- sort(unique(pop_change$cbsa_title))
+total_pop <- read_rds("../../data/total_pop.rds")
 
-locality_list <- sort(unique(pop_change$name_long))
+cbsa_list <- sort(unique(total_pop$cbsa_title))
+locality_list <- sort(unique(total_pop$name_long))
 
-cbsa_pop <- pop_change |> 
-  group_by(year, cbsa_title, component) |> 
+cbsa_pop <- total_pop |> 
+  group_by(year, cbsa_title, counttype) |> 
   summarise(value = sum(value))
 
-state_pop <- pop_change |> 
-  group_by(year, component) |> 
+state_pop <- total_pop |> 
+  group_by(year, counttype) |> 
   summarise(value = sum(value))
-
-subtitle_text <- subtitle_text <- "Net <span style = 'color:#011E41'><b>domestic migration,</b></span> <span style = 'color:#40C0C0'><b>international migration,</b></span> and <span style = 'color:#8B85CA'><b>natural increase (or decrease)</b></span>"
 
 
 server <- function(input, output) {
   
+  options(shiny.autoreload = TRUE)
+  
   locality <- reactive({
-    filter(pop_change, name_long == input$sel_locality)
+    filter(total_pop, name_long %in% input$sel_locality)
   })
   
   cbsa <- reactive({
-    filter(pop_change, cbsa_title == input$sel_cbsa)
-  })
+    filter(cbsa_pop, cbsa_title %in% input$sel_cbsa) |> 
+      group_by(year, counttype) |> 
+      summarise(value = sum(value))
+  }) 
+  
   
   output$local_plot <- renderGirafe({
     
     gg <- ggplot(locality(),
                  aes(x = year,
                      y = value,
-                     fill = component,
+                     fill = counttype,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "stack") +
       geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
-      labs(title = "Local components of population change",
-           subtitle = subtitle_text,
+      labs(title = paste0("Local population: ", input$sel_locality,
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
-      scale_y_continuous(labels = number_format(big.mark = ",")) +
-      plot_annotation(
-        theme = theme(
-          plot.subtitle = element_markdown(
-            margin = margin(b = 0.4, unit = 'cm'),
-            size = 11.5
-          )))
+      scale_y_continuous(labels = number_format(big.mark = ",")))
     
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 7, 
+           height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
-             opts_toolbar(pngname = input$sel_locality))) 
+             opts_toolbar(pngname = "local_pop")))
   })
   
   output$cbsa_plot <- renderGirafe({
@@ -78,31 +74,23 @@ server <- function(input, output) {
     gg <- ggplot(cbsa(),
                  aes(x = year,
                      y = value,
-                     fill = component,
+                     fill = counttype,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "stack") +
       geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
-      labs(title = "Core-based statistical area components of population change",
-           subtitle = subtitle_text,
+      labs(title = "Core-based statistical area population",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
-      scale_y_continuous(labels = number_format(big.mark = ","))  +
-      plot_annotation(
-        theme = theme(
-          plot.subtitle = element_markdown(
-            margin = margin(b = 0.4, unit = 'cm'),
-            size = 11.5
-          )))
+      scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 7, 
+           height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
-             opts_toolbar(pngname = input$sel_cbsa)))
+             opts_toolbar(pngname = "cbsa_pop")))
   })
   
   output$state_plot <- renderGirafe({
@@ -110,28 +98,20 @@ server <- function(input, output) {
     gg <- ggplot(state_pop,
                  aes(x = year,
                      y = value,
-                     fill = component,
+                     fill = counttype,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "stack") +
       geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
-      labs(title = "Virginia components of population change",
-           subtitle = subtitle_text,
+      labs(title = "Virginia population",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
-      scale_y_continuous(labels = number_format(big.mark = ","))  +
-      plot_annotation(
-        theme = theme(
-          plot.subtitle = element_markdown(
-            margin = margin(b = 0.4, unit = 'cm'),
-            size = 11.5
-          )))
+      scale_y_continuous(labels = number_format(big.mark = ","))
     
     
     girafe(ggobj = gg, 
-           width_svg = 10, 
-           height_svg = 8,
+           width_svg = 7, 
+           height_svg = 5,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
@@ -149,10 +129,11 @@ ui <- fluidPage(
   ),
   sidebarPanel(
     conditionalPanel(condition = "input.tabselected==2",
-                     selectInput(
+                     pickerInput(
                        inputId = "sel_cbsa",
                        label = "Select a CBSA",
-                       choices = cbsa_list
+                       choices = cbsa_list,
+                       multiple = TRUE
                      ),
                      style = "font-family: Verdana;"
     ),
@@ -160,7 +141,8 @@ ui <- fluidPage(
                      selectInput(
                        inputId = "sel_locality",
                        label = "Select a locality",
-                       choices = locality_list
+                       choices = locality_list,
+                       pickerOptions(showTick = TRUE)
                      ),
                      style = "font-family: Verdana;"
     )
