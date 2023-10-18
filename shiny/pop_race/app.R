@@ -34,7 +34,13 @@ server <- function(input, output) {
   locality <- reactive({ race |> 
     filter(name_long == input$sel_locality) |> 
       filter(year == input$sel_year) |> 
-      mutate(percent = value/sum(value))
+      group_by(year) |> 
+      mutate(percent = value/sum(value),
+             value_label = number_format(big.mark = ",")(value),
+             percent_label = percent_format(accuracy = 0.1)(percent)) |>
+      mutate(tooltip = paste0("Value: ", value_label,
+                              "<br>",
+                              "Percentage: ", percent_label))
       
   })
   
@@ -43,7 +49,12 @@ server <- function(input, output) {
       summarise(value = sum(value))  |> 
       filter(cbsa_title == input$sel_cbsa) |> 
       filter(year == input$sel_year) |> 
-      mutate(percent = value/sum(value))
+      mutate(percent = value/sum(value),
+             value_label = number_format(big.mark = ",")(value),
+             percent_label = percent_format(accuracy = 0.1)(percent)) |> 
+      mutate(tooltip = paste0("Value: ", value_label,
+                              "<br>",
+                              "Percentage: ", percent_label))
   })
   
   
@@ -51,14 +62,23 @@ server <- function(input, output) {
       group_by(year, label) |> 
       summarise(value = sum(value)) |> 
       filter(year == input$sel_year) |> 
-      mutate(percent = value/sum(value))})
+      mutate(percent = value/sum(value),
+             value_label = number_format(big.mark = ",")(value),
+             percent_label = percent_format(accuracy = 0.1)(percent)) |> 
+      mutate(tooltip = paste0("Value: ", value_label,
+                              "<br>",
+                              "Percentage: ", percent_label))
+    })
+  
   
   output$local_plot <- renderGirafe({
     
     gg <- ggplot(locality(),
                  aes(x = reorder(label, -percent),
                      y = percent,
-                     fill = label)) +
+                     fill = label,
+                     data_id = percent,
+                     tooltip = tooltip)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
@@ -82,7 +102,9 @@ server <- function(input, output) {
     gg <- ggplot(cbsa(),
                  aes(x = reorder(label, -percent),
                      y = percent,
-                     fill = label)) +
+                     fill = label,
+                     data_id = percent,
+                     tooltip = tooltip)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
@@ -105,7 +127,9 @@ server <- function(input, output) {
     gg <- ggplot(state(),
                  aes(x = reorder(label, -percent),
                      y = percent,
-                     fill = label)) +
+                     fill = label,
+                     data_id = percent,
+                     tooltip = tooltip)) +
       geom_col(position = "dodge") +
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
@@ -126,14 +150,34 @@ server <- function(input, output) {
 }
 
 ui <- fluidPage(
-  sidebarLayout(mainPanel(
+  tags$head(
+    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=FontName", type = "text/css"),
+    tags$style(HTML("
+
+      .selectize-input {
+        font-size: 10pt;
+      }
+      
+      .selectize-dropdown {
+        font-size: 10pt;
+      } 
+      
+      .centered-image-container {
+          display: flex;
+          justify-content: right;
+          align-items: right;
+      }
+
+    "))),
+  page_sidebar(mainPanel(
     tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
                 tabPanel("Statewide", girafeOutput("state_plot"), value =1),
                 tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
                 tabPanel("Locality", girafeOutput("local_plot"), value =3)
     )
   ),
-  sidebarPanel(
+  sidebar = sidebar(
+    position = "right",
     conditionalPanel(condition = "input.tabselected==2",
                      selectInput(
                        inputId = "sel_cbsa",
@@ -154,7 +198,8 @@ ui <- fluidPage(
                 label = "Select year",
                 choices = as.character(c(2010:2020)),
                 selected = "2020"
-  ))))
+  )
+    )))
 
 
 # Run the application 
