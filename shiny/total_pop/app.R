@@ -53,14 +53,15 @@ server <- function(input, output) {
       geom_col_interactive(position = "dodge") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
-      labs(title = paste0("Local population: ", input$sel_locality),
+      labs(title = "Local population",
+           subtitle = input$sel_locality,
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
       scale_y_continuous(labels = number_format(big.mark = ","))
     
     
     girafe(ggobj = gg, 
            width_svg = 7, 
-           height_svg = 5,
+           height_svg = 4,
     options = list(
       opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
       opts_sizing(rescale = FALSE),
@@ -80,12 +81,13 @@ server <- function(input, output) {
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Core-based statistical area population",
+           subtitle = input$sel_cbsa,
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
     scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
            width_svg = 7, 
-           height_svg = 5,
+           height_svg = 4,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
@@ -111,7 +113,7 @@ server <- function(input, output) {
     
     girafe(ggobj = gg, 
            width_svg = 7, 
-           height_svg = 5,
+           height_svg = 4,
            options = list(
              opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
              opts_sizing(rescale = FALSE),
