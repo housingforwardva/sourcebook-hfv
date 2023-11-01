@@ -1,4 +1,4 @@
-# sourcebook-2.0
+# sourcebook
 
 This repository contains the foundation for HousingForward Virginia's (HFV) SOURCEBOOK, a free online resource for data on housing, demographic, and socioeconomic trends across the Commonwealth.
 
