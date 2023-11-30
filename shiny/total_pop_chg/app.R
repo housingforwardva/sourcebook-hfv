@@ -78,7 +78,8 @@ server <- function(input, output) {
       scale_y_continuous(labels = percent_format()) +
       theme(panel.grid.major.y = element_line(color = "#808080", size = 0.05),
             panel.grid.major.x = element_line(color = "#808080", size = 0.05),) +
-      labs(title = paste0("Local population: ", input$sel_locality),
+      labs(title = input$sel_locality,
+           subtitle = "Population change since 2010",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")
     
     
@@ -107,7 +108,8 @@ server <- function(input, output) {
       scale_y_continuous(labels = percent_format()) +
       theme(panel.grid.major.y = element_line(color = "#808080", size = 0.05),
             panel.grid.major.x = element_line(color = "#808080", size = 0.05),) +
-      labs(title = "Core-based statistical area population",
+      labs(title = input$sel_cbsa,
+           subtitle = "Population change since 2010",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")
     
     girafe(ggobj = gg, 
@@ -135,7 +137,8 @@ server <- function(input, output) {
       scale_y_continuous(labels = percent_format()) +
       theme(panel.grid.major.y = element_line(color = "#808080", size = 0.05),
             panel.grid.major.x = element_line(color = "#808080", size = 0.05),) +
-      labs(title = "Population change since 2010",
+      labs(title = "Virginia",
+           subtitle = "Population change since 2010",
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.")
     
     
@@ -150,7 +153,6 @@ server <- function(input, output) {
 }
 
 ui <- fluidPage(
-  headerPanel(title = "Change in Population since 2010"),
   sidebarLayout(mainPanel(
     tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
                 tabPanel("Statewide", girafeOutput("state_plot"), value =1),
