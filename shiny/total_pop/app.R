@@ -14,8 +14,11 @@ library(scales)
 library(rsconnect)
 library(bslib)
 
+# Read the RDS file using the virtual path
 
-total_pop <- read_rds("total_pop.rds")
+addResourcePath("data", "sourcebook-hfv/data")
+
+total_pop <- readRDS("total_pop.rds")
 
 cbsa_list <- sort(unique(total_pop$cbsa_title))
 locality_list <- sort(unique(total_pop$name_long))
