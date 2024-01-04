@@ -1,5 +1,5 @@
 # This is a Shiny app that shows the total population
-# of Virginia geographies from 2010 to 2022 based on 
+# of Virginia geographies by age group from 2010 to 2022 based on 
 # Census Population Estimates Program and the Decennial
 # Census.
 
@@ -15,18 +15,20 @@ library(rsconnect)
 library(bslib)
 
 
-total_pop <- readRDS("total_pop.rds")
+pop_age <- readRDS("pop_age.rds")
 
-cbsa_list <- sort(unique(total_pop$cbsa_title))
-locality_list <- sort(unique(total_pop$name_long))
+cbsa_list <- sort(unique(pop_age$cbsa_title))
+locality_list <- sort(unique(pop_age$name_long))
 
-cbsa_pop <- total_pop |> 
-  group_by(year, cbsa_title, counttype) |> 
+cbsa_pop <- pop_age |> 
+  group_by(year, cbsa_title, agegroup) |> 
   summarise(value = sum(value))
 
-state_pop <- total_pop |> 
-  group_by(year, counttype) |> 
+state_pop <- pop_age |> 
+  group_by(year, agegroup) |> 
   summarise(value = sum(value))
+
+year <- 2010:2022
 
 
 server <- function(input, output) {
@@ -34,23 +36,30 @@ server <- function(input, output) {
   options(shiny.autoreload = TRUE)
   
   locality <- reactive({
-    filter(total_pop, name_long == input$sel_locality)
+    filter(pop_age, name_long == input$sel_locality)
   })
   
   cbsa <- reactive({
     filter(cbsa_pop, cbsa_title == input$sel_cbsa)
   })
   
+  year_select <- reactive({
+    filter(year, year == input$sel_year)
+  })
+  
   output$local_plot <- renderGirafe({
     
+    locality() <- locality() |> 
+      filter(year == year_select())
+    
     gg <- ggplot(locality(),
-                 aes(x = year,
+                 aes(x = agegroup,
                      y = value,
-                     fill = counttype,
+                     fill = agegroup,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "dodge") +
-      geom_col_interactive(position = "dodge") +
+      geom_col(position = "stack") +
+      geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Local population",
@@ -62,28 +71,28 @@ server <- function(input, output) {
     girafe(ggobj = gg, 
            width_svg = 7, 
            height_svg = 4,
-    options = list(
-      opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
-      opts_sizing(rescale = FALSE),
-      opts_toolbar(pngname = input$sel_locality)))
-})
+           options = list(
+             opts_tooltip(css = "background-color:white;color:black;font-family:Verdana;padding:5pt;"),
+             opts_sizing(rescale = FALSE),
+             opts_toolbar(pngname = input$sel_locality)))
+  })
   
   output$cbsa_plot <- renderGirafe({
     
     gg <- ggplot(cbsa(),
                  aes(x = year,
                      y = value,
-                     fill = counttype,
+                     fill = agegroup,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "dodge") +
-      geom_col_interactive(position = "dodge") +
+      geom_col(position = "stack") +
+      geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Core-based statistical area population",
            subtitle = input$sel_cbsa,
            caption = "**Source:** U.S. Census Bureau, Population Estimates Program and Decennial Census.") +
-    scale_y_continuous(labels = number_format(big.mark = ","))
+      scale_y_continuous(labels = number_format(big.mark = ","))
     
     girafe(ggobj = gg, 
            width_svg = 7, 
@@ -99,11 +108,11 @@ server <- function(input, output) {
     gg <- ggplot(state_pop,
                  aes(x = year,
                      y = value,
-                     fill = counttype,
+                     fill = agegroup,
                      data_id = value,
                      tooltip = number_format(big.mark = ",")(value))) +
-      geom_col(position = "dodge") +
-      geom_col_interactive(position = "dodge") +
+      geom_col(position = "stack") +
+      geom_col_interactive(position = "stack") +
       theme_hfv(base_size = 15) +
       scale_fill_hfv() +
       labs(title = "Virginia population",
@@ -121,8 +130,8 @@ server <- function(input, output) {
   })
 }
 
-  ui <- fluidPage(
-    tags$head(
+ui <- fluidPage(
+  tags$head(
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=FontName", type = "text/css"),
     tags$style(HTML("
 
@@ -141,35 +150,40 @@ server <- function(input, output) {
       }
 
     "))),
-    page_sidebar(mainPanel(
-      tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
-        tabPanel("Statewide", girafeOutput("state_plot"), value =1),
-        tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
-        tabPanel("Locality", girafeOutput("local_plot"), value =3)
-      )
+  page_sidebar(mainPanel(
+    tabsetPanel(type = "tabs", id = "tabselected", selected = 1,
+                tabPanel("Statewide", girafeOutput("state_plot"), value =1),
+                tabPanel("CBSA", girafeOutput("cbsa_plot"), value =2),
+                tabPanel("Locality", girafeOutput("local_plot"), value =3)
+    )
+  ),
+  sidebar = sidebar(
+    position = "right",
+    sidebarPanel(selectInput(
+      inputId = "sel_year",
+      label = "Select year",
+      choices = year
+    )),
+    conditionalPanel(condition = "input.tabselected==2",
+                     selectInput(
+                       inputId = "sel_cbsa",
+                       label = "Select a CBSA",
+                       choices = cbsa_list
+                     ),
+                     style = "font-family: Open Sans;"
     ),
-    sidebar = sidebar(
-      position = "right",
-      conditionalPanel(condition = "input.tabselected==2",
-                       selectInput(
-                         inputId = "sel_cbsa",
-                         label = "Select a CBSA",
-                         choices = cbsa_list
-                       ),
-                       style = "font-family: Open Sans;"
-      ),
-      conditionalPanel(condition = "input.tabselected==3",
-        selectInput(
-          inputId = "sel_locality",
-          label = "Select a locality",
-          choices = locality_list
-        ),
-        style = "font-family: Open Sans;"
-      )
-    ),
-    hr(),
-    div(class = "centered-image-container",
-    img(src = "hfv_logo.png", width ="150px"))
+    conditionalPanel(condition = "input.tabselected==3",
+                     selectInput(
+                       inputId = "sel_locality",
+                       label = "Select a locality",
+                       choices = locality_list
+                     ),
+                     style = "font-family: Open Sans;"
+    )
+  ),
+  hr(),
+  div(class = "centered-image-container",
+      img(src = "hfv_logo.png", width ="150px"))
   ))
 
 
