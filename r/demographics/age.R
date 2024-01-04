@@ -144,4 +144,4 @@ lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
 age_join <- age |> 
   left_join(lookup, by = 'GEOID')
   
-write_rds(age_join, "data/pop_age.rds")
+write_rds(age_join, "shiny/age/pop_age.rds")
