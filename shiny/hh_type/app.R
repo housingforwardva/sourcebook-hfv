@@ -228,6 +228,22 @@ server <- function(input, output) {
   title_text <- "<b><span style='color:#011E41'>Householder with no partner</span></b> and 
 <b><span style='color:#40C0C0'>Married or cohabitating couple</span></b>"
   
+  # Create a custom theme function to be applied consistently
+  custom_theme <- function() {
+    theme_hfv() %+replace%
+      theme(
+        axis.text.x = element_text(
+          angle = 0,
+          hjust = 0.5,
+          vjust = 0.5,
+          lineheight = 0.8,
+          margin = margin(t = 5)
+        ),
+        plot.title = element_markdown(),
+        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
+      )
+  }
+  
   # Create interactive plot for Statewide tab
   output$state_plot <- renderGirafe({
     state_data <- state_hh()
@@ -256,21 +272,10 @@ server <- function(input, output) {
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
-      theme_hfv() +
       scale_fill_hfv() +
       # Hide the color legend since it's redundant with the fill legend
       guides(color = "none") +
-      theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-      ) +
+      custom_theme() +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
       facet_grid(cols = vars(type), scales = "free_x", space = "free")
     
@@ -314,21 +319,10 @@ server <- function(input, output) {
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
-      theme_hfv() +
       scale_fill_hfv() +
       # Hide the color legend since it's redundant with the fill legend
       guides(color = "none") +
-      theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-      ) +
+      custom_theme() +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
       facet_grid(cols = vars(type), scales = "free_x", space = "free")
     
@@ -372,21 +366,10 @@ server <- function(input, output) {
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
-      theme_hfv() +
       scale_fill_hfv() +
       # Hide the color legend since it's redundant with the fill legend
       guides(color = "none") +
-      theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-      ) +
+      custom_theme() +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
       facet_grid(cols = vars(type), scales = "free_x", space = "free")
     
@@ -560,19 +543,10 @@ server <- function(input, output) {
            fill = "Comparison",
            color = "Comparison") +
       scale_y_continuous(labels = scales::percent_format()) +
-      theme_hfv() +
       scale_fill_manual(values = c("#011E41", "#40C0C0")) +
+      custom_theme() +
       theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        legend.position = "top",
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
+        legend.position = "top"
       ) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
       facet_grid(cols = vars(type), scales = "free_x", space = "free")
