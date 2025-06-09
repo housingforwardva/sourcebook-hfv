@@ -383,7 +383,7 @@ server <- function(input, output, session) {
         y = "Population",
         x = "Year"
       ) +
-      theme_bw() +
+      theme_minimal(base_family = "Arial") +
       theme(
         legend.position = "none",
         plot.title.position = "plot",
