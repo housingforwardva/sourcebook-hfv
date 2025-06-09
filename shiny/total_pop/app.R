@@ -60,7 +60,7 @@ ui <- page_fillable(
       body, html {
         margin: 0;
         padding: 0;
-        height: 100vh;
+        height: auto;
         overflow-x: hidden;
       }
       
