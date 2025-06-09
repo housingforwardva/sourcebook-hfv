@@ -64,15 +64,30 @@ ui <- page_fillable(
         overflow-x: hidden;
       }
       
-      /* Iframe optimization - detect when app is embedded */
-      @media (max-height: 800px) and (min-width: 768px) {
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
         .hfv-container {
-          padding: 15px !important;
-          margin: 10px auto !important;
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        .hfv-header {
+          margin-bottom: 8px !important;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px !important;
         }
         
         .girafe-container {
-          height: 350px !important;
+          height: 280px !important;
+          min-height: 280px !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
         }
       }
       
@@ -113,7 +128,8 @@ ui <- page_fillable(
       /* Plot container styles */
       .girafe-container {
         width: 100%;
-        height: 450px;
+        height: auto;
+        min-height: 350px;
         overflow: visible;
       }
       
