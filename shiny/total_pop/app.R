@@ -70,7 +70,7 @@ ui <- page_fillable(
         margin: 0 auto; 
         border: 2px solid #011E41; 
         border-radius: 5px; 
-        padding: 25px;
+        padding: 45px;
       }
       
       /* Header styles */
