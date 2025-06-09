@@ -7,50 +7,266 @@ library(shiny)
 library(bslib)
 library(plotly)
 library(here)
+library(systemfonts) # For font_google
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(shinyjs) # For dynamic UI updates
+library(cowplot) # For adding logo to plots
+library(magick) # For image handling
+
+# Define HFV color palette
+hfv_colors <- list(
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA",
+  shadow = "#011E41",
+  shadow_light = "#102C54", # Lighter shade of shadow color
+  berry = "#B1005F",
+  desert = "#E0592A"
+)
+
+# Create a Bootstrap theme
+hfv_theme <- bs_theme(
+  version = 5, # Use Bootstrap 5
+  bg = "#ffffff", # Background color
+  fg = "#333333", # Text color
+  primary = hfv_colors$sky, # Primary color
+  secondary = hfv_colors$shadow, # Secondary color
+  success = hfv_colors$grass, # Success color
+  info = hfv_colors$lilac, # Info color
+  warning = hfv_colors$desert, # Warning color
+  danger = hfv_colors$berry, # Danger color
+  base_font = font_google("Open Sans"),
+  heading_font = font_google("Poppins"),
+  font_scale = 0.8 # Compact the text more for small window
+)
 
 # UI for the Shiny app
-ui <- page_sidebar(
-  title = "Virginia Homeownership Explorer",
-  sidebar = sidebar(
-    width = 300,
-    h4("Selected Location"),
-    textOutput("selected_tract"),
-    textOutput("selected_county"),
-    hr(),
-    h4("About"),
-    p("Click on any census tract to see historical homeownership rates."),
-    p("Data source: US Census ACS 5-year estimates, 2010-2023")
+ui <- page_fillable(
+  theme = hfv_theme,
+  useShinyjs(), # Initialize shinyjs
+
+  # MOBILE OPTIMIZATION #1: Add the viewport meta tag for mobile devices
+  tags$head(
+    tags$meta(
+      name = "viewport",
+      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    )
   ),
-  layout_columns(
-    col_widths = c(12),
-    card(
-      full_screen = TRUE,
-      card_header("Homeownership Rate by Census Tract"),
-      # Show loading message during render
+
+  # MOBILE OPTIMIZATION #2: Add CSS with media queries for responsive design
+  tags$head(
+    tags$style(HTML(
+      "
+      /* Base styles for all screen sizes */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow-x: hidden;
+      }
+      
+      /* Container styles */
+      .hfv-container {
+        max-width: 1200px; 
+        margin: 0 auto; 
+        border: 2px solid #011E41; 
+        border-radius: 5px; 
+        padding: 45px;
+      }
+      
+      /* Header styles */
+      .hfv-header {
+        display: flex; 
+        align-items: center; 
+        margin-bottom: 15px; 
+        border-bottom: 2px solid #40C0C0; 
+        padding-bottom: 8px;
+      }
+      
+      .hfv-header img {
+        height: 30px;
+        margin-right: 10px;
+      }
+      
+      .title-text {
+        margin: 0; 
+        color: #011E41;
+        font-size: 20px;
+      }
+      
+      /* Sidebar panel styles */
+      .hfv-sidebar {
+        background-color: #E8EDF2;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      
+      /* Map container styles */
+      .map-container {
+        width: 100%;
+        height: 450px;
+      }
+      
+      /* Plot container styles */
+      .plot-container {
+        width: 100%;
+        height: 350px;
+      }
+      
+      /* MOBILE OPTIMIZATION #3: Medium-sized screens (tablets, smaller laptops) */
+      @media (max-width: 992px) {
+        .hfv-container {
+          padding: 10px;
+        }
+        
+        .title-text {
+          font-size: 18px;
+        }
+        
+        .map-container {
+          height: 400px;
+        }
+        
+        .plot-container {
+          height: 300px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #4: Small screens (large phones, small tablets) */
+      @media (max-width: 768px) {
+        .hfv-container {
+          padding: 8px;
+          border-width: 1px;
+        }
+        
+        .title-text {
+          font-size: 16px;
+        }
+        
+        .hfv-header {
+          margin-bottom: 10px;
+        }
+        
+        .hfv-sidebar {
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        
+        .map-container {
+          height: 350px;
+        }
+        
+        .plot-container {
+          height: 250px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #5: Extra-small screens (phones) */
+      @media (max-width: 480px) {
+        .hfv-container {
+          padding: 5px;
+        }
+        
+        .hfv-header img {
+          height: 25px;
+        }
+        
+        .title-text {
+          font-size: 14px;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px;
+        }
+        
+        .map-container {
+          height: 300px;
+        }
+        
+        .plot-container {
+          height: 200px;
+        }
+      }
+    "
+    ))
+  ),
+
+  # Main container with responsive padding
+  div(
+    class = "hfv-container",
+
+    # Header with logo and title
+    div(
+      class = "hfv-header",
+      img(
+        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
+        alt = "HousingForward VA Logo"
+      ),
+      h4("Virginia Homeownership Explorer", class = "title-text")
+    ),
+
+    # MOBILE OPTIMIZATION #6: Responsive grid layout with different column widths for different screen sizes
+    layout_columns(
+      fillable = TRUE,
+      col_widths = c(
+        # For larger screens (lg and up): sidebar takes 25% width, main content takes 75%
+        lg = c(3, 9),
+        # For medium screens (md): sidebar takes 33% width, main content takes 67%
+        md = c(4, 8),
+        # For small screens (sm and xs): full width stacked layout
+        sm = c(12, 12)
+      ),
+
+      # Sidebar Panel
       div(
-        id = "loading-content",
-        style = "position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1000;",
+        class = "hfv-sidebar",
+        h5("Selected Location", style = "margin-bottom: 10px; font-weight: bold;"),
+        textOutput("selected_tract"),
+        textOutput("selected_county"),
+        hr(style = "margin: 15px 0;"),
+        h5("About", style = "margin-bottom: 10px; font-weight: bold;"),
+        p("Click on any census tract to see historical homeownership rates."),
+        hr(style = "margin: 15px 0;"),
         div(
-          style = "background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 5px; text-align: center;",
-          h4("Loading map data..."),
-          span(class = "spinner-border", role = "status")
+          style = "font-size: 10px; color: #666; margin-top: 8px;",
+          p("Data source: US Census ACS 5-year estimates, 2010-2023")
         )
       ),
-      maplibreOutput("map_id", height = "500px")
+      # Main Panel
+      div(
+        style = "width: 100%;",
+        
+        # Map Section
+        div(
+          style = "margin-bottom: 20px;",
+          h5("Homeownership Rate by Census Tract", style = "margin-bottom: 10px; font-weight: bold;"),
+          div(
+            class = "map-container",
+            # Show loading message during render
+            div(
+              id = "loading-content",
+              style = "position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1000;",
+              div(
+                style = "background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 5px; text-align: center;",
+                h4("Loading map data..."),
+                span(class = "spinner-border", role = "status")
+              )
+            ),
+            maplibreOutput("map_id", height = "100%")
+          )
+        ),
+        
+        # Plot Section
+        div(
+          h5("Homeownership Rate Over Time", style = "margin-bottom: 10px; font-weight: bold;"),
+          div(
+            class = "plot-container",
+            plotlyOutput("ho_trend_plot", height = "100%")
+          )
+        )
+      )
     )
-  ),
-  # Add a new card for the plot below the map
-  layout_columns(
-    col_widths = c(12),
-    card(
-      card_header("Homeownership Rate Over Time"),
-      plotlyOutput("ho_trend_plot", height = "350px")
-    )
-  ),
-  # Brand with logo
-  tags$div(
-    style = "position: absolute; bottom: 10px; left: 10px; z-index: 999;",
-    tags$img(src = "hfv_rgb_logo.png", height = "auto", width = "150px")
   ),
   # Add JavaScript to handle loading indicator
   tags$script(HTML("
@@ -80,6 +296,11 @@ server <- function(input, output, session) {
     
     # Hide loading indicator when data is ready
     session$sendCustomMessage(type = 'hideLoading', message = list())
+  })
+
+  # MOBILE OPTIMIZATION #8: Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
   })
   
   # Store the selected tract 

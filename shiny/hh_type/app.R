@@ -10,6 +10,14 @@ library(ggiraph)
 library(scales)
 library(here)  # For better path handling
 library(shinyWidgets) # Added for toggle switch
+library(bslib) # For modern UI components
+library(systemfonts) # For font_google
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(shinyjs) # For dynamic UI updates
+library(cowplot) # For adding logo to plots
+library(magick) # For image handling
+library(gdtools) # For font registration
 
 # Determine the app directory and set the data path
 # Option 1: Using here package (recommended)
@@ -29,174 +37,427 @@ tryCatch({
              "you may need to adjust the path in the app.R file."))
 })
 
+# Define HFV color palette
+hfv_colors <- list(
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA",
+  shadow = "#011E41",
+  shadow_light = "#102C54", # Lighter shade of shadow color
+  berry = "#B1005F",
+  desert = "#E0592A"
+)
+
+# Register Google fonts
+tryCatch({
+  gdtools::register_gfont("Open Sans")
+  gdtools::register_gfont("Poppins")
+}, error = function(e) {
+  message("Could not register Google fonts: ", e$message)
+})
+
+# Create a Bootstrap theme
+hfv_theme <- bs_theme(
+  version = 5, # Use Bootstrap 5
+  bg = "#ffffff", # Background color
+  fg = "#333333", # Text color
+  primary = hfv_colors$sky, # Primary color
+  secondary = hfv_colors$shadow, # Secondary color
+  success = hfv_colors$grass, # Success color
+  info = hfv_colors$lilac, # Info color
+  warning = hfv_colors$desert, # Warning color
+  danger = hfv_colors$berry, # Danger color
+  base_font = font_google("Open Sans"),
+  heading_font = font_google("Poppins"),
+  font_scale = 0.8 # Compact the text more for small window
+)
+
 # UI
-ui <- fluidPage(
-  # App title and styling
-  titlePanel("Household Composition"),
-  
-  # Add CSS for better styling
+ui <- page_fillable(
+  theme = hfv_theme,
+  useShinyjs(), # Initialize shinyjs
+
+  # MOBILE OPTIMIZATION #1: Add the viewport meta tag for mobile devices
   tags$head(
-    tags$style(HTML("
-      .well { background-color: #f8f9fa; border-color: #ddd; }
-      .shiny-download-link { width: 100%; margin-bottom: 10px; }
-      .nav-tabs { margin-bottom: 15px; }
-      h2 { color: #011E41; }
-      .header-panel { padding: 15px; margin-bottom: 15px; background-color: #f8f9fa; border-radius: 5px; }
-    "))
+    tags$meta(
+      name = "viewport",
+      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    )
   ),
-  
-  # Add header info
-  div(class = "header-panel",
-      h4("About This Dashboard"),
-      p("This dashboard displays household composition data from the American Community Survey (ACS).
-       Data is available for the state of Virginia, Core-Based Statistical Areas (CBSAs), and all Virginia localities."),
-      p("Source: U.S. Census Bureau, American Community Survey 5-year estimates, Table B11021.")
+
+  # MOBILE OPTIMIZATION #2: Add CSS with media queries for responsive design
+  tags$head(
+    tags$style(HTML(
+      "
+      /* Base styles for all screen sizes */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow-x: hidden;
+      }
+      
+      /* Container styles */
+      .hfv-container {
+        max-width: 1200px; 
+        margin: 0 auto; 
+        border: 2px solid #011E41; 
+        border-radius: 5px; 
+        padding: 45px;
+      }
+      
+      /* Header styles */
+      .hfv-header {
+        display: flex; 
+        align-items: center; 
+        margin-bottom: 15px; 
+        border-bottom: 2px solid #40C0C0; 
+        padding-bottom: 8px;
+      }
+      
+      .hfv-header img {
+        height: 30px;
+        margin-right: 10px;
+      }
+      
+      .title-text {
+        margin: 0; 
+        color: #011E41;
+        font-size: 20px;
+      }
+      
+      /* Sidebar panel styles */
+      .hfv-sidebar {
+        background-color: #E8EDF2;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      
+      /* Plot container styles */
+      .girafe-container {
+        width: 100%;
+        height: 450px;
+        overflow: visible;
+      }
+      
+      .girafe-container svg {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      
+      /* MOBILE OPTIMIZATION #3: Medium-sized screens (tablets, smaller laptops) */
+      @media (max-width: 992px) {
+        .hfv-container {
+          padding: 10px;
+        }
+        
+        .title-text {
+          font-size: 18px;
+        }
+        
+        .girafe-container {
+          height: 400px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #4: Small screens (large phones, small tablets) */
+      @media (max-width: 768px) {
+        .hfv-container {
+          padding: 8px;
+          border-width: 1px;
+        }
+        
+        .title-text {
+          font-size: 16px;
+        }
+        
+        .hfv-header {
+          margin-bottom: 10px;
+        }
+        
+        .hfv-sidebar {
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        
+        .control-label {
+          font-size: 12px;
+        }
+        
+        .form-check-label {
+          font-size: 11px;
+        }
+        
+        .form-select {
+          font-size: 12px;
+        }
+        
+        .form-control {
+          font-size: 12px;
+        }
+        
+        .girafe-container {
+          height: 350px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #5: Extra-small screens (phones) */
+      @media (max-width: 480px) {
+        .hfv-container {
+          padding: 5px;
+        }
+        
+        .hfv-header img {
+          height: 25px;
+        }
+        
+        .title-text {
+          font-size: 14px;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px;
+        }
+        
+        .girafe-container {
+          height: 300px;
+        }
+        
+        .nav-tabs .nav-link {
+          font-size: 13px;
+          padding: 6px 10px;
+        }
+      }
+    "
+    ))
   ),
-  
-  # Create tabs for different geographic levels
-  tabsetPanel(
-    # Tab 1: Statewide
-    tabPanel("Statewide", 
-             sidebarLayout(
-               sidebarPanel(
-                 # Replace select input with toggle switch
-                 switchInput(
-                   inputId = "state_year_toggle",
-                   label = paste("Toggle between", min(year_list), "and", max(year_list)),
-                   value = TRUE,
-                   onLabel = max(year_list),
-                   offLabel = min(year_list),
-                   size = "large"
-                 ),
-                 hr(),
-                 downloadButton("download_state", "Download Plot"),
-                 hr(),
-                 helpText("This visualization shows household composition across Virginia.")
-               ),
-               mainPanel(
-                 girafeOutput("state_plot", height = "600px")
-               )
-             )
+
+  # Main container with responsive padding
+  div(
+    class = "hfv-container",
+
+    # Header with logo and title
+    div(
+      class = "hfv-header",
+      img(
+        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
+        alt = "HousingForward VA Logo"
+      ),
+      h4("Household Composition", class = "title-text")
     ),
-    
-    # Tab 2: CBSA
-    tabPanel("CBSA", 
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("cbsa", 
-                             "Select CBSA:", 
-                             choices = cbsa_list,
-                             selected = cbsa_list[1]),
-                 # Replace select input with toggle switch
-                 switchInput(
-                   inputId = "cbsa_year_toggle",
-                   label = "Switch Year",
-                   value = TRUE,
-                   onLabel = max(year_list),
-                   offLabel = min(year_list),
-                   size = "large"
-                 ),
-                 hr(),
-                 downloadButton("download_cbsa", "Download Plot"),
-                 hr(),
-                 helpText("Core-Based Statistical Areas (CBSAs) represent metropolitan regions.")
-               ),
-               mainPanel(
-                 girafeOutput("cbsa_plot", height = "600px")
-               )
-             )
-    ),
-    
-    # Tab 3: Locality
-    tabPanel("Locality", 
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("locality", 
-                             "Select Locality:", 
-                             choices = locality_list,
-                             selected = locality_list[1]),
-                 # Replace select input with toggle switch
-                 switchInput(
-                   inputId = "locality_year_toggle",
-                   label = paste("Toggle between", min(year_list), "and", max(year_list)),
-                   value = TRUE,
-                   onLabel = max(year_list),
-                   offLabel = min(year_list),
-                   size = "large"
-                 ),
-                 hr(),
-                 downloadButton("download_locality", "Download Plot"),
-                 hr(),
-                 helpText("Localities are counties and independent cities in Virginia.")
-               ),
-               mainPanel(
-                 girafeOutput("locality_plot", height = "600px")
-               )
-             )
-    ),
-    
-    # Tab 4: Comparison
-    tabPanel("Compare", 
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("compare_type", 
-                             "Compare by:", 
-                             choices = c("Years", "Localities"),
-                             selected = "Years"),
-                 
-                 # Conditional panels based on comparison type
-                 conditionalPanel(
-                   condition = "input.compare_type == 'Years'",
-                   selectInput("compare_locality", 
-                               "Select Locality:", 
-                               choices = locality_list,
-                               selected = locality_list[1]),
-                   # Keep both years for comparison - we need both for this tab
-                   selectInput("compare_year1", 
-                               "First Year:", 
-                               choices = year_list,
-                               selected = year_list[2]),
-                   selectInput("compare_year2", 
-                               "Second Year:", 
-                               choices = year_list,
-                               selected = year_list[1])
-                 ),
-                 
-                 conditionalPanel(
-                   condition = "input.compare_type == 'Localities'",
-                   # Replace select input with toggle switch
-                   switchInput(
-                     inputId = "compare_year_toggle",
-                     label = paste("Toggle between", min(year_list), "and", max(year_list)),
-                     value = TRUE,
-                     onLabel = max(year_list),
-                     offLabel = min(year_list),
-                     size = "large"
-                   ),
-                   selectInput("compare_locality1", 
-                               "First Locality:", 
-                               choices = locality_list,
-                               selected = locality_list[1]),
-                   selectInput("compare_locality2", 
-                               "Second Locality:", 
-                               choices = locality_list,
-                               selected = locality_list[2])
-                 ),
-                 hr(),
-                 downloadButton("download_compare", "Download Plot"),
-                 hr(),
-                 helpText("Compare household composition across different years or localities.")
-               ),
-               mainPanel(
-                 girafeOutput("compare_plot", height = "600px")
-               )
-             )
+
+    # MOBILE OPTIMIZATION #6: Responsive grid layout with different column widths for different screen sizes
+    layout_columns(
+      fillable = TRUE,
+      col_widths = c(
+        # For larger screens (lg and up): sidebar takes 25% width, main content takes 75%
+        lg = c(3, 9),
+        # For medium screens (md): sidebar takes 33% width, main content takes 67%
+        md = c(4, 8),
+        # For small screens (sm and xs): full width stacked layout
+        sm = c(12, 12)
+      ),
+
+      # Sidebar Panel
+      div(
+        class = "hfv-sidebar",
+
+        # Year toggle for state
+        div(
+          style = "margin-bottom: 15px;",
+          conditionalPanel(
+            condition = "input.tabs == 'statewide'",
+            switchInput(
+              inputId = "state_year_toggle",
+              label = paste("Toggle between", min(year_list), "and", max(year_list)),
+              value = TRUE,
+              onLabel = max(year_list),
+              offLabel = min(year_list),
+              size = "small",
+              width = "100%"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa'",
+            selectInput(
+              "cbsa",
+              "Select CBSA:",
+              choices = cbsa_list,
+              selected = cbsa_list[1],
+              width = "100%",
+              selectize = TRUE
+            ),
+            switchInput(
+              inputId = "cbsa_year_toggle",
+              label = "Switch Year",
+              value = TRUE,
+              onLabel = max(year_list),
+              offLabel = min(year_list),
+              size = "small",
+              width = "100%"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'locality'",
+            selectInput(
+              "locality",
+              "Select Locality:",
+              choices = locality_list,
+              selected = locality_list[1],
+              width = "100%",
+              selectize = TRUE
+            ),
+            switchInput(
+              inputId = "locality_year_toggle",
+              label = paste("Toggle between", min(year_list), "and", max(year_list)),
+              value = TRUE,
+              onLabel = max(year_list),
+              offLabel = min(year_list),
+              size = "small",
+              width = "100%"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'compare'",
+            selectInput(
+              "compare_type",
+              "Compare by:",
+              choices = c("Years", "Localities"),
+              selected = "Years",
+              width = "100%",
+              selectize = TRUE
+            ),
+            conditionalPanel(
+              condition = "input.compare_type == 'Years'",
+              selectInput(
+                "compare_locality",
+                "Select Locality:",
+                choices = locality_list,
+                selected = locality_list[1],
+                width = "100%",
+                selectize = TRUE
+              ),
+              selectInput(
+                "compare_year1",
+                "First Year:",
+                choices = year_list,
+                selected = year_list[2],
+                width = "100%",
+                selectize = TRUE
+              ),
+              selectInput(
+                "compare_year2",
+                "Second Year:",
+                choices = year_list,
+                selected = year_list[1],
+                width = "100%",
+                selectize = TRUE
+              )
+            ),
+            conditionalPanel(
+              condition = "input.compare_type == 'Localities'",
+              switchInput(
+                inputId = "compare_year_toggle",
+                label = paste("Toggle between", min(year_list), "and", max(year_list)),
+                value = TRUE,
+                onLabel = max(year_list),
+                offLabel = min(year_list),
+                size = "small",
+                width = "100%"
+              ),
+              selectInput(
+                "compare_locality1",
+                "First Locality:",
+                choices = locality_list,
+                selected = locality_list[1],
+                width = "100%",
+                selectize = TRUE
+              ),
+              selectInput(
+                "compare_locality2",
+                "Second Locality:",
+                choices = locality_list,
+                selected = locality_list[2],
+                width = "100%",
+                selectize = TRUE
+              )
+            )
+          )
+        ),
+
+        # Download buttons
+        div(
+          style = "margin-bottom: 15px;",
+          conditionalPanel(
+            condition = "input.tabs == 'statewide'",
+            downloadButton("download_state", "Download Plot", class = "btn-primary", width = "100%")
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa'",
+            downloadButton("download_cbsa", "Download Plot", class = "btn-primary", width = "100%")
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'locality'",
+            downloadButton("download_locality", "Download Plot", class = "btn-primary", width = "100%")
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'compare'",
+            downloadButton("download_compare", "Download Plot", class = "btn-primary", width = "100%")
+          )
+        ),
+
+        # Horizontal line
+        hr(style = "margin: 15px 0;"),
+
+        # Source information
+        div(
+          style = "font-size: 10px; color: #666; margin-top: 8px;",
+          p("Source: U.S. Census Bureau, American Community Survey 5-year estimates, Table B11021.")
+        )
+      ),
+
+      # Main Panel (tabs)
+      div(
+        style = "width: 100%;",
+
+        navset_tab(
+          id = "tabs",
+          nav_panel(
+            title = "Statewide",
+            value = "statewide",
+            padding = 5,
+            # MOBILE OPTIMIZATION #7: Direct plot output without uiOutput wrappers
+            div(class = "girafe-container", girafeOutput("state_plot"))
+          ),
+
+          nav_panel(
+            title = "CBSA",
+            value = "cbsa",
+            padding = 5,
+            div(class = "girafe-container", girafeOutput("cbsa_plot"))
+          ),
+
+          nav_panel(
+            title = "Locality",
+            value = "locality",
+            padding = 5,
+            div(class = "girafe-container", girafeOutput("locality_plot"))
+          ),
+
+          nav_panel(
+            title = "Compare",
+            value = "compare",
+            padding = 5,
+            div(class = "girafe-container", girafeOutput("compare_plot"))
+          )
+        )
+      )
     )
   )
 )
 
 # Server
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   # Create reactive expressions for toggle switches to get selected years
   state_year <- reactive({
@@ -308,6 +569,7 @@ server <- function(input, output) {
       ) +
       labs(title = title_text,
            subtitle = paste("Virginia:", selected_year),
+           caption = " ", # Empty caption to leave space for logo
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
@@ -356,6 +618,7 @@ server <- function(input, output) {
       scale_fill_manual(values = c("#011E41", "#40C0C0")) +
       labs(title = title_text,
            subtitle = paste(input$cbsa, ":", selected_year),
+           caption = " ", # Empty caption to leave space for logo
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
@@ -403,6 +666,7 @@ server <- function(input, output) {
       scale_color_manual(values = c("#011E41", "#40C0C0")) +
       labs(title = title_text,
            subtitle = paste(input$locality, ":", selected_year),
+           caption = " ", # Empty caption to leave space for logo
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
@@ -439,15 +703,15 @@ server <- function(input, output) {
                 vjust = -0.5,
                 size = 3.5) +
       # Make sure text colors match fill colors
-      scale_color_hfv() +
+      scale_color_manual(values = c("#011E41", "#40C0C0")) +
       labs(title = "Household Composition by Type",
            subtitle = subtitle,
            caption = "Source: ACS 5-year estimates",
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
-      theme_hfv() +
-      scale_fill_hfv() +
+      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
+      theme_minimal() +
       # Hide the color legend since it's redundant with the fill legend
       guides(color = "none") +
       theme(
@@ -587,6 +851,7 @@ server <- function(input, output) {
       scale_color_manual(values = c("#011E41", "#40C0C0")) +
       labs(title = title_text,
            subtitle = plot_title,
+           caption = " ", # Empty caption to leave space for logo
            x = NULL,
            y = "Percent of Households",
            fill = "Comparison",
@@ -657,7 +922,7 @@ server <- function(input, output) {
              fill = "Comparison",
              color = "Comparison") +
         scale_y_continuous(labels = scales::percent_format()) +
-        theme_hfv() +
+        theme_minimal() +
         scale_fill_manual(values = c("#011E41", "#40C0C0")) +
         theme(
           axis.text.x = element_text(
@@ -677,6 +942,11 @@ server <- function(input, output) {
       ggsave(file, plot = p, width = 10, height = 6, dpi = 300)
     }
   )
+  
+  # MOBILE OPTIMIZATION #7: Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
+  })
 }
 
 # Run the application 

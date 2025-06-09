@@ -1,62 +1,42 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
+library(scales)
+library(here)
+library(bslib) # For modern UI components
 library(systemfonts) # For font_google
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(ggtext)      # For formatted text in plots
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(shinyjs) # For dynamic UI updates
+library(cowplot) # For adding logo to plots
+library(magick) # For image handling
+library(ggiraph) # For interactive plots
 
 # Define HFV color palette
 hfv_colors <- list(
   sky = "#40C0C0",
   grass = "#259591",
-  lilac = "#8B85CA", 
+  lilac = "#8B85CA",
   shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
+  shadow_light = "#102C54", # Lighter shade of shadow color
   berry = "#B1005F",
   desert = "#E0592A"
 )
 
 # Create a Bootstrap theme
 hfv_theme <- bs_theme(
-  version = 5,                        # Use Bootstrap 5
-  bg = "#ffffff",                     # Background color
-  fg = "#333333",                     # Text color
-  primary = hfv_colors$sky,           # Primary color
-  secondary = hfv_colors$shadow,      # Secondary color
-  success = hfv_colors$grass,         # Success color
-  info = hfv_colors$lilac,            # Info color
-  warning = hfv_colors$desert,        # Warning color
-  danger = hfv_colors$berry,          # Danger color
+  version = 5, # Use Bootstrap 5
+  bg = "#ffffff", # Background color
+  fg = "#333333", # Text color
+  primary = hfv_colors$sky, # Primary color
+  secondary = hfv_colors$shadow, # Secondary color
+  success = hfv_colors$grass, # Success color
+  info = hfv_colors$lilac, # Info color
+  warning = hfv_colors$desert, # Warning color
+  danger = hfv_colors$berry, # Danger color
   base_font = font_google("Open Sans"),
   heading_font = font_google("Poppins"),
-  font_scale = 0.8                    # Compact the text more for small window
+  font_scale = 0.8 # Compact the text more for small window
 )
-
-# Load data outside of server
-pop_change <- read_rds("./pop_change.rds")
-
-# Create lists for filters
-cbsa_list <- sort(unique(pop_change$cbsa_title))
-locality_list <- sort(unique(pop_change$name_long))
-
-# Pre-process data
-cbsa_pop <- pop_change %>% 
-  group_by(year, cbsa_title, component) %>% 
-  summarise(value = sum(value), .groups = "drop")
-
-state_pop <- pop_change %>% 
-  group_by(year, component) %>% 
-  summarise(value = sum(value), .groups = "drop")
-
-# Create color-coded subtitle
-subtitle_text <- "Net <span style='color:#011E41'><b>domestic migration</b></span>, <span style='color:#40C0C0'><b>international migration</b></span>, and <span style='color:#8B85CA'><b>natural increase (or decrease)</b></span>"
 
 # Define UI
 ui <- page_fillable(
@@ -229,7 +209,7 @@ ui <- page_fillable(
         src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
         alt = "HousingForward VA Logo"
       ),
-      h4("Components of Population Change", class = "title-text")
+      h4("Poverty Rate by Race and Ethnicity", class = "title-text")
     ),
 
     # MOBILE OPTIMIZATION #6: Responsive grid layout with different column widths for different screen sizes
@@ -254,36 +234,22 @@ ui <- page_fillable(
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput(
-              "cbsa_select", 
+              "cbsa_select",
               "Metro Area:",
-              choices = cbsa_list,
-              selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
+              choices = NULL,
               width = "100%",
               selectize = TRUE
             )
           ),
           conditionalPanel(
-            condition = "input.tabs == 'local'",
+            condition = "input.tabs == 'locality'",
             selectInput(
               "locality_select",
               "Locality:",
-              choices = locality_list,
-              selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1],
+              choices = NULL,
               width = "100%",
               selectize = TRUE
             )
-          )
-        ),
-
-        # Component legend
-        div(
-          style = "margin-bottom: 15px;",
-          h6("Legend:", style = "margin-bottom: 10px; font-weight: bold;"),
-          div(
-            style = "font-size: 12px;",
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #011E41; margin-right: 8px;'></span>Domestic Migration</div>"),
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #40C0C0; margin-right: 8px;'></span>International Migration</div>"),
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #8B85CA; margin-right: 8px;'></span>Natural Increase/Decrease</div>")
           )
         ),
 
@@ -293,7 +259,7 @@ ui <- page_fillable(
         # Source information
         div(
           style = "font-size: 10px; color: #666; margin-top: 8px;",
-          p("Source: U.S. Census Bureau, Population Estimates Program and Decennial Census.")
+          p("Source: U.S. Census Bureau, American Community Survey 5-year estimates.")
         )
       ),
 
@@ -318,9 +284,9 @@ ui <- page_fillable(
           ),
           nav_panel(
             title = "Locality",
-            value = "local",
+            value = "locality",
             padding = 5,
-            div(class = "girafe-container", girafeOutput("local_plot"))
+            div(class = "girafe-container", girafeOutput("locality_plot"))
           )
         )
       )
@@ -328,81 +294,179 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# Define server logic
 server <- function(input, output, session) {
   
-  # Create filtered datasets
-  filtered_cbsa <- reactive({
-    req(input$cbsa_select)
+  # Load data
+  poverty_race <- reactive({
+    read_rds(here("data", "rds", "poverty_race.rds"))
+  })
+  
+  # Process state data
+  state_data <- reactive({
+    req(poverty_race())
     
-    cbsa_pop %>%
+    pov_race_state <- poverty_race() %>% 
+      group_by(year, race) %>% 
+      summarise(estimate = sum(estimate),
+                totalrace = sum(totalrace)) %>% 
+      mutate(rate = estimate/totalrace) %>% 
+      ungroup()
+    
+    # Calculate the mean rate for each race to help determine order of facets
+    state_summary <- pov_race_state %>%
+      group_by(race) %>%
+      summarize(mean_rate = mean(rate, na.rm = TRUE)) %>%
+      arrange(desc(mean_rate))
+    
+    # Add ordered factor
+    pov_race_state %>%
+      mutate(race_ordered = factor(race, levels = state_summary$race))
+  })
+  
+  # Define color palette based on unique race values
+  race_colors <- reactive({
+    req(state_data())
+    
+    # First, get the actual unique race values from your data
+    race_levels <- unique(state_data()$race)
+    
+    # Create color vector without names first
+    color_values <- c(hfv_colors$desert, hfv_colors$grass, hfv_colors$shadow, 
+                      hfv_colors$sky, hfv_colors$berry, hfv_colors$lilac, 
+                      hfv_colors$shadow_light, "#FFC658")
+    
+    # Then create a named vector matching your actual data values
+    setNames(color_values[1:length(race_levels)], race_levels)
+  })
+  
+  # Process CBSA data
+  cbsa_data <- reactive({
+    req(poverty_race())
+    
+    pov_race_cbsa <- poverty_race() %>% 
+      group_by(year, race, cbsa_title) %>% 
+      summarise(estimate = sum(estimate),
+                totalrace = sum(totalrace)) %>% 
+      mutate(rate = estimate/totalrace) %>% 
+      ungroup()
+    
+    # Update CBSA choices in the UI
+    cbsa_choices <- sort(unique(pov_race_cbsa$cbsa_title))
+    updateSelectInput(session, "cbsa_select", choices = cbsa_choices, 
+                      selected = ifelse("Richmond, VA" %in% cbsa_choices, "Richmond, VA", cbsa_choices[1]))
+    
+    pov_race_cbsa
+  })
+  
+  # Filter CBSA data based on selection
+  filtered_cbsa_data <- reactive({
+    req(cbsa_data(), input$cbsa_select)
+    
+    cbsa <- cbsa_data() %>% 
       filter(cbsa_title == input$cbsa_select)
-  })
-  
-  filtered_locality <- reactive({
-    req(input$locality_select)
     
-    pop_change %>%
-      filter(name_long == input$locality_select)
+    # Calculate the mean rate for each race to help determine order of facets
+    cbsa_summary <- cbsa %>%
+      group_by(race) %>%
+      summarize(mean_rate = mean(rate, na.rm = TRUE)) %>%
+      arrange(desc(mean_rate))
+    
+    # Add ordered factor
+    cbsa %>%
+      mutate(race_ordered = factor(race, levels = cbsa_summary$race))
   })
   
-  # Plot titles
-  state_title <- reactive({
-    "Virginia Components of Population Change"
+  # Process locality data
+  locality_data <- reactive({
+    req(poverty_race())
+    
+    pov_race_local <- poverty_race()
+    
+    # Update locality choices in the UI
+    locality_choices <- sort(unique(pov_race_local$locality))
+    updateSelectInput(session, "locality_select", choices = locality_choices, 
+                      selected = ifelse("Richmond city" %in% locality_choices, "Richmond city", locality_choices[1]))
+    
+    pov_race_local
   })
   
-  cbsa_title <- reactive({
-    paste("Components of Population Change in", input$cbsa_select)
+  # Filter locality data based on selection
+  filtered_locality_data <- reactive({
+    req(locality_data(), input$locality_select)
+    
+    local <- locality_data() %>% 
+      filter(locality == input$locality_select)
+    
+    # Calculate the mean rate for each race to help determine order of facets
+    local_summary <- local %>%
+      group_by(race) %>%
+      summarize(mean_rate = mean(rate, na.rm = TRUE)) %>%
+      arrange(desc(mean_rate))
+    
+    # Add ordered factor
+    local %>%
+      mutate(race_ordered = factor(race, levels = local_summary$race))
   })
   
-  locality_title <- reactive({
-    paste("Components of Population Change in", input$locality_select)
-  })
-  
-  # Function to create stacked bar plots for population components
-  create_pop_change_plot <- function(data, title_text) {
+  # Function to create interactive plots
+  create_poverty_plot <- function(data, title_text) {
     req(nrow(data) > 0)
+    
+    # Get latest year data for labels
+    latest_year <- max(data$year)
+    latest_data <- data %>% filter(year == latest_year)
     
     # Create tooltips
     plot_data <- data %>%
       mutate(tooltip = paste0(
+        "Race: ", race_ordered, "\n",
         "Year: ", year, "\n",
-        "Component: ", component, "\n",
-        "Change: ", format(value, big.mark = ",")
+        "Poverty Rate: ", scales::percent(rate, accuracy = 0.1)
       ))
     
     # Create base plot
     p <- ggplot(plot_data,
-                aes(x = year,
-                    y = value,
-                    fill = component)) +
-      geom_col_interactive(
-        aes(tooltip = tooltip, data_id = paste(year, component)),
-        position = "stack"
+           aes(
+             x = year,
+             y = rate,
+             color = race_ordered,
+             group = race_ordered)) +
+      geom_line_interactive(
+        aes(tooltip = tooltip, data_id = paste(race_ordered, year)),
+        linewidth = 1.5
       ) +
-      scale_fill_manual(values = c(
-        "Domestic migration" = hfv_colors$shadow,
-        "International migration" = hfv_colors$sky,
-        "Natural increase" = hfv_colors$lilac
-      )) +
-      scale_y_continuous(labels = number_format(big.mark = ",")) +
+      geom_point_interactive(
+        aes(tooltip = tooltip, data_id = paste(race_ordered, year)),
+        size = 3
+      ) +
+      # Add labels for latest values
+      geom_text(data = latest_data, 
+                aes(label = scales::percent(rate, accuracy = 0.1)),
+                hjust = -0.3, vjust = 0.5, size = 3) +
+      facet_wrap(~race_ordered, ncol = 3) +
+      scale_color_manual(values = race_colors()) +
+      # Better x-axis formatting - show fewer years
+      scale_x_discrete(breaks = function(x) x[seq(1, length(x), by = max(1, length(x) %/% 4))]) +  
+      # Format y-axis as percentage
+      scale_y_continuous(labels = scales::percent_format(), 
+                         limits = c(0, NA)) +
       labs(
         title = title_text,
-        caption = " ", # Add empty caption to leave space for logo
-        y = "Population Change",
-        x = NULL
+        caption = " ", # Empty caption to leave space for logo
+        x = NULL,
+        y = "Poverty Rate"
       ) +
-      theme_bw() +
+      theme_minimal() +
       theme(
+        strip.text = element_text(size = 12, face = "bold"),
         legend.position = "none",
-        plot.title.position = "plot",
-        plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 11),
-        axis.text = element_text(size = 10),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.spacing = unit(1.5, "lines"),
         panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.margin = margin(5, 5, 15, 5), # Extra bottom margin for logo
+        axis.title = element_text(size = 11),
+        axis.text = element_text(size = 10)
       )
     
     # Add logo directly using external URL
@@ -417,18 +481,14 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
-    return(p_with_logo)
-  }
-  
-  # Convert to interactive girafe for each plot
-  create_interactive_plot <- function(plot_obj) {
+
+    # Create girafe object with the logo plot
     girafe(
-      ggobj = plot_obj,
+      ggobj = p_with_logo,
       width_svg = 8, # Set explicit width
       height_svg = 5, # Set explicit height
       options = list(
-        opts_hover(css = "fill-opacity:0.8;"),
+        opts_hover(css = "stroke-width:3;"),
         opts_tooltip(
           opacity = 0.9,
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
@@ -439,24 +499,31 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
+  # State Plot
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_pop_change_plot(state_pop, state_title()))
+    req(state_data(), race_colors())
+    create_poverty_plot(state_data(), "Virginia Poverty Rate by Race and Ethnicity")
   })
   
+  # CBSA Plot
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_pop_change_plot(filtered_cbsa(), cbsa_title()))
+    req(filtered_cbsa_data(), race_colors())
+    title <- paste0("Poverty Rate by Race and Ethnicity - ", input$cbsa_select)
+    create_poverty_plot(filtered_cbsa_data(), title)
   })
   
-  output$local_plot <- renderGirafe({
-    create_interactive_plot(create_pop_change_plot(filtered_locality(), locality_title()))
+  # Locality Plot
+  output$locality_plot <- renderGirafe({
+    req(filtered_locality_data(), race_colors())
+    title <- paste0("Poverty Rate by Race and Ethnicity - ", input$locality_select)
+    create_poverty_plot(filtered_locality_data(), title)
   })
-
+  
   # MOBILE OPTIMIZATION #8: Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 
-# Run the application 
+# Run the app
 shinyApp(ui = ui, server = server)

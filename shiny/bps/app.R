@@ -198,10 +198,18 @@ ui <- page_fillable(
         }
         
         .control-label {
-          font-size: 14px;
+          font-size: 12px;
         }
         
         .form-check-label {
+          font-size: 11px;
+        }
+        
+        .form-select {
+          font-size: 12px;
+        }
+        
+        .form-control {
           font-size: 12px;
         }
         
@@ -526,7 +534,7 @@ server <- function(input, output, session) {
         legend.text = element_text(family = "Arial"),
         plot.title.position = "plot",
         axis.title = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 30, l = 5) # Increased bottom margin for logo
+        plot.margin = margin(t = 5, r = 5, b = 10, l = 5) # Increased bottom margin for logo
       )
 
     # Add logo directly using external URL
