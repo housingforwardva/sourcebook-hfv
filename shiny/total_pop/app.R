@@ -60,16 +60,41 @@ ui <- page_fillable(
       body, html {
         margin: 0;
         padding: 0;
-        height: 100vh;
+        height: auto;
         overflow-x: hidden;
+      }
+      
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
+        .hfv-container {
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        .hfv-header {
+          margin-bottom: 8px !important;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px !important;
+        }
+        
+        .girafe-container {
+          height: 280px !important;
+          min-height: 280px !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
+        }
       }
       
       /* Container styles */
       .hfv-container {
         max-width: 1200px; 
         margin: 0 auto; 
-        border: 2px solid #011E41; 
-        border-radius: 5px; 
         padding: 45px;
       }
       
@@ -103,7 +128,8 @@ ui <- page_fillable(
       /* Plot container styles */
       .girafe-container {
         width: 100%;
-        height: 450px;
+        height: auto;
+        min-height: 350px;
         overflow: visible;
       }
       
@@ -378,7 +404,7 @@ server <- function(input, output, session) {
       geom_text(
         aes(label = format(value, big.mark = ",")),
         color = "white",
-        size = 3,
+        size = 4,
         angle = 90,
         hjust = 1.5,
         vjust = 0.5
@@ -423,8 +449,8 @@ server <- function(input, output, session) {
   create_interactive_plot <- function(plot_obj) {
     girafe(
       ggobj = plot_obj,
-      width_svg = 8, # Set explicit width
-      height_svg = 5, # Set explicit height
+      width_svg = 8,
+      height_svg = 5,
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(

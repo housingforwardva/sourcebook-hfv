@@ -39,11 +39,41 @@ hfv_theme <- bs_theme(
 # Define UI
 ui <- page_fluid(
   theme = hfv_theme,
+  
+  # Add CSS with iframe optimization
+  tags$head(
+    tags$style(HTML(
+      "
+      /* Base styles */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: auto;
+        overflow-x: hidden;
+      }
+      
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
+        .hfv-container {
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
+        }
+      }
+      "
+    ))
+  ),
   useShinyjs(),  # Initialize shinyjs
   
-  # Fixed dimensions and border
+  # Fixed dimensions container
   tags$div(
-    style = "width: 800px; height: 500px; margin: 0 auto; border: 2px solid #011E41; border-radius: 5px; overflow: hidden; padding: 10px;",
+    class = "hfv-container",
+    style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; padding: 10px;",
     
     # Header with logo and title
     div(
@@ -529,8 +559,8 @@ server <- function(input, output, session) {
     # Return interactive plot with logo
     girafe(
       ggobj = p_with_logo,
-      width_svg = 7.5,
-      height_svg = 4.5,
+      width_svg = 8,
+      height_svg = 5,
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
@@ -539,7 +569,7 @@ server <- function(input, output, session) {
           use_fill = TRUE
         ),
         opts_toolbar(hidden = c("lasso_deselect", "lasso_select")),
-        opts_sizing(rescale = TRUE, width = 1)
+        opts_sizing(rescale = TRUE)
       )
     )
   }
