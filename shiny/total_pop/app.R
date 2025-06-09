@@ -64,6 +64,18 @@ ui <- page_fillable(
         overflow-x: hidden;
       }
       
+      /* Iframe optimization - detect when app is embedded */
+      @media (max-height: 800px) and (min-width: 768px) {
+        .hfv-container {
+          padding: 15px !important;
+          margin: 10px auto !important;
+        }
+        
+        .girafe-container {
+          height: 350px !important;
+        }
+      }
+      
       /* Container styles */
       .hfv-container {
         max-width: 1200px; 
