@@ -368,13 +368,20 @@ server <- function(input, output, session) {
     
     # Create base plot
     p <- ggplot(plot_data,
-                aes(x = year,
+                aes(x = factor(year),
                     y = value)) +
-      geom_line(aes(group = 1), color = hfv_colors$shadow, linewidth = 1) +
-      geom_point_interactive(
+      geom_col_interactive(
         aes(tooltip = tooltip, data_id = year),
+        fill = hfv_colors$shadow,
+        width = 0.7
+      ) +
+      geom_text(
+        aes(label = format(value, big.mark = ",")),
+        color = "white",
         size = 3,
-        color = hfv_colors$shadow
+        angle = 90,
+        hjust = 1.5,
+        vjust = 0.5
       ) +
       scale_y_continuous(labels = number_format(big.mark = ",")) +
       labs(
@@ -388,12 +395,12 @@ server <- function(input, output, session) {
         legend.position = "none",
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 11),
+        axis.title = element_blank(),
         axis.text = element_text(size = 10),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(angle = 0, hjust = 0.5),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
     # Add logo directly using external URL

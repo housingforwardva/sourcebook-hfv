@@ -151,12 +151,12 @@ server <- function(input, output, session) {
         legend.position = "none",
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 11),
+        axis.title = element_blank(),
         axis.text = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
     # Add logo directly using external URL

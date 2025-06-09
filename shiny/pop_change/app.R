@@ -278,7 +278,6 @@ ui <- page_fillable(
         # Component legend
         div(
           style = "margin-bottom: 15px;",
-          h6("Legend:", style = "margin-bottom: 10px; font-weight: bold;"),
           div(
             style = "font-size: 12px;",
             HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #011E41; margin-right: 8px;'></span>Domestic Migration</div>"),
@@ -392,17 +391,17 @@ server <- function(input, output, session) {
         y = "Population Change",
         x = NULL
       ) +
-      theme_bw() +
+      theme_minimal(base_family = "Arial") +
       theme(
         legend.position = "none",
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 11),
+        axis.title = element_blank(),
         axis.text = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
     # Add logo directly using external URL
@@ -434,7 +433,8 @@ server <- function(input, output, session) {
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_sizing(rescale = TRUE)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
       )
     )
   }
