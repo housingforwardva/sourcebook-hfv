@@ -80,8 +80,6 @@ ui <- page_fillable(
       .hfv-container {
         max-width: 1200px; 
         margin: 0 auto; 
-        border: 2px solid #011E41; 
-        border-radius: 5px; 
         padding: 45px;
       }
       
