@@ -578,6 +578,8 @@ server <- function(input, output, session) {
     # Create girafe object with the logo plot
     girafe(
       ggobj = logo_plot,
+      width_svg = 8,
+      height_svg = 5,
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(

@@ -559,6 +559,8 @@ server <- function(input, output, session) {
     # Return interactive plot with logo
     girafe(
       ggobj = p_with_logo,
+      width_svg = 8,
+      height_svg = 5,
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
