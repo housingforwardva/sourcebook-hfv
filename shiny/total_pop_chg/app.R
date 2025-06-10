@@ -179,8 +179,6 @@ server <- function(input, output, session) {
   create_interactive_plot <- function(plot_obj) {
     girafe(
       ggobj = plot_obj,
-      width_svg = 8, # Set explicit width
-      height_svg = 5, # Set explicit height
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(

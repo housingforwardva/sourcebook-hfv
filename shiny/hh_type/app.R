@@ -606,8 +606,6 @@ server <- function(input, output, session) {
     
     girafe(
       ggobj = p,
-      width_svg = 10,
-      height_svg = 6,
       options = list(
         opts_tooltip(use_fill = TRUE),
         opts_hover(css = "fill-opacity: 0.8;"),
@@ -655,8 +653,6 @@ server <- function(input, output, session) {
     
     girafe(
       ggobj = p,
-      width_svg = 10,
-      height_svg = 6,
       options = list(
         opts_tooltip(use_fill = TRUE),
         opts_hover(css = "fill-opacity: 0.8;"),
@@ -704,8 +700,6 @@ server <- function(input, output, session) {
     
     girafe(
       ggobj = p,
-      width_svg = 10,
-      height_svg = 6,
       options = list(
         opts_tooltip(use_fill = TRUE),
         opts_hover(css = "fill-opacity: 0.8;"),
@@ -892,8 +886,6 @@ server <- function(input, output, session) {
     
     girafe(
       ggobj = p,
-      width_svg = 10,
-      height_svg = 6,
       options = list(
         opts_tooltip(use_fill = TRUE),
         opts_hover(css = "fill-opacity: 0.8;"),

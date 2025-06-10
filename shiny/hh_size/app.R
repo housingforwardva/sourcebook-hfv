@@ -559,8 +559,6 @@ server <- function(input, output, session) {
     # Return interactive plot with logo
     girafe(
       ggobj = p_with_logo,
-      width_svg = 7.5,
-      height_svg = 4.5,
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
@@ -569,7 +567,7 @@ server <- function(input, output, session) {
           use_fill = TRUE
         ),
         opts_toolbar(hidden = c("lasso_deselect", "lasso_select")),
-        opts_sizing(rescale = TRUE, width = 1)
+        opts_sizing(rescale = TRUE)
       )
     )
   }

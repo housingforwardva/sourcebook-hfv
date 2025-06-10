@@ -367,7 +367,9 @@ server <- function(input, output, session) {
     req(input$locality_select)
     
     pop_change %>%
-      filter(name_long == input$locality_select)
+      filter(name_long == input$locality_select) %>%
+      group_by(year, component) %>%
+      summarise(value = sum(value), .groups = "drop")
   })
   
   # Plot titles
@@ -404,6 +406,7 @@ server <- function(input, output, session) {
         aes(tooltip = tooltip, data_id = paste(year, component)),
         position = "stack"
       ) +
+      facet_wrap(~component, nrow = 1) +
       scale_fill_manual(values = c(
         "Domestic migration" = hfv_colors$shadow,
         "International migration" = hfv_colors$sky,
@@ -449,8 +452,6 @@ server <- function(input, output, session) {
   create_interactive_plot <- function(plot_obj) {
     girafe(
       ggobj = plot_obj,
-      width_svg = 8, # Set explicit width
-      height_svg = 5, # Set explicit height
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
