@@ -404,7 +404,7 @@ server <- function(input, output, session) {
       geom_text(
         aes(label = format(value, big.mark = ",")),
         color = "white",
-        size = 3,
+        size = 4,
         angle = 90,
         hjust = 1.5,
         vjust = 0.5

@@ -50,9 +50,39 @@ locality_list_age <- sort(unique(poverty_age$locality))
 ui <- page_fluid(
   theme = hfv_theme,
   
-  # Fixed dimensions and border
+  # Add CSS with iframe optimization
+  tags$head(
+    tags$style(HTML(
+      "
+      /* Base styles */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: auto;
+        overflow-x: hidden;
+      }
+      
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
+        .hfv-container {
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
+        }
+      }
+      "
+    ))
+  ),
+  
+  # Fixed dimensions container
   tags$div(
-    style = "width: 800px; height: 500px; margin: 0 auto; border: 2px solid #011E41; border-radius: 5px; overflow: hidden; padding: 10px;",
+    class = "hfv-container",
+    style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; padding: 10px;",
     
     # Header with logo and title
     div(

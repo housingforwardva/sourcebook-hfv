@@ -12,8 +12,9 @@ library(png)     # For reading PNG files
 
 # Define UI
 ui <- fluidPage(
-  # Set a fixed width and height for the entire app with a border in HFV Shadow color
-  style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; border: 2px solid #011E41; border-radius: 5px; font-family: 'Open Sans', sans-serif;",
+  # Set a fixed width and height for the entire app
+  class = "hfv-container",
+  style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; font-family: 'Open Sans', sans-serif;",
   
   # Add CSS for HousingForward branding
   tags$head(
@@ -21,6 +22,28 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Open+Sans&display=swap"),
     
     tags$style(HTML("
+      /* Base styles */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: auto;
+        overflow-x: hidden;
+      }
+      
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
+        .hfv-container {
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
+        }
+      }
+      
       /* Set brand colors */
       :root {
         --sky: #40C0C0;

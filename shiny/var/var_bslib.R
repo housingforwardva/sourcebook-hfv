@@ -95,8 +95,30 @@ ui <- dashboardPage(
     .wrapper {
       min-height: 600px;
       height: auto;
-      max-height: 100vh;
+      max-height: none;
       position: relative; /* Positioning context for sidebar */
+    }
+    
+    /* Iframe optimization for 800x500 dimensions */
+    @media (max-height: 600px) {
+      .wrapper {
+        max-height: 500px !important;
+        overflow: hidden !important;
+      }
+      
+      .content-wrapper {
+        max-height: 500px !important;
+        overflow-y: auto !important;
+      }
+      
+      .main-sidebar {
+        height: 500px !important;
+        min-height: 500px !important;
+      }
+      
+      html, body {
+        overflow: hidden !important;
+      }
     }
     
     /* Make sure sidebar always extends full height */
@@ -355,7 +377,7 @@ ui <- dashboardPage(
       /* Make sure sidebar background extends full height on mobile too */
       .main-sidebar {
         bottom: 0;
-        min-height: 100vh !important;
+        min-height: 100% !important;
       }
     }
     
