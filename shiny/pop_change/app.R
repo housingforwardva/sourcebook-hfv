@@ -426,7 +426,7 @@ server <- function(input, output, session) {
         plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
         axis.text = element_text(size = 10),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(angle = 90, hjust = 1),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
