@@ -5,15 +5,15 @@ library(readxl)
 library(httr)
 
 # Data collection
-
+# https://www.fhfa.gov/data/hpi/datasets?tab=quarterly-data
 
 
 # Read in the csv files for statewide and CBSA data
 
-hpi_state_raw <- read_csv("https://www.fhfa.gov/DataTools/Downloads/Documents/HPI/HPI_AT_state.csv",
+hpi_state_raw <- read_csv("https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_state.csv",
                           col_names = FALSE)
 
-hpi_cbsa_raw <- read_csv("https://www.fhfa.gov/DataTools/Downloads/Documents/HPI/HPI_AT_metro.csv",
+hpi_cbsa_raw <- read_csv("https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_metro.csv",
                          col_names = FALSE)
 
 # Non-metro data is only available as an xls file; must read in via temp file
@@ -24,7 +24,7 @@ temp <- tempfile(fileext = ".xls")
 
 # Write nonmetro xls file to temp file on disk
 
-httr::GET(url = "https://www.fhfa.gov/DataTools/Downloads/Documents/HPI/HPI_AT_nonmetro.xls",
+httr::GET(url = "https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_nonmetro.xls",
           write_disk(temp))
 
 # Import xls and skip header rows
@@ -83,4 +83,4 @@ hpi_all_data <- bind_rows(hpi_state_data, hpi_cbsa_data, hpi_nonmetro_data) %>%
 
 # Save HPI data
 
-write_rds(hpi_all_data, "data/hpi.rds")
+write_rds(hpi_all_data, "data/rds/hpi.rds")

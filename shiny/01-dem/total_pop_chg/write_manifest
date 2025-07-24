@@ -1,0 +1,11 @@
+library(rsconnect)
+# Create a manifest file for deployment
+rsconnect::writeManifest(
+  appDir = "shiny/total_pop_chg",                      # Current directory
+  appFiles = c(                      # Files to include
+    "app.R",       # Main app file
+    "total_pop.rds",     # Data files
+    "www/hfv_logo.png"           # Assets
+  ),
+  appPrimaryDoc = "app.R"  # Main file
+)

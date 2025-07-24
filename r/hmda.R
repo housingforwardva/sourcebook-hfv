@@ -3,6 +3,7 @@ library(httr)
 library(jsonlite)
 library(httr)
 library(glue)
+library(arrow)
 
 # Data collection
 
@@ -19,6 +20,26 @@ col_spec <- cols_only(
   "derived_dwelling_category" = col_character(),
   "derived_ethnicity" = col_character(),
   "derived_race" = col_character(),
+  "applicant_race-1" = col_integer(),
+  "applicant_race-2" = col_integer(),
+  "applicant_race-3" = col_integer(),
+  "applicant_race-4" = col_integer(),
+  "applicant_race-5" = col_integer(),
+  "co-applicant_race-1" = col_integer(),
+  "co-applicant_race-2" = col_integer(),
+  "co-applicant_race-3" = col_integer(),
+  "co-applicant_race-4" = col_integer(),
+  "co-applicant_race-5" = col_integer(),
+  "applicant_ethnicity-1" = col_integer(),
+  "applicant_ethnicity-2" = col_integer(),
+  "applicant_ethnicity-3" = col_integer(),
+  "applicant_ethnicity-4" = col_integer(),
+  "applicant_ethnicity-5" = col_integer(),
+  "co-applicant_ethnicity-1" = col_integer(),
+  "co-applicant_ethnicity-2" = col_integer(),
+  "co-applicant_ethnicity-3" = col_integer(),
+  "co-applicant_ethnicity-4" = col_integer(),
+  "co-applicant_ethnicity-5" = col_integer(),
   "derived_sex" = col_character(),
   "action_taken" = col_integer(),
   "purchaser_type" = col_integer(),
@@ -64,7 +85,7 @@ col_spec <- cols_only(
 # we pass our column specification defined above to `col_types` to align each dataset
 # correctly.
 # 
-hmda_pull <- map_dfr(2018:2022, ~{
+hmda_pull <- map_dfr(2018:2024, ~{
   GET("https://ffiec.cfpb.gov/v2/data-browser-api/view/csv", 
       query = list(
         states = "VA",
@@ -75,12 +96,98 @@ hmda_pull <- map_dfr(2018:2022, ~{
     read_csv(col_types = col_spec) 
 })
 
+write_parquet(hmda_pull, "data/parquet/hmda_va.parquet")
+
 
 # Data prep
+
+hmda_pull <- read_parquet("data/parquet/hmda_va.parquet")
+
+hmda_clean <- hmda_pull %>% 
+  select(activity_year, lei, county_code,
+         census_tract, loan_product = derived_loan_product_type,
+         dwelling_category = derived_dwelling_category, ethnicity = derived_ethnicity,
+         race = derived_race, sex = derived_sex, action_taken, purchaser_type,
+         loan_purpose, loan_amount, loan_to_value_ratio, interest_rate, property_value,
+         construction_method, occupancy_type, income, debt_to_income_ratio, applicant_age,
+         `denial_reason-1`, `denial_reason-2`, `denial_reason-3`, `denial_reason-4`        ) %>% 
+          mutate(action_taken = case_when(
+            action_taken == 1 ~ "Loan originated",
+            action_taken  == 2 ~ "Application approved but not accepted",
+            action_taken == 3 ~ "Application denied",
+            action_taken == 4 ~ "Application withdrawn by applicant",
+            action_taken == 5 ~ "File closed for incompleteness", 
+            action_taken == 6 ~ "Purchased loan",
+            action_taken == 7 ~ "Preapproval request denied",
+            action_taken == 8 ~ "Preapproval request approved but not accepted"
+          )) %>% 
+          mutate(purchaser_type = case_when(
+            purchaser_type == 0 ~ "Not applicable",
+            purchaser_type == 1 ~ "Fannie Mae",
+            purchaser_type == 2 ~ "Ginnie Mae",
+            purchaser_type == 3 ~ "Freddie Mac",
+            purchaser_type == 4 ~ "Farmer Mac",
+            purchaser_type ==  5 ~ "Private securitizer",
+            purchaser_type ==  6 ~ "Commercial bank, savings bank, or savings association",
+            purchaser_type ==  71 ~ "Credit union, mortgage company, or finance company",
+            purchaser_type == 72 ~ "Life insurance company",
+            purchaser_type == 8 ~ "Affiliate institution",
+            purchaser_type == 9 ~ "Other type of purchaser"
+          )) %>% 
+          mutate(loan_purpose = case_when(
+            loan_purpose == 1 ~ "Home purchase",
+            loan_purpose == 2 ~ "Home improvement",
+            loan_purpose == 31 ~ "Refinancing",
+            loan_purpose == 32 ~ "Cash-out refinancing",
+            loan_purpose == 4 ~ "Other purpose",
+            loan_purpose == 5 ~ "Not applicable"
+          )) %>% 
+          mutate(race_ethnicity = case_when(
+            ethnicity == "Hispanic or Latino" & race == "Joint" ~ "White Co-Applicant",
+            race == "American Indian or Alaska Native" & ethnicity == "Not Hispanic or Latino" ~ "Other Minority",
+            race == "Asian" & ethnicity == "Not Hispanic or Latino" ~ "Asian",
+            race == "Black or African American" & ethnicity == "Not Hispanic or Latino" ~ "Black",
+            race == "Native Hawaiian or Other Pacific Islander" & ethnicity == "Not Hispanic or Latino" ~ "Other Minority",
+            race == "White" & ethnicity == "Not Hispanic or Latino" ~ "White, non-Hispanic",
+            race == "2 or more minority races" & ethnicity == "Not Hispanic or Latino" ~ "Other Minority",
+            race == "Race Not Available" & ethnicity == "Ethnicity Not Available" ~ "Incomplete/No Data",
+            race == "Joint" & ethnicity == "Not Hispanic or Latino" ~ "White Co-Applicant",
+            ethnicity == "Free Form Text Only" ~ "Hispanic or Latino",
+            ethnicity == "Not Hispanic or Latino" & race == "Race Not Available" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "White" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "American Indian or Alaska Native" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "Asian" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "Black or African American" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "Native Hawaiian or Other Pacific Islander" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "2 or more minority races" ~ "Incomplete/No Data",
+            ethnicity == "Not Hispanic or Latino" & race == "Free Form Text Only" ~ "Incomplete/No Data",
+            ethnicity == "Free Form Text Only" & race == "Race Not Available" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "Free Form Text Only" ~ "Incomplete/No Data",
+            ethnicity == "Ethnicity Not Available" & race == "Joint" ~ "White Co-Applicant",
+            ethnicity == "Joint" & race == "Joint" ~ "White Co-Applicant",
+            TRUE ~ "Hispanic or Latino"
+            )) |> 
+          mutate(occupancy_type = case_when(
+            occupancy_type == 1 ~ "Principal residence",
+            occupancy_type == 2 ~ "Second residence",
+            occupancy_type == 3 ~ "Investment property"
+          )) |> 
+          mutate(construction_method = case_when(
+            construction_method == 1 ~ "Site Built",
+            TRUE ~ "Manufactured Home"
+          ))
+
+all(is.na(hmda_clean$`co-applicant_ethnicity-5`))
+all(is.na(hmda_clean$`co-applicant_ethnicity-4`))
+all(is.na(hmda_clean$`applicant_ethnicity-5`))
+all(is.na(hmda_clean$`applicant_ethnicity-4`))
+all(is.na(hmda_clean$`applicant_race-5`))
+
+
 
 
 # Data export
 #' Writing out the raw loan-level data; there are interesting analyses that could be done as-is
 #' or many ways to do custom aggregations given that we have tract-level information
-write_rds(hmda_pull, "data/hmda_va.rds")
+write_parquet(hmda_clean, "data/parquet/hmda_va_clean.parquet")
 

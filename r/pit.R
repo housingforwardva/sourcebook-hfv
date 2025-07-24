@@ -82,7 +82,7 @@ full_set_longer <- full_set %>%
 
 # write the file to csv.
 
-write_rds(full_set_longer, "data/va_pit.rds")
+write_rds(full_set_longer, "shiny/07-instability/pit/va_pit.rds")
 
 # Install required packages
 if (!requireNamespace("devtools", quietly = TRUE)) {
