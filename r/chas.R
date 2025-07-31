@@ -117,7 +117,6 @@ unlink("data/050", recursive = TRUE)
 Table7 <- read_csv("data/Table7.csv") |> 
   filter(Line_Type == "Detail") |> 
   clean_names() |> 
-  subset(fips %in% juris) |> 
   select(year, estimate, moe, county, fips, tenure, household_income, household_type, cost_burden) |>
   mutate(tenure = case_when(
     tenure == "Owner occupied" ~ "Homeowner",
@@ -151,7 +150,6 @@ Table7 <- read_csv("data/Table7.csv") |>
 
 Table9 <- read_csv("data/Table9.csv") |> 
   filter(Line_Type == "Detail") |> 
-  subset(fips %in% juris) |>  
   clean_names() |> 
   mutate(tenure = case_when(
     tenure == "Owner occupied" ~ "Homeowner",
@@ -180,7 +178,6 @@ Table9 <- read_csv("data/Table9.csv") |>
 
 Table18c <- read_csv("data/Table18C.csv")  %>% 
   clean_names() %>% 
-  subset(fips %in% juris) |>  
   filter(line_type == "Detail") %>% 
   select(county, fips, year, estimate, tenure, rent, household_income) %>% 
   group_by(county, fips, year, tenure, rent, household_income) %>% 
@@ -189,11 +186,11 @@ Table18c <- read_csv("data/Table18C.csv")  %>%
   mutate(rent = case_when(
     rent == "greater than RHUD30 and less than or equal to RHUD50" ~ "31 to 50 percent AMI",
     rent == "greater than RHUD50 and less than or equal to RHUD80" ~ "51 to 80 percent AMI",
-    rent == "greater than RHUD80" ~ "80 percent AMI or greater",
+    rent == "greater than RHUD80" ~ "81 percent AMI or greater",
     rent == "less than or equal to RHUD30" ~ "30 percent AMI or below")) %>% 
   mutate(household_income = case_when(
-    household_income == "greater than 100% of HAMFI" ~ "80 percent AMI or greater",
-    household_income == "greater than 80% of HAMFI but less than or equal to 100% of HAMFI" ~ "80 percent AMI or greater",
+    household_income == "greater than 100% of HAMFI" ~ "81 percent AMI or greater",
+    household_income == "greater than 80% of HAMFI but less than or equal to 100% of HAMFI" ~ "81 percent AMI or greater",
     household_income == "greater than 50% of HAMFI but less than or equal to 80% of HAMFI" ~ "51 to 80 percent AMI",
     household_income == "greater than 30% of HAMFI but less than or equal to 50% of HAMFI" ~ "31 to 50 percent AMI",
     household_income == "less than or equal to 30% of HAMFI" ~ "30 percent AMI or below"
@@ -205,23 +202,29 @@ Table18c <- read_csv("data/Table18C.csv")  %>%
     rent == household_income ~ "Affordable",
     rent == "30 percent AMI or below" & household_income == "31 to 50 percent AMI" ~ "Very affordable",
     rent == "30 percent AMI or below" & household_income == "51 to 80 percent AMI" ~ "Very affordable",
-    rent == "30 percent AMI or below" & household_income == "80 percent AMI or greater" ~ "Very affordable",
+    rent == "30 percent AMI or below" & household_income == "81 percent AMI or greater" ~ "Very affordable",
     rent == "31 to 50 percent AMI" & household_income == "31 to 50 percent AMI" ~ "Affordable",
     rent == "31 to 50 percent AMI" & household_income == "51 to 80 percent AMI" ~ "Very affordable",
-    rent == "31 to 50 percent AMI" & household_income == "80 percent AMI or greater" ~ "Very affordable",
+    rent == "31 to 50 percent AMI" & household_income == "81 percent AMI or greater" ~ "Very affordable",
     rent == "31 to 50 percent AMI" & household_income == "30 percent AMI or below" ~ "Unaffordable",
     rent == "51 to 80 percent AMI" & household_income == "30 percent AMI or below" ~ "Unaffordable",
     rent == "51 to 80 percent AMI" & household_income == "31 to 50 percent AMI" ~ "Unaffordable",
-    rent == "51 to 80 percent AMI" & household_income == "80 percent AMI or greater" ~ "Very affordable",
-    rent == "80 percent AMI or greater" & household_income == "30 percent AMI or below" ~ "Unaffordable",
-    rent == "80 percent AMI or greater" & household_income == "31 to 50 percent AMI" ~ "Unaffordable",
-    rent == "80 percent AMI or greater" & household_income == "51 to 80 percent AMI" ~ "Unaffordable"
+    rent == "51 to 80 percent AMI" & household_income == "81 percent AMI or greater" ~ "Very affordable",
+    rent == "81 percent AMI or greater" & household_income == "30 percent AMI or below" ~ "Unaffordable",
+    rent == "81 percent AMI or greater" & household_income == "31 to 50 percent AMI" ~ "Unaffordable",
+    rent == "81 percent AMI or greater" & household_income == "51 to 80 percent AMI" ~ "Unaffordable"
   )) %>% 
   mutate(gapcode = case_when(
     match == "Unaffordable" ~ "Gap",
     TRUE ~ "Matches or less than income"
+  )) |> 
+  mutate(household_income = case_when(
+    household_income == "81 percent AMI or greater" ~ "81% AMI or greater",
+    household_income == "51 to 80 percent AMI" ~ "51 to 80% AMI",
+    household_income == "31 to 50 percent AMI" ~ "31 to 50% AMI",
+    household_income == "30 percent AMI or below" ~ "30% AMI or less"
   ))
 
-write_rds(Table7, "data/table7_chas.rds")
-write_rds(Table9, "data/table9_chas.rds")
-write_rds(Table18c, "data/table18c_chas.rds")
+write_rds(Table7, "data/rds/table7_chas.rds")
+write_rds(Table9, "data/rds/table9_chas.rds")
+write_rds(Table18c, "data/rds/table18c_chas.rds")

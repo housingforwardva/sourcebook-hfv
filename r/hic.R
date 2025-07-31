@@ -135,9 +135,15 @@ year_sheets <- sheet_names[!sheet_names %in% c("Revisions")]
 
 # Function to standardize column names across years
 standardize_column_names <- function(data, year) {
+  # First, standardize the CoC column name
+  col_names <- names(data)
+  if("CoC" %in% col_names) {
+    names(data)[col_names == "CoC"] <- "CoC Number"
+    cat(sprintf("Year %d: Renamed 'CoC' to 'CoC Number'\n", year))
+  }
+  
   # Create mapping from old names to new names
   # Based on the pattern: pre-2014 vs 2014+
-  
   column_mapping <- if(year < 2014) {
     # Pre-2014 naming pattern to post-2013 naming pattern
     c(
@@ -192,6 +198,35 @@ standardize_column_names <- function(data, year) {
   return(data)
 }
 
+# Function to remove duplicate columns (keep first instance only)
+remove_duplicate_columns <- function(data) {
+  col_names <- names(data)
+  
+  # Clean column names by removing Excel's automatic duplicate suffixes (...13, ...15, etc.)
+  clean_col_names <- str_replace(col_names, "\\.{3}\\d+$", "")
+  
+  # Find which columns are actually duplicates after cleaning
+  duplicated_clean <- duplicated(clean_col_names)
+  
+  if(any(duplicated_clean)) {
+    duplicate_names <- unique(clean_col_names[duplicated_clean])
+    cat("Found duplicate columns after cleaning:", paste(duplicate_names, collapse = ", "), "\n")
+    
+    # Keep only the first instance of each column name
+    data <- data[, !duplicated_clean]
+    
+    # Update the column names to the cleaned versions
+    names(data) <- clean_col_names[!duplicated_clean]
+    
+    cat("Removed", sum(duplicated_clean), "duplicate columns\n")
+  } else {
+    # Even if no duplicates, still clean the names
+    names(data) <- clean_col_names
+  }
+  
+  return(data)
+}
+
 # Function to read a single sheet and add year column
 read_sheet_with_year <- function(sheet_name, file_path) {
   # Read the sheet, skipping the first row (which contains category headers)
@@ -205,6 +240,9 @@ read_sheet_with_year <- function(sheet_name, file_path) {
   # Add a year column
   year_num <- as.numeric(sheet_name)
   data$year <- year_num
+  
+  # Remove duplicate columns (keep first instance only)
+  data <- remove_duplicate_columns(data)
   
   # Standardize column names based on year
   data <- standardize_column_names(data, year_num)
@@ -241,33 +279,47 @@ analyze_column_consistency <- function(sheet_list) {
   # Get all unique column names across all sheets
   all_unique_cols <- unique(unlist(all_columns))
   
-  # For each column, count in how many sheets it appears
-  col_frequency <- map_int(all_unique_cols, function(col_name) {
-    sum(map_lgl(all_columns, function(sheet_cols) {
+  # For each column, count in how many sheets it appears and track which sheets
+  col_analysis <- map_dfr(all_unique_cols, function(col_name) {
+    sheets_with_col <- names(all_columns)[map_lgl(all_columns, function(sheet_cols) {
       col_name %in% sheet_cols
-    }))
-  })
-  names(col_frequency) <- all_unique_cols
-  
-  # Create summary dataframe
-  col_summary <- tibble(
-    column_name = names(col_frequency),
-    appears_in_sheets = col_frequency,
-    total_sheets = length(sheet_list),
-    consistency_rate = col_frequency / length(sheet_list)
-  ) %>%
+    })]
+    
+    tibble(
+      column_name = col_name,
+      appears_in_sheets = length(sheets_with_col),
+      total_sheets = length(sheet_list),
+      consistency_rate = length(sheets_with_col) / length(sheet_list),
+      present_in_years = paste(sort(sheets_with_col), collapse = ", "),
+      missing_from_years = paste(sort(setdiff(names(all_columns), sheets_with_col)), collapse = ", ")
+    )
+  }) %>%
     arrange(desc(appears_in_sheets), column_name)
   
-  return(col_summary)
+  return(col_analysis)
 }
 
-# After analyzing consistency, create the final dataset with consistent columns only
-create_consistent_dataset <- function(sheet_list, consistent_columns) {
-  # Keep only consistent columns from each sheet
-  consistent_data <- map(sheet_list, ~.x %>% select(all_of(consistent_columns)))
+# After analyzing consistency, create the final dataset with selected columns only
+create_selected_dataset <- function(sheet_list) {
+  # Select only the columns we want: CoC Number, year, and columns starting with "Total Year-Round Beds"
+  selected_data <- map(sheet_list, function(sheet) {
+    col_names <- names(sheet)
+    
+    # Find columns we want to keep
+    keep_cols <- c(
+      "CoC Number",  # Always keep CoC identifier
+      "year",        # Always keep year
+      col_names[str_starts(col_names, "Total Year-Round Beds")]  # Any column starting with this pattern
+    )
+    
+    # Only keep columns that actually exist in this sheet
+    existing_cols <- keep_cols[keep_cols %in% col_names]
+    
+    return(sheet %>% select(all_of(existing_cols)))
+  })
   
   # Combine all sheets
-  combined <- bind_rows(consistent_data)
+  combined <- bind_rows(selected_data)
   
   return(combined)
 }
@@ -306,21 +358,50 @@ inconsistent_cols <- column_analysis %>%
   arrange(desc(appears_in_sheets))
 
 cat("Columns with inconsistent presence:\n")
-print(inconsistent_cols %>% select(column_name, appears_in_sheets, total_sheets))
+print(inconsistent_cols %>% select(column_name, appears_in_sheets, total_sheets, missing_from_years))
 
-# Create dataset with only consistent columns
+# Show detailed breakdown for the most common inconsistent columns
+cat("\nDetailed breakdown of top inconsistent columns:\n")
+top_inconsistent <- inconsistent_cols %>% 
+  filter(appears_in_sheets >= length(year_sheets) * 0.5) %>%  # Show columns present in at least 50% of sheets
+  head(10)
+
+if(nrow(top_inconsistent) > 0) {
+  for(i in 1:nrow(top_inconsistent)) {
+    col_info <- top_inconsistent[i, ]
+    cat(sprintf("\n'%s':\n", col_info$column_name))
+    cat(sprintf("  Present in %d/%d sheets: %s\n", 
+                col_info$appears_in_sheets, 
+                col_info$total_sheets,
+                col_info$present_in_years))
+    if(nzchar(col_info$missing_from_years)) {
+      cat(sprintf("  Missing from: %s\n", col_info$missing_from_years))
+    }
+  }
+}
+
+# Create dataset with only selected columns
 cat("\n", rep("=", 50), "\n")
-cat("CREATING FINAL DATASET WITH CONSISTENT COLUMNS\n")
+cat("CREATING FINAL DATASET WITH SELECTED COLUMNS\n")
+cat("(CoC Number, year, and columns starting with 'Total Year-Round Beds')\n")
 cat(rep("=", 50), "\n\n")
 
-combined_data <- create_consistent_dataset(all_sheets_data, consistent_cols)
+combined_data <- create_selected_dataset(all_sheets_data)
+
+# Show what columns we ended up with
+cat("Selected columns in final dataset:\n")
+cat(paste(names(combined_data), collapse = "\n"), "\n\n")
 
 # Filter for Virginia entries (CoC Number starts with "VA")
 virginia_data <- combined_data %>%
-  filter(str_starts(`CoC Number`, "VA"))
+  filter(str_starts(`CoC Number`, "VA")) |> 
+  select(-3, -c(10:14))
+
+write_rds(virginia_data, "data/rds/hic_va_data.rds")
 
 # Convert numeric columns back to numeric
 # This handles the "." values and other non-numeric entries by converting them to NA
+# Keep CoC Number and year as character/numeric respectively
 numeric_columns <- virginia_data %>%
   select(-`CoC Number`, -year) %>%
   names()
@@ -334,7 +415,7 @@ cat("================\n")
 cat("Total rows in combined dataset:", nrow(combined_data), "\n")
 cat("Virginia rows:", nrow(virginia_data), "\n")
 cat("Years covered:", min(virginia_data$year), "to", max(virginia_data$year), "\n")
-cat("Consistent columns used:", length(consistent_cols), "\n\n")
+cat("Selected columns used:", ncol(combined_data), "\n\n")
 
 # Show Virginia CoC numbers to verify
 virginia_cocs <- virginia_data %>%
@@ -345,7 +426,7 @@ cat("Virginia CoC Numbers found:\n")
 print(virginia_cocs)
 
 # Optional: Save the Virginia data to a CSV file
-write_csv(virginia_data, "virginia_hic_data_consistent_columns.csv")
+write_csv(virginia_data, "virginia_hic_data_selected_columns.csv")
 
 # View first few rows of Virginia data
 cat("\nFirst few rows of Virginia data:\n")

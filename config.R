@@ -10,8 +10,6 @@ years_partial_2 <- 2015:2023
 comp_years <- c(2010, 2023)
 
 
-source("r/acs.R")
-
 ## ---- The following sets the latest PEP year: ----
 
 latest_pep <- 2024
