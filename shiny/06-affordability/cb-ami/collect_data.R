@@ -118,7 +118,7 @@ juris_select <- juris |>
   group_by(household_type, household_income) |> 
   mutate(percent = estimate/sum(estimate))
 
-ggplot(juris_select,
+filtered_juris <- ggplot(juris_select,
        aes(x = household_type,
            y = percent,
            fill = cost_burden)) +
@@ -126,6 +126,26 @@ ggplot(juris_select,
   facet_wrap(~household_income, nrow = 1) +
   coord_flip()
 
+
+test_plot <- function(data) {
+  ggplot(data, aes(x = household_type, y = percent, fill = cost_burden)) +
+    geom_col_interactive(
+      aes(tooltip = paste("Test:", cost_burden)),
+      position = "stack"
+    ) +
+    scale_fill_manual(
+      values = c(
+        "Not cost-burdened" = "#40C0C0",
+        "No or negative income" = "#8B85CA",
+        "Cost-burdened" = "#E0592A",
+        "Severely cost-burdened" = "#B1005F"
+      )
+    ) +
+    theme_minimal()
+}
+
+# Then test with minimal girafe options:
+girafe(ggobj = test_plot(juris_select))
 
 
 
