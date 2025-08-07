@@ -17,8 +17,8 @@ library(sass)        # For SCSS compilation
 
 # Compile HFV styles if needed (for deployment compatibility)
 compile_hfv_styles_if_needed <- function() {
-  css_file <- "../../www/styles/hfv-theme.css"
-  scss_file <- "../../www/styles/hfv-theme.scss"
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
   
   # Only compile if CSS doesn't exist or SCSS is newer
   if (!file.exists(css_file) || 
@@ -76,6 +76,21 @@ ui <- page_fillable(
     tags$meta(
       name = "viewport",
       content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    ),
+    
+    # Google Fonts import
+    tags$link(
+      rel = "preconnect", 
+      href = "https://fonts.googleapis.com"
+    ),
+    tags$link(
+      rel = "preconnect", 
+      href = "https://fonts.gstatic.com", 
+      crossorigin = "anonymous"
+    ),
+    tags$link(
+      rel = "stylesheet",
+      href = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap"
     ),
     
     # Include HFV CSS if it exists, otherwise use fallback
