@@ -12,6 +12,7 @@ library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
 library(systemfonts) # For font registration
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
