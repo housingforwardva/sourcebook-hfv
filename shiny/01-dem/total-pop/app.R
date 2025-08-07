@@ -10,10 +10,25 @@ library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
+library(gdtools)
+library(systemfonts) # For font registration
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
 
 # Compile HFV styles if needed (for deployment compatibility)
 compile_hfv_styles_if_needed <- function() {
@@ -130,7 +145,7 @@ ui <- page_fillable(
       col_widths = c(
         lg = c(3, 9),
         md = c(4, 8), 
-        sm = c(12)
+        sm = 12
       ),
       gap = "16px",
       
@@ -362,6 +377,10 @@ server <- function(input, output, session) {
         ),
         opts_sizing(rescale = TRUE),
         opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
