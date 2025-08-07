@@ -11,6 +11,7 @@ library(lubridate)
 
 source("r/helper_functions.R")
 
+
 # CLEAN ACS VARIABLES ----------------------------------------------------------
 
 ## TABLE B11001 - Household Type (including Living Alone) ----------------------
@@ -183,7 +184,7 @@ b25042_vars <- load_table_vars("B25042", 2023) %>%
 
 b25032_vars <- load_table_vars("B25032_", 2023) %>% 
   separate(label, into = c("est", "total", "tenure", "structure"), sep = "!!") %>% 
-  select(variable.= name, tenure, structure) %>% 
+  select(variable = name, tenure, structure) %>% 
   mutate(structure = case_when(
     is.na(structure) ~ "All units",
     TRUE ~ structure
@@ -324,7 +325,7 @@ b25119_vars <- load_table_vars("B25119", 2023) %>%
     str_detect(tenure, "Renter") ~ "Renter",
   ))
 
-## TABLE B19013B-H - Median Household Income by Race -------------------------------
+## TABLE B19013B-H - Median Household Income by Race ---------------------------
 
 
 b19013_vars <- load_table_vars("B19013", 2023) %>% 
@@ -337,26 +338,52 @@ b19013_vars <- load_table_vars("B19013", 2023) %>%
     TRUE ~ race
   )) %>% 
   select(variable, race)
+
+## TABLE B25064 - Median Gross Rent --------------------------------------------
+
+b25064_vars <- load_table_vars("B25064", 2023) %>% 
+  select(variable = name, label = concept)
+
   
 
-## TABLE B18107 - Sex by age by independent living difficulty ------------------
+## TABLE B25031 - Median Gross Rent by Bedrooms --------------------------------
+
+b25031_vars <- load_table_vars("B25031", 2023) %>% 
+  separate(label, into = c("est", "med", "total", "br"), sep = "!!") %>% 
+  select(variable = name, br) %>% 
+  mutate(br = case_when(
+    is.na(br) ~ "All bedrooms"
+  ))
+
+
+## TABLE B25058 - Median Contract Rent -----------------------------------------
+
+b25058_vars <- load_table_vars("B25058", 2023) %>% 
+  select(variable = name, label = concept)
+
+
 
 
 
 
 # PULL RAW ACS DATA ------------------------------------------------------------
 
+# Set requested years
+requested_years <- 2010:2023
+survey <- "acs5"
+
+# Define all tables including race variants
 tables <- c(
   "B11001",  # Household Type (including Living Alone)
   paste0("B11001", LETTERS[2:8]),  # Race variants B-H
+  "B11012",  # Households by Type (limited years)
+  "B09021",  # Living Arrangements of Adults (limited years)
   "B25003",  # Tenure of Occupied Housing Units  
   paste0("B25003", LETTERS[2:8]),  # Race variants B-H
   "B25004",  # Vacancy Status
   "B25007",  # Tenure by Householder Age
   "B25009",  # Tenure by Household Size  
   "B25010",  # Tenure by Average Household Size
-  "B11012",  # Households by Type
-  "B09021",  # Living Arrangements of Adults
   "B25042",  # Tenure by Bedrooms
   "B25032",  # Structure Type by Tenure
   "B25127",  # Tenure by Year Structure Built By Units
@@ -369,90 +396,210 @@ tables <- c(
   "B19049",  # Median Household Income by Age
   "B25119",  # Median Household Income by Tenure
   "B19013",  # Median Household Income by Race
-  paste0("B19013", LETTERS[2:8])   # Race variants B-H
+  paste0("B19013", LETTERS[2:8]),   # Race variants B-H,
+  "B25064", # Median Gross Rent
+  "B25031", # Median Gross Rent by Bedrooms (limited years)
+  "B25058"  # Median Contract Rent
 )
 
-years <- 2010:2023
-survey = "acs5"
+## COUNTY DATA PULL --------------------------------------------------------------
 
-table_data <- map(tables, ~ get_va_acs(.x, "county", years, survey)) %>%
+message("Pulling county data...")
+
+county_data <- map(tables, function(table) {
+  valid_years <- get_available_years(table, requested_years)
+  if (!is.null(valid_years)) {
+    get_va_acs(table, "county", valid_years, survey)
+  } else {
+    NULL
+  }
+}) %>%
   set_names(tables)
 
-# Process all table data with corresponding variables
-# Combine race variants for B11001 (B11001, B11001B-H)
-b11001_data <- bind_rows(
-  table_data$B11001,
-  table_data$B11001B, table_data$B11001C, table_data$B11001D,
-  table_data$B11001E, table_data$B11001F, table_data$B11001G, table_data$B11001H
-) %>% 
-  left_join(b11001_vars, by = "variable")
+# Remove NULL results
+county_data <- compact(county_data)
 
-# Combine race variants for B25003 (B25003, B25003B-H)
-b25003_data <- bind_rows(
-  table_data$B25003,
-  table_data$B25003B, table_data$B25003C, table_data$B25003D,
-  table_data$B25003E, table_data$B25003F, table_data$B25003G, table_data$B25003H
-) %>% 
-  left_join(b25003_vars, by = "variable")
+## STATE DATA PULL -------------------------------------------------------------
 
-b25004_data <- table_data$B25004 %>% 
-  left_join(b25004_vars, by = "variable")
+message("Pulling state data...")
 
-b25007_data <- table_data$B25007 %>% 
-  left_join(b25007_vars, by = "variable")
+state_data <- map(tables, function(table) {
+  valid_years <- get_available_years(table, requested_years)
+  if (!is.null(valid_years)) {
+    get_state_acs(table, valid_years, "acs5")
+  } else {
+    NULL
+  }
+}) %>%
+  set_names(tables)
 
-b25009_data <- table_data$B25009 %>% 
-  left_join(b25009_vars, by = "variable")
+# Remove NULL results
+state_data <- compact(state_data)
 
-b25010_data <- table_data$B25010 %>% 
-  left_join(b25010_vars, by = "variable")
+## CBSA DATA PULL --------------------------------------------------------------
 
-b11012_data <- table_data$B11012 %>% 
-  left_join(b11012_vars, by = "variable")
+message("Pulling CBSA data...")
 
-b09021_data <- table_data$B09021 %>% 
-  left_join(b09021_vars, by = "variable")
+cbsa_data <- map(tables, function(table) {
+  valid_years <- get_available_years(table, requested_years)
+  if (!is.null(valid_years)) {
+    get_cbsa_acs(table, valid_years, "acs5")
+  } else {
+    NULL
+  }
+}) %>%
+  set_names(tables)
 
-b25042_data <- table_data$B25042 %>% 
-  left_join(b25042_vars, by = "variable")
+# Remove NULL results
+cbsa_data <- compact(cbsa_data)
 
-b25032_data <- table_data$B25032 %>% 
-  left_join(b25032_vars, by = "variable")
+# PROCESS DATA SAFELY ----------------------------------------------------------
 
-b25127_data <- table_data$B25127 %>% 
-  left_join(b25127_vars, by = "variable")
+message("Processing data...")
 
-b25063_data <- table_data$B25063 %>% 
-  left_join(b25063_vars, by = "variable")
+# Process tables with race variants
+message("Processing B11001 (household type)...")
+b11001_combined <- list(
+  county = combine_race_variants("B11001", county_data),
+  state = combine_race_variants("B11001", state_data),
+  cbsa = combine_race_variants("B11001", cbsa_data)
+)
+b11001_data <- safe_process_data(
+  list("B11001" = b11001_combined$county), 
+  list("B11001" = b11001_combined$state), 
+  list("B11001" = b11001_combined$cbsa), 
+  "B11001", b11001_vars
+)
 
-b25118_data <- table_data$B25118 %>% 
-  left_join(b25118_vars, by = "variable")
+message("Processing B25003 (tenure)...")
+b25003_combined <- list(
+  county = combine_race_variants("B25003", county_data),
+  state = combine_race_variants("B25003", state_data),
+  cbsa = combine_race_variants("B25003", cbsa_data)
+)
+b25003_data <- safe_process_data(
+  list("B25003" = b25003_combined$county), 
+  list("B25003" = b25003_combined$state), 
+  list("B25003" = b25003_combined$cbsa), 
+  "B25003", b25003_vars
+)
 
-b25014_data <- table_data$B25014 %>% 
-  left_join(b25014_vars, by = "variable")
+message("Processing B17001 (poverty status)...")
+b17001_combined <- list(
+  county = combine_race_variants("B17001", county_data),
+  state = combine_race_variants("B17001", state_data),
+  cbsa = combine_race_variants("B17001", cbsa_data)
+)
+b17001_data <- safe_process_data(
+  list("B17001" = b17001_combined$county), 
+  list("B17001" = b17001_combined$state), 
+  list("B17001" = b17001_combined$cbsa), 
+  "B17001", b17001_vars
+)
 
-# Combine race variants for B17001 (B17001, B17001B-H)
-b17001_data <- bind_rows(
-  table_data$B17001,
-  table_data$B17001B, table_data$B17001C, table_data$B17001D,
-  table_data$B17001E, table_data$B17001F, table_data$B17001G, table_data$B17001H
-) %>% 
-  left_join(b17001_vars, by = "variable")
+message("Processing B19013 (median income by race)...")
+b19013_combined <- list(
+  county = combine_race_variants("B19013", county_data),
+  state = combine_race_variants("B19013", state_data),
+  cbsa = combine_race_variants("B19013", cbsa_data)
+)
+b19013_data <- safe_process_data(
+  list("B19013" = b19013_combined$county), 
+  list("B19013" = b19013_combined$state), 
+  list("B19013" = b19013_combined$cbsa), 
+  "B19013", b19013_vars, process_median_income
+)
 
-b25106_data <- table_data$B25106 %>% 
-  left_join(b25106_vars, by = "variable")
+# Process regular tables
+message("Processing other tables...")
+b25004_data <- safe_process_data(county_data, state_data, cbsa_data, "B25004", b25004_vars)
+b25007_data <- safe_process_data(county_data, state_data, cbsa_data, "B25007", b25007_vars)
+b25009_data <- safe_process_data(county_data, state_data, cbsa_data, "B25009", b25009_vars)
+b25010_data <- safe_process_data(county_data, state_data, cbsa_data, "B25010", b25010_vars)
+b25042_data <- safe_process_data(county_data, state_data, cbsa_data, "B25042", b25042_vars)
+b25032_data <- safe_process_data(county_data, state_data, cbsa_data, "B25032", b25032_vars)
+b25127_data <- safe_process_data(county_data, state_data, cbsa_data, "B25127", b25127_vars)
+b25063_data <- safe_process_data(county_data, state_data, cbsa_data, "B25063", b25063_vars)
+b25118_data <- safe_process_data(county_data, state_data, cbsa_data, "B25118", b25118_vars)
+b25014_data <- safe_process_data(county_data, state_data, cbsa_data, "B25014", b25014_vars)
+b25106_data <- safe_process_data(county_data, state_data, cbsa_data, "B25106", b25106_vars)
 
-b19049_data <- table_data$B19049 %>% 
-  left_join(b19049_vars, by = "variable")
+# Process tables with special functions
+b19049_data <- safe_process_data(county_data, state_data, cbsa_data, "B19049", b19049_vars, process_median_income)
+b25119_data <- safe_process_data(county_data, state_data, cbsa_data, "B25119", b25119_vars, process_median_income)
+b25064_data <- safe_process_data(county_data, state_data, cbsa_data, "B25064", b25064_vars, adjust_for_rent_inflation)
+b25058_data <- safe_process_data(county_data, state_data, cbsa_data, "B25058", b25058_vars, adjust_for_rent_inflation)
 
-b25119_data <- table_data$B25119 %>% 
-  left_join(b25119_vars, by = "variable")
+# Process potentially missing tables
+b11012_data <- safe_process_data(county_data, state_data, cbsa_data, "B11012", b11012_vars)
+b09021_data <- safe_process_data(county_data, state_data, cbsa_data, "B09021", b09021_vars)
+b25031_data <- safe_process_data(county_data, state_data, cbsa_data, "B25031", b25031_vars, adjust_for_rent_inflation)
 
-# Combine race variants for B19013 (B19013, B19013B-H)
-b19013_data <- bind_rows(
-  table_data$B19013,
-  table_data$B19013B, table_data$B19013C, table_data$B19013D,
-  table_data$B19013E, table_data$B19013F, table_data$B19013G, table_data$B19013H
-) %>% 
-  left_join(b19013_vars, by = "variable")
+## WRITE DATA TO S3 ------------------------------------------------------------
+
+library(paws)
+# Initialize S3 client
+s3 <- paws::s3()
+bucket_name <- "hda-data-hub"
+
+# Create list of all datasets, including potentially NULL ones
+datasets <- list(
+  "b11001_data" = b11001_data,
+  "b25003_data" = b25003_data,
+  "b25004_data" = b25004_data,
+  "b25007_data" = b25007_data,
+  "b25009_data" = b25009_data,
+  "b25010_data" = b25010_data,
+  "b11012_data" = b11012_data,
+  "b09021_data" = b09021_data,
+  "b25042_data" = b25042_data,
+  "b25032_data" = b25032_data,
+  "b25127_data" = b25127_data,
+  "b25063_data" = b25063_data,
+  "b25118_data" = b25118_data,
+  "b25014_data" = b25014_data,
+  "b17001_data" = b17001_data,
+  "b25106_data" = b25106_data,
+  "b19049_data" = b19049_data,
+  "b25119_data" = b25119_data,
+  "b19013_data" = b19013_data,
+  "b25064_data" = b25064_data,
+  "b25031_data" = b25031_data,
+  "b25058_data" = b25058_data
+)
+
+# Remove NULL datasets
+datasets <- compact(datasets)
+
+message(paste("Uploading", length(datasets), "datasets to S3..."))
+
+# Upload each dataset as .rds file to S3
+iwalk(datasets, ~ {
+  # Create temporary file
+  temp_file <- tempfile(fileext = ".rds")
   
+  # Save dataset to temporary file
+  saveRDS(.x, temp_file)
+  
+  # Upload to S3
+  s3$put_object(
+    Bucket = bucket_name,
+    Key = paste0("acs_data/", .y, ".rds"),
+    Body = temp_file
+  )
+  
+  # Clean up temporary file
+  file.remove(temp_file)
+  
+  # Print progress
+  cat("Uploaded", .y, "to S3\n")
+})
+
+message("Data processing complete!")
+
+pit_data <- s3$get_object(
+  Bucket = "hda-data-hub",
+  Key = "hud/pit_data_longer.rds"
+)
+
+message(paste("Successfully processed", length(datasets), "tables"))

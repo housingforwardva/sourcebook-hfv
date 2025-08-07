@@ -5,13 +5,14 @@ library(janitor)
 library(tigris)
 library(air)
 
+source("config.R")
 
-va <- counties(state = "VA") %>% 
-  sf::st_drop_geometry()
-
-lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
-  mutate(fips_full = as.character(fips_full)) |> # Convert numeric GEOID to character in order to complete join
-  select(GEOID = fips_full, name_long, cbsa_title) # Simplify data
+# va <- counties(state = "VA") %>% 
+#   sf::st_drop_geometry()
+# 
+# lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
+#   mutate(fips_full = as.character(fips_full)) |> # Convert numeric GEOID to character in order to complete join
+#   select(GEOID = fips_full, name_long, cbsa_title) # Simplify data
 
 # Population Estimate -----------------------------------------------------
 
@@ -19,7 +20,6 @@ lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
 
 pep_2010s <- get_estimates(
   geography = "county",
-  state = "VA",
   variables = "POP",
   year = 2019,
   time_series = TRUE
@@ -56,7 +56,6 @@ pep_2010s_clean <- pep_2010s %>%
 
 pep_2020s <- get_estimates(
   geography = "county",
-  state = "VA",
   variables = "POPESTIMATE",
   vintage = latest_pep,
   time_series = TRUE
@@ -77,7 +76,6 @@ pep_2020s_clean <- pep_2020s |>
 
 census_raw <- get_decennial(
   geography = "county",
-  state = "VA",
   year = 2020,
   sumfile = "pl",
   variables = "P1_001N"
@@ -96,18 +94,27 @@ census_clean <- census_raw %>%
 
 #  Combine total population data.
 
-pop_data <- rbind(pep_2010s_clean, pep_2020s_clean, census_clean) %>% 
-  left_join(lookup, by = "GEOID")
+pop_data <- rbind(pep_2010s_clean, pep_2020s_clean, census_clean) 
 
 
-write_rds(pop_data, "data/rds/pop_data.rds")
+# write_rds(pop_data, "data/rds/pop_data.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+temp_file <- tempfile(fileext = ".rds")
+write_rds(pop_data, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "pep/pop_data.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
 
 
 # Components of Population Change -----------------------------------------
 
 change_2010s <- get_estimates(
   geography = "county",
-  state = "VA",
   variables = c("NATURALINC", "DOMESTICMIG", "INTERNATIONALMIG"),
   year = 2019,
   time_series = TRUE
@@ -115,7 +122,6 @@ change_2010s <- get_estimates(
 
 change_2020s <- get_estimates(
   geography = "county",
-  state = "VA",
   variables = c("NATURALCHG", "DOMESTICMIG", "INTERNATIONALMIG"),
   vintage = latest_pep,
   time_series = TRUE
@@ -159,10 +165,19 @@ change_2020s_clean <- change_2020s %>%
     value
   ) 
 
-pep_change <- rbind(change_2010s_clean, change_2020s_clean) %>% 
-  left_join(lookup, by = "GEOID")
+pep_change <- rbind(change_2010s_clean, change_2020s_clean) 
 
-write_rds(pep_change, "data/rds/pop_change.rds")
+# write_rds(pep_change, "data/rds/pop_change.rds")
+
+# Upload to S3 bucket
+temp_file <- tempfile(fileext = ".rds")
+write_rds(pep_change, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "pep/pop_change.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
 
 
 # Race and Ethnicity Estimates --------------------------------------------
@@ -173,7 +188,6 @@ write_rds(pep_change, "data/rds/pop_change.rds")
 
 race_2010s <- get_estimates(
   geography = "county",
-  state = "VA",
   product = "characteristics",
   breakdown = c("RACE", "HISP"),
   breakdown_labels = TRUE,
@@ -210,7 +224,6 @@ race_2010s <- get_estimates(
 
 race_2020s <- get_estimates(
   geography = "county",
-  state = "VA",
   product = "characteristics",
   breakdown = c("RACE", "HISP"),
   breakdown_labels = TRUE,
@@ -258,7 +271,6 @@ census_vars_race <- c(
 
 census_raw <- get_decennial(
   geography = "county",
-  state = "VA",
   year = 2020,
   sumfile = "pl",
   variables = census_vars_race
@@ -420,10 +432,19 @@ race_ethnicity_data <- race_ethnicity_raw %>%
     hisp,
     label,
     value
-  ) %>% 
-  left_join(lookup, by = "GEOID")
+  ) 
 
-write_rds(race_ethnicity_data, "data/rds/race-ethnicity.rds")
+# write_rds(race_ethnicity_data, "data/rds/race-ethnicity.rds")
+
+# Upload to S3 bucket
+temp_file <- tempfile(fileext = ".rds")
+write_rds(race_ethnicity_data, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "pep/race-ethnicity.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
 
 
 # Population by Age -------------------------------------------------------
@@ -434,7 +455,6 @@ write_rds(race_ethnicity_data, "data/rds/race-ethnicity.rds")
 
 age_10s <- get_estimates(
   geography = "county",
-  state = "VA",
   product = "characteristics",
   breakdown = "AGEGROUP",
   breakdown_labels = TRUE,
@@ -446,7 +466,6 @@ age_10s <- get_estimates(
 
 age_20s <- get_estimates(
   geography = "county",
-  state = "VA",
   product = "characteristics",
   breakdown = "AGEGROUP",
   breakdown_labels = TRUE,
@@ -565,14 +584,21 @@ age <- age_data |>
   group_by(GEOID, year, counttype, agegroup) |>  # Collapse and sum recoded age groups
   summarise(value = sum(value)) 
 
-lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
-  mutate(fips_full = as.character(fips_full)) |> # Convert numeric GEOID to character in order to complete join
-  select(GEOID = fips_full, name_long, cbsa_title) # Simplify data
 
-age_join <- age |> 
-  left_join(lookup, by = 'GEOID')
 
-write_rds(age_join, "data/rds/pop_age.rds")
+# write_rds(age_join, "data/rds/pop_age.rds")
+
+# Upload to S3 bucket
+temp_file <- tempfile(fileext = ".rds")
+write_rds(age, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "pep/pop_age.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
+
+
 
 
 

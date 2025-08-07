@@ -1,10 +1,9 @@
 library(tidyverse)
 library(readxl)
 library(glue)
+library(paws)
 
 # Data collection
-
-
 
 # Data provided in .xlsx files separated by locality and MSA
 # Historical quarterly data (2014 to 2021) are in separate files
@@ -269,9 +268,23 @@ full_data <- bind_rows(locality_data, msa_data) %>%
              TRUE ~ geography
            ))
 
-
 # Data export
 
-# Save home sales data
+# # Save home sales data
+# 
+# write_rds(full_data, "shiny/var/home-sales.rds")
 
-write_rds(full_data, "shiny/var/home-sales.rds")
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+
+write_rds(full_data, temp_file)
+
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "var/full_data.rds",
+  Body = temp_file
+)
+
+file.remove(temp_file)
