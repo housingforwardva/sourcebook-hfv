@@ -5,8 +5,12 @@ library(tigris)
 library(readxl)
 library(janitor)
 library(httr)
+library(paws)
 
+source("config.R")
 
+s3_bucket <- "hda-data-hub"  # Replace with your actual bucket name
+s3 <- paws::s3()
 
 # Virginia county setup seems fine
 virginia <- list_counties("VA") |> 
@@ -111,7 +115,9 @@ qcew_data_label <- qcew_data %>%
   mutate(fips = area_fips) %>% 
   left_join(local_lookup, by = "fips")
 
-write_rds(qcew_data_label, "data/qcew_data.rds")
+# write_rds(qcew_data_label, "data/qcew_data.rds")
+
+
 
 
 # Download and unzip all years to individual folders based on respective years. 
@@ -286,10 +292,28 @@ names(result) = c('va_employed', 'va_unemployment_rate', 'va_laborforce', 'va_un
 
 list2env(result, envir = .GlobalEnv)
 
+# Function to write data frames to S3 using paws
+write_to_s3 <- function(data, filename, bucket) {
+  temp_file <- tempfile(fileext = ".rds")
+  write_rds(data, temp_file)
+  s3$put_object(
+    Bucket = bucket,
+    Key = paste0("bls/", filename),
+    Body = temp_file
+  )
+  unlink(temp_file)
+  message(paste("Successfully uploaded", filename, "to S3"))
+}
 
-# Write to rds.
+# Write all four data frames to S3
+write_to_s3(va_employed, "va_employment_level.rds", s3_bucket)
+write_to_s3(va_unemployment_rate, "va_unemployment_rate.rds", s3_bucket)
+write_to_s3(va_laborforce, "va_laborforce_level.rds", s3_bucket)
+write_to_s3(va_unemployment, "va_unemployment_level.rds", s3_bucket)
 
-write_rds(va_employed, "data/va_employment_level.rds")
-write_rds(va_unemployment_rate, "data/va_unemployment_rate.rds")
-write_rds(va_laborforce, "data/va_laborforce_level.rds")
-write_rds(va_unemployment, "data/va_unemployment_level.rds")
+# # Write to rds.
+# 
+# write_rds(va_employed, "data/va_employment_level.rds")
+# write_rds(va_unemployment_rate, "data/va_unemployment_rate.rds")
+# write_rds(va_laborforce, "data/va_laborforce_level.rds")
+# write_rds(va_unemployment, "data/va_unemployment_level.rds")

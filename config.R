@@ -28,3 +28,9 @@ bls_latest <- 2024
 
 chas_years <- 2016:2021
 
+
+# Set years for BPS pull:
+
+bps_years <- 2000:2024 # Get 2000 to the latest past year.
+bps_ytd <- 2506 # Set the year-month combination for latest available YTD
+

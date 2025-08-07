@@ -3,6 +3,7 @@
 library(tidyverse)
 library(readxl)
 library(httr)
+library(paws)
 
 # Data collection
 # https://www.fhfa.gov/data/hpi/datasets?tab=quarterly-data
@@ -38,7 +39,6 @@ hpi_nonmetro_raw <- read_excel(temp, sheet = 1, skip = 2)
 
 hpi_state_data <- hpi_state_raw %>% 
   setNames(c("name", "year", "quarter", "hpi")) %>% 
-  filter(name == "VA") %>% 
   mutate(geography = "State",
          .before = 1) %>%
   mutate(fips = 51,
@@ -50,7 +50,6 @@ hpi_state_data <- hpi_state_raw %>%
 
 hpi_cbsa_data <- hpi_cbsa_raw %>% 
   setNames(c("name", "fips", "year", "quarter", "hpi", "stderror")) %>% 
-  filter(str_detect(name, "VA")) %>% 
   mutate(geography = "CBSA",
          .before = 1) %>% 
   mutate(name = str_remove_all(name, "  \\(MSAD\\)")) %>% 
@@ -63,14 +62,13 @@ hpi_cbsa_data <- hpi_cbsa_raw %>%
 
 hpi_nonmetro_data <- hpi_nonmetro_raw %>% 
   setNames(c("name", "year", "quarter", "hpi", "stderror")) %>%
-  filter(name == "VA") %>% 
   mutate(geography = "Nonmetro",
          .before = 1) %>%
   mutate(fips = NA,
          .after = 2) %>% 
-  mutate(name = "Nonmetropolitan area")  %>% 
   mutate(stderror = str_replace_all(stderror, "[^0-9.]+", ""),
-         stderror = as.numeric(stderror))
+         stderror = as.numeric(stderror)) %>% 
+  mutate(name = paste(name, "Nonmetro Area", sep = " "))
 
 # Bind three geography levels together and create new date field with year and quarter
 
@@ -83,4 +81,16 @@ hpi_all_data <- bind_rows(hpi_state_data, hpi_cbsa_data, hpi_nonmetro_data) %>%
 
 # Save HPI data
 
-write_rds(hpi_all_data, "data/rds/hpi.rds")
+# write_rds(hpi_all_data, "data/rds/hpi.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(hpi_all_data, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "fhfa/hpi_data.rds",
+  Body = temp_file
+)
+file.remove(temp_file)

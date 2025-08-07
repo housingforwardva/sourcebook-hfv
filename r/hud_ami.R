@@ -1,7 +1,12 @@
 # Load required packages
 library(readxl)
+library(tidyverse)
 library(dplyr)
 library(httr)
+library(paws)
+
+readRenviron(".Renviron") # Loads the .Renviron file from your home directory
+
 
 # Create vectors for years and corresponding URL patterns
 years <- 2017:2025
@@ -120,9 +125,8 @@ if (length(data_list) > 0) {
 str(combined_data)
 
 
-va_hud_ami <- combined_data |> 
+hud_ami <- combined_data |> 
   janitor::clean_names() |> 
-  filter(state_abbrev == "VA") |> 
   pivot_longer(9:32,
                names_to = "income",
                values_to = "limit") |> 
@@ -143,7 +147,18 @@ va_hud_ami <- combined_data |>
     str_detect(income, "_8") ~ "Eight-person"
   ))
   
-write_rds(va_hud_ami, "data/rds/va_hud_ami.rds")
+# write_rds(va_hud_ami, "data/rds/va_hud_ami.rds")
 
 # Optional: Save combined data
 # write.csv(combined_data, "section8_income_limits_2017_2025.csv", row.names = FALSE)
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+temp_file <- tempfile(fileext = ".rds")
+write_rds(hud_ami, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "hud/hud_ami.rds",
+  Body = temp_file
+)
+file.remove(temp_file)

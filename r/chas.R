@@ -225,6 +225,38 @@ Table18c <- read_csv("data/Table18C.csv")  %>%
     household_income == "30 percent AMI or below" ~ "30% AMI or less"
   ))
 
+
 write_rds(Table7, "data/rds/table7_chas.rds")
 write_rds(Table9, "data/rds/table9_chas.rds")
 write_rds(Table18c, "data/rds/table18c_chas.rds")
+
+table7 <- read_rds("data/rds/table7_chas.rds")
+
+table9 <- read_rds("data/rds/table9_chas.rds")
+
+table18c <- read_rds("data/rds/table18c_chas.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+s3_bucket <- "hda-data-hub"
+
+# Function to write data frames to S3 using paws
+write_to_s3 <- function(data, filename, bucket) {
+  temp_file <- tempfile(fileext = ".rds")
+  write_rds(data, temp_file)
+  s3$put_object(
+    Bucket = bucket,
+    Key = paste0("hud/", filename),
+    Body = temp_file
+  )
+  unlink(temp_file)
+  message(paste("Successfully uploaded", filename, "to S3"))
+}
+
+# Write all three data frames to S3
+write_to_s3(table7, "va_table7.rds", s3_bucket)
+write_to_s3(table9, "va_table9.rds", s3_bucket)
+write_to_s3(table18c, "va_table18c", s3_bucket)
+
+
+

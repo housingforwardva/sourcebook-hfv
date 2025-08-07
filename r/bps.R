@@ -1,9 +1,10 @@
 library(tidyverse)
 library(glue)
+library(paws)
 
-# Collect building permits data
+source("config.R")
 
-years <- 2000:2024
+# Collect building permits data from the Census Building Permits Survey
 
 # Generate the appropriate names for the data
 
@@ -25,7 +26,7 @@ column_names <- header_rows %>%
 
 # Scrape annual county data and apply column names
 
-cbps_raw <- map_df(years, ~{
+cbps_raw <- map_df(bps_years, ~{
 
   raw <- read_csv(glue::glue("https://www2.census.gov/econ/bps/County/co{.x}a.txt"), skip = 2, 
                     col_names = FALSE) %>%
@@ -36,7 +37,7 @@ cbps_raw <- map_df(years, ~{
   
 })
 
-cbps_ytd <- read_csv("https://www2.census.gov/econ/bps/County/co2503y.txt", 
+cbps_ytd <- read_csv(paste0("https://www2.census.gov/econ/bps/County/co", bps_ytd, "y.txt"), 
                      col_names = FALSE,
                      skip = 2) |> 
   select(X1:X18) |> 
@@ -68,4 +69,19 @@ lookup <- read_csv("data/local_lookup.csv") |> # Read in lookup csv
 cbps_data <- cbps_data %>% 
   left_join(lookup, by = "GEOID")
 
-write_rds(cbps_data, "data/rds/bps.rds")
+# write_rds(cbps_data, "data/rds/bps.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(cbps_data, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "bps/hic_data.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
+
+
+

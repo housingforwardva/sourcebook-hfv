@@ -584,7 +584,7 @@ iwalk(datasets, ~ {
   # Upload to S3
   s3$put_object(
     Bucket = bucket_name,
-    Key = paste0("acs_data/", .y, ".rds"),
+    Key = paste0("census/", .y, ".rds"),
     Body = temp_file
   )
   
@@ -596,10 +596,4 @@ iwalk(datasets, ~ {
 })
 
 message("Data processing complete!")
-
-pit_data <- s3$get_object(
-  Bucket = "hda-data-hub",
-  Key = "hud/pit_data_longer.rds"
-)
-
 message(paste("Successfully processed", length(datasets), "tables"))

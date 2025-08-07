@@ -4,6 +4,7 @@ library(jsonlite)
 library(httr)
 library(glue)
 library(arrow)
+library(paws)
 
 # Data collection
 
@@ -189,5 +190,20 @@ all(is.na(hmda_clean$`applicant_race-5`))
 # Data export
 #' Writing out the raw loan-level data; there are interesting analyses that could be done as-is
 #' or many ways to do custom aggregations given that we have tract-level information
-write_parquet(hmda_clean, "data/parquet/hmda_va_clean.parquet")
+# write_parquet(hmda_clean, "data/parquet/hmda_va_clean.parquet")
+
+# hmda_clean <- read_parquet("data/parquet/hmda_va_clean.parquet")
+  
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".parquet")
+write_rds(hmda_clean, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "hmda/hmda_va_clean.parquet",
+  Body = temp_file
+)
+file.remove(temp_file)
+
 
