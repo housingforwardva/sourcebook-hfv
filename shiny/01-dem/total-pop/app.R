@@ -11,8 +11,6 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
-library(systemfonts) # For font registration
-library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -334,7 +332,7 @@ server <- function(input, output, session) {
         y = "Population",
         x = "Year"
       ) +
-      theme_minimal() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
         plot.title.position = "plot",
