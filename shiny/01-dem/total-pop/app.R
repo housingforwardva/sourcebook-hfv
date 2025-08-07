@@ -260,7 +260,7 @@ server <- function(input, output, session) {
   })
   
   cbsa_title <- reactive({
-    paste("Population of", input$cbsa)
+    paste("Population of", input$cbsa, "CBSA")
   })
   
   locality_title <- reactive({
