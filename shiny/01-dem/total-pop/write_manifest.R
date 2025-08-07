@@ -1,4 +1,4 @@
-library(rsconnect)cla
+library(rsconnect)
 # Create a manifest file for deployment
 
 rsconnect::writeManifest(
