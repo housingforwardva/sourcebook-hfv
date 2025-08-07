@@ -1,7 +1,6 @@
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
-library(systemfonts) # For font_google
 library(here)        # For here() function in file paths
 library(grid)        # For grobs
 library(png)         # For reading PNG files
@@ -61,8 +60,8 @@ hfv_theme <- bs_theme(
   info = "#8B85CA",
   warning = "#E0592A",
   danger = "#B1005F",
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
 
@@ -83,12 +82,14 @@ ui <- page_fillable(
     if (compile_hfv_styles_if_needed()) {
       tags$link(rel = "stylesheet", href = "../../www/styles/hfv-theme.css")
     } else {
-      # Fallback: minimal inline CSS with HFV colors
+      # Fallback: minimal inline CSS with HFV colors and reliable fonts
       tags$style(HTML("
+        body { font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
         .hfv-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
         .hfv-header { display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid #40C0C0; }
         .hfv-logo { height: 24px; margin-right: 16px; }
-        .hfv-title { margin: 0; color: #011E41; font-family: 'Poppins', sans-serif; }
+        .hfv-title { margin: 0; color: #011E41; font-family: 'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
         .hfv-sidebar { background-color: #E8EDF2; padding: 16px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .hfv-chart-container { width: 100%; height: auto; min-height: 350px; }
         .text-primary { color: #40C0C0 !important; }
