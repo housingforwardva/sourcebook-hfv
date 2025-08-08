@@ -1,41 +1,82 @@
 library(shiny)
 library(tidyverse)
-library(scales)
-library(here)
-library(bslib) # For modern UI components
-library(systemfonts) # For font_google
-library(grid) # For grobs
-library(png) # For reading PNG files
-library(shinyjs) # For dynamic UI updates
-library(cowplot) # For adding logo to plots
-library(magick) # For image handling
-library(ggiraph) # For interactive plots
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA",
-  shadow = "#011E41",
-  shadow_light = "#102C54", # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5, # Use Bootstrap 5
-  bg = "#ffffff", # Background color
-  fg = "#333333", # Text color
-  primary = hfv_colors$sky, # Primary color
-  secondary = hfv_colors$shadow, # Secondary color
-  success = hfv_colors$grass, # Success color
-  info = hfv_colors$lilac, # Info color
-  warning = hfv_colors$desert, # Warning color
-  danger = hfv_colors$berry, # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8 # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # Define UI
@@ -357,9 +398,9 @@ server <- function(input, output, session) {
     race_levels <- unique(state_data()$race)
     
     # Create color vector without names first
-    color_values <- c(hfv_colors$desert, hfv_colors$grass, hfv_colors$shadow, 
-                      hfv_colors$sky, hfv_colors$berry, hfv_colors$lilac, 
-                      hfv_colors$shadow_light, "#FFC658")
+    color_values <- c("#E0592A", "#259591", "#011E41", 
+                      "#40C0C0", "#B1005F", "#8B85CA", 
+                      "#102C54", "#FFC658")
     
     # Then create a named vector matching your actual data values
     setNames(color_values[1:length(race_levels)], race_levels)
@@ -482,15 +523,16 @@ server <- function(input, output, session) {
         x = NULL,
         y = "Poverty Rate"
       ) +
-      theme_minimal() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
         strip.text = element_text(size = 12, face = "bold"),
         legend.position = "none",
         panel.spacing = unit(1.5, "lines"),
         panel.grid.minor = element_blank(),
         plot.title = element_text(size = 14, face = "bold"),
-        plot.margin = margin(5, 5, 15, 5), # Extra bottom margin for logo
-        axis.title = element_text(size = 11),
+        plot.title.position = "plot",
+        plot.margin = margin(5, 5, 30, 5), # Extra bottom margin for logo
+        axis.title = element_text(size = 12),
         axis.text = element_text(size = 10)
       )
     
@@ -519,7 +561,12 @@ server <- function(input, output, session) {
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_sizing(rescale = TRUE)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
@@ -527,21 +574,21 @@ server <- function(input, output, session) {
   # State Plot
   output$state_plot <- renderGirafe({
     req(state_data(), race_colors())
-    create_poverty_plot(state_data(), "Virginia Poverty Rate by Race and Ethnicity")
+    suppressWarnings(create_poverty_plot(state_data(), "Virginia Poverty Rate by Race and Ethnicity"))
   })
   
   # CBSA Plot
   output$cbsa_plot <- renderGirafe({
     req(filtered_cbsa_data(), race_colors())
     title <- paste0("Poverty Rate by Race and Ethnicity - ", input$cbsa_select)
-    create_poverty_plot(filtered_cbsa_data(), title)
+    suppressWarnings(create_poverty_plot(filtered_cbsa_data(), title))
   })
   
   # Locality Plot
   output$locality_plot <- renderGirafe({
     req(filtered_locality_data(), race_colors())
     title <- paste0("Poverty Rate by Race and Ethnicity - ", input$locality_select)
-    create_poverty_plot(filtered_locality_data(), title)
+    suppressWarnings(create_poverty_plot(filtered_locality_data(), title))
   })
   
   # MOBILE OPTIMIZATION #8: Handle responsive window events

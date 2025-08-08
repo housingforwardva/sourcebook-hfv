@@ -1,165 +1,180 @@
 library(shiny)
-library(tidyverse)  # Includes dplyr, ggplot2, etc.
-library(scales)     # For percent_format
-library(ggiraph)    # For interactive ggplots
-library(systemfonts) # For font_google
-library(here)       # For here() function in file paths
-library(grid)       # For grobs
-library(png)        # For reading PNG files
-library(bslib)      # For modern UI components
-library(cowplot)    # For adding logo to plots
+library(tidyverse)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # New lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5,                        # Use Bootstrap 5
-  bg = "#ffffff",                     # Background color
-  fg = "#333333",                     # Text color
-  primary = hfv_colors$sky,           # Primary color
-  secondary = hfv_colors$shadow,      # Secondary color
-  success = hfv_colors$grass,         # Success color
-  info = hfv_colors$lilac,            # Info color
-  warning = hfv_colors$desert,        # Warning color
-  danger = hfv_colors$berry,          # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8                    # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # Define UI
-ui <- page_fluid(
+ui <- page_fillable(
   theme = hfv_theme,
-  
-  # Add CSS with iframe optimization
-  tags$head(
-    tags$style(HTML(
-      "
-      /* Base styles */
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      /* Iframe optimization for 800x500 dimensions */
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      "
-    ))
-  ),
-  
-  # Fixed dimensions container
-  tags$div(
+  useShinyjs(), # Initialize shinyjs
+
+  # Main container using HFV classes
+  div(
     class = "hfv-container",
-    style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; padding: 10px;",
     
-    # Header with logo and title
+    # Header using HFV styling
     div(
-      style = "display: flex; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #40C0C0; padding-bottom: 5px;",
-      img(src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png", 
-          height = "30px", style = "margin-right: 10px;"),
-      h4("Housing Type Distribution", style = "margin: 0; color: #011E41;")
+      class = "hfv-header",
+      h4("Housing Type Distribution", class = "hfv-title")
     ),
-    
-    # Main content area with reduced margins
-    div(
-      style = "height: 435px; overflow: hidden;",
+
+    # Layout using bslib layout_columns
+    layout_columns(
+      col_widths = c(
+        lg = c(3, 9),
+        md = c(4, 8), 
+        sm = 12
+      ),
+      gap = "16px",
       
-      # Use layout_columns for a compact layout
-      layout_columns(
-        col_widths = c(3, 9),
-        gap = "10px",
+      # Sidebar Panel with HFV styling
+      div(
+        class = "hfv-sidebar",
         
-        # Sidebar Panel (more compact) - now with the lighter background color
-        card(
-          height = "435px",
-          padding = "10px",
-          margin = 0,
-          full_screen = FALSE,
-          style = "background-color: #E8EDF2;",  # Light shade derived from shadow color
-          
-          # Year select with minimal padding
-          div(
-            style = "margin-bottom: 5px;",
-            selectInput("year", "Select Year:", 
-                        choices = 2010:2023, 
-                        selected = 2023, 
-                        width = "100%")
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
+        # Year selector
+        div(
+          style = "margin-bottom: 16px;",
+          selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
+        ),
+        
+        # Geography selectors
+        div(
+          style = "margin-bottom: 16px;",
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa'",
+            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
           ),
-          
-          # Geography selectors with minimal height
-          div(
-            style = "margin-bottom: 5px;",
-            conditionalPanel(
-              condition = "input.tabs == 'cbsa'",
-              selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%")
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'local'",
-              selectInput("locality", "Locality:", choices = NULL, width = "100%")
-            )
-          ),
-          
-          # Horizontal line
-          hr(style = "margin: 5px 0;"),
-          
-          # Source information
-          div(
-            style = "font-size: 11px; color: #666;",
-            p(
-              "Source: U.S. Census Bureau. American Community Survey 5-Year Estimates. Table B25032.",
-              style = "margin-bottom: 5px;"
-            )
+          conditionalPanel(
+            condition = "input.tabs == 'local'",
+            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
           )
         ),
         
-        # Main Panel (tabs)
-        card(
-          height = "435px",
-          padding = 0,
-          margin = 0,
-          full_screen = FALSE,
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
+        
+        # Data source
+        div(
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+          p(
+            strong("Data Source:"), br(),
+            "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25032",
+            style = "margin-bottom: 0;"
+          )
+        )
+      ),
+        
+      # Main Panel with tabs
+      div(
+        navset_tab(
+          id = "tabs",
           
-          navset_tab(
-            id = "tabs",
-            nav_panel(
-              title = "State", 
-              value = "state",
-              padding = 5,
-              girafeOutput("state_plot", height = "390px")
-            ),
-            nav_panel(
-              title = "Metro Area", 
-              value = "cbsa",
-              padding = 5,
-              girafeOutput("cbsa_plot", height = "390px")
-            ),
-            nav_panel(
-              title = "Locality", 
-              value = "local",
-              padding = 5,
-              girafeOutput("local_plot", height = "390px")
+          nav_panel(
+            title = "State",
+            value = "state",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Locality",
+            value = "local",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
             )
           )
         )
@@ -168,52 +183,19 @@ ui <- page_fluid(
   )
 )
 
-# Server function remains mostly the same
+# Server function
 server <- function(input, output, session) {
-  # Define the add_logo_to_plot function inside the server function
-  add_logo_to_plot <- function(plot) {
-    # Path to the logo in parent's www folder
-    logo_path <- "C:/Users/ericv/Desktop/github/sourcebook-hfv/shiny/www/hfv_rgb_logo.png"
-    
-    # Check if the file exists
-    if (!file.exists(logo_path)) {
-      warning("Logo file not found at ", logo_path, ". Please check the path.")
-      return(plot)  # Return original plot if logo not found
-    }
-    
-    # Read the logo with error handling
-    logo_img <- tryCatch({
-      png::readPNG(logo_path)
-    }, error = function(e) {
-      warning("Failed to read logo: ", e$message)
-      return(NULL)
-    })
-    
-    # If logo couldn't be read, return original plot
-    if (is.null(logo_img)) {
-      return(plot)
-    }
-    
-    # Convert to grob
-    logo_grob <- grid::rasterGrob(
-      logo_img, 
-      x = unit(0.5, "npc"), 
-      y = unit(0.01, "npc"), 
-      just = c("center", "bottom"),
-      width = unit(0.15, "npc") # Adjust width as needed
-    )
-    
-    # Add logo to plot
-    plot + 
-      annotation_custom(
-        grob = logo_grob,
-        xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = -Inf
-      )
-  }
   
   # Read in data
   b25032 <- reactive({
     read_rds(here("data", "rds", "b25032.rds"))
+  })
+  
+  # Initialize year dropdown
+  observe({
+    updateSelectInput(session, "year", 
+                      choices = 2010:2023,
+                      selected = 2023)
   })
   
   # Process data for state level
@@ -249,16 +231,16 @@ server <- function(input, output, session) {
   
   # Populate CBSA dropdown
   observe({
-    cbsa_choices <- unique(cbsa_housing()$cbsa_title)
+    cbsa_choices <- sort(unique(cbsa_housing()$cbsa_title))
     updateSelectInput(session, "cbsa", choices = cbsa_choices, 
-                      selected = "Richmond, VA")
+                      selected = if("Richmond, VA" %in% cbsa_choices) "Richmond, VA" else cbsa_choices[1])
   })
   
   # Populate locality dropdown
   observe({
-    locality_choices <- unique(local_housing()$name_long)
+    locality_choices <- sort(unique(local_housing()$name_long))
     updateSelectInput(session, "locality", choices = locality_choices,
-                      selected = "Richmond City")
+                      selected = if("Richmond City" %in% locality_choices) "Richmond City" else locality_choices[1])
   })
   
   # Filter data based on inputs
@@ -320,29 +302,34 @@ server <- function(input, output, session) {
         title = title_text(),
         caption = " " # Add empty caption to leave space for logo
       ) +
-      # Use the most basic theme with minimal customization
-      theme_bw() +
+      # Use minimal theme with standardized styling
+      theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
         strip.text = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_blank(),
         plot.title.position = "plot",
-        axis.text = element_text(size = 11), # Smaller text
+        plot.title = element_text(size = 14, face = "bold"),
+        axis.text = element_text(size = 10),
         axis.text.x = element_text(hjust = 0.1),
         panel.spacing.x = unit(15, "pt"),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        # Make the plot more compact overall
-        plot.margin = margin(5, 5, 5, 5)
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
-    # Get logo and add it to the plot
-    # Add logo to the plot
-    logo_path <- "www/hfv_logo.png"
-    p_with_logo <- cowplot::ggdraw(p) +
-      cowplot::draw_image(logo_path, 
-                          x = 0.8, y = -0.05, 
-                          width = 0.15, height = 0.15) # Smaller logo
+    # Add logo directly using external URL
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    # Add logo to the plot using the URL
+    p_with_logo <- ggdraw(p) +
+      draw_image(
+        logo_url, # Use URL directly
+        x = 0.85, # Horizontal position (right side)
+        y = 0.05, # Vertical position (bottom)
+        width = 0.15,
+        height = 0.15
+      )
     
     return(p_with_logo)
   }
@@ -356,29 +343,38 @@ server <- function(input, output, session) {
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
-          opacity = 0.9, 
+          opacity = 0.9,
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_toolbar(hidden = c("lasso_deselect", "lasso_select")),
-        opts_sizing(rescale = TRUE, width = 1)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
   
   # Render the state plot
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_plot(filtered_state()))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_state())))
   })
   
   # Render the CBSA plot
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_plot(filtered_cbsa()))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa())))
   })
   
   # Render the local plot
   output$local_plot <- renderGirafe({
-    create_interactive_plot(create_plot(filtered_local()))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_local())))
+  })
+
+  # Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 

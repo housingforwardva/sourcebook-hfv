@@ -1,33 +1,101 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)
-library(systemfonts)
-library(here)
-library(grid)
-library(png)
-library(bslib)
-library(cowplot)
-library(scales)
-library(shinyjs)
-library(magick)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 library(arrow)
 
-# Define HFV color palette
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# HFV Color Palette
 hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",
-  berry = "#B1005F",
-  desert = "#E0592A"
+  sky = "#40C0C0",           # Primary teal
+  grass = "#259591",         # Dark teal/success
+  lilac = "#8B85CA",         # Purple/info
+  shadow = "#011E41",        # Dark navy/secondary
+  shadow_light = "#102C54",  # Lighter navy
+  berry = "#B1005F",         # Magenta/danger
+  desert = "#E0592A"         # Orange/warning
+)
+
+# Create HFV bslib theme (colors are defined in SCSS files)
+hfv_theme <- bs_theme(
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # Define consistent colors for race_ethnicity categories
 race_ethnicity_colors <- c(
-  "White, non-Hispanic" = hfv_colors$shadow,
-  "Black" = hfv_colors$berry,
-  "Hispanic or Latino" = hfv_colors$desert,
+  "White, non-Hispanic" = "#011E41",
+  "Black" = "#B1005F",
+  "Hispanic or Latino" = "#E0592A",
   "Asian" = hfv_colors$grass,
   "Other Minority" = hfv_colors$lilac,
   "White Co-Applicant" = hfv_colors$shadow_light,
@@ -453,7 +521,7 @@ server <- function(input, output, session) {
       ) +
       scale_fill_manual(values = race_ethnicity_colors, na.value = "#CCCCCC") +
       coord_flip() +
-      scale_y_continuous(labels = number_format(big.mark = ",")) +
+      scale_y_continuous(labels = comma_format()) +
       labs(
         title = title_text,
         caption = " ",

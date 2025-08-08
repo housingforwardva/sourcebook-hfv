@@ -1,45 +1,86 @@
-# Load required packages
-library(tidycensus)
-library(tidyverse)
 library(shiny)
-library(bslib)
-library(ggiraph)
-library(systemfonts) # For font_google
-library(here) # For here() function in file paths
-library(grid) # For grobs
-library(png) # For reading PNG files
-library(shinyjs) # For dynamic UI updates
-library(cowplot) # For adding logo to plots
-library(magick)
+library(tidyverse)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
+library(tidycensus)
 
 # Load data - ONLY load from the specified path, no simulated data
 bps <- read_rds("./bps.rds")
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA",
-  shadow = "#011E41",
-  shadow_light = "#102C54", # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5, # Use Bootstrap 5
-  bg = "#ffffff", # Background color
-  fg = "#333333", # Text color
-  primary = hfv_colors$sky, # Primary color
-  secondary = hfv_colors$shadow, # Secondary color
-  success = hfv_colors$grass, # Success color
-  info = hfv_colors$lilac, # Info color
-  warning = hfv_colors$desert, # Warning color
-  danger = hfv_colors$berry, # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8 # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # Prepare aggregated datasets with recategorized building types
@@ -94,219 +135,35 @@ ui <- page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
-  # MOBILE OPTIMIZATION #1: Add the viewport meta tag for mobile devices
-  tags$head(
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    )
-  ),
-
-  # MOBILE OPTIMIZATION #2: Add CSS with media queries for responsive design
-  tags$head(
-    tags$style(HTML(
-      "
-      /* Base styles for all screen sizes */
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      /* Iframe optimization for 800x500 dimensions */
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        .hfv-header {
-          margin-bottom: 8px !important;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px !important;
-        }
-        
-        .girafe-container {
-          height: 280px !important;
-          min-height: 280px !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      
-      /* Container styles */
-      .hfv-container {
-        max-width: 1200px; 
-        margin: 0 auto; 
-        padding: 45px;
-      }
-      
-      /* Header styles */
-      .hfv-header {
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 15px; 
-        border-bottom: 2px solid #40C0C0; 
-        padding-bottom: 8px;
-      }
-      
-      .hfv-header img {
-        height: 30px;
-        margin-right: 10px;
-      }
-      
-      .title-text {
-        margin: 0; 
-        color: #011E41;
-        font-size: 20px;
-      }
-      
-      /* Sidebar panel styles */
-      .hfv-sidebar {
-        background-color: #E8EDF2;
-        padding: 15px;
-        border-radius: 5px;
-      }
-      
-      /* Plot container styles */
-      .girafe-container {
-        width: 100%;
-        height: 450px;
-        overflow: visible;
-      }
-      
-      .girafe-container svg {
-        width: 100% !important;
-        height: 100% !important;
-      }
-      
-      /* MOBILE OPTIMIZATION #3: Medium-sized screens (tablets, smaller laptops) */
-      @media (max-width: 992px) {
-        .hfv-container {
-          padding: 10px;
-        }
-        
-        .title-text {
-          font-size: 18px;
-        }
-        
-        .girafe-container {
-          height: 400px;
-        }
-      }
-      
-      /* MOBILE OPTIMIZATION #4: Small screens (large phones, small tablets) */
-      @media (max-width: 768px) {
-        .hfv-container {
-          padding: 8px;
-          border-width: 1px;
-        }
-        
-        .title-text {
-          font-size: 16px;
-        }
-        
-        .hfv-header {
-          margin-bottom: 10px;
-        }
-        
-        .hfv-sidebar {
-          padding: 10px;
-          margin-bottom: 10px;
-        }
-        
-        .control-label {
-          font-size: 12px;
-        }
-        
-        .form-check-label {
-          font-size: 11px;
-        }
-        
-        .form-select {
-          font-size: 12px;
-        }
-        
-        .form-control {
-          font-size: 12px;
-        }
-        
-        .girafe-container {
-          height: 350px;
-        }
-      }
-      
-      /* MOBILE OPTIMIZATION #5: Extra-small screens (phones) */
-      @media (max-width: 480px) {
-        .hfv-container {
-          padding: 5px;
-        }
-        
-        .hfv-header img {
-          height: 25px;
-        }
-        
-        .title-text {
-          font-size: 14px;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px;
-        }
-        
-        .girafe-container {
-          height: 300px;
-        }
-        
-        .nav-tabs .nav-link {
-          font-size: 13px;
-          padding: 6px 10px;
-        }
-      }
-    "
-    ))
-  ),
-
-  # Main container with responsive padding
+  # Main container using HFV classes
   div(
     class = "hfv-container",
-
-    # Header with logo and title
+    
+    # Header using HFV styling
     div(
       class = "hfv-header",
-      img(
-        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
-        alt = "HousingForward VA Logo"
-      ),
-      h4("Building Permit Trends", class = "title-text")
+      h4("Building Permit Trends", class = "hfv-title")
     ),
 
-    # MOBILE OPTIMIZATION #6: Responsive grid layout with different column widths for different screen sizes
+    # Layout using bslib layout_columns
     layout_columns(
-      fillable = TRUE,
       col_widths = c(
-        # For larger screens (lg and up): sidebar takes 25% width, main content takes 75%
         lg = c(3, 9),
-        # For medium screens (md): sidebar takes 33% width, main content takes 67%
-        md = c(4, 8),
-        # For small screens (sm and xs): full width stacked layout
-        sm = c(12, 12)
+        md = c(4, 8), 
+        sm = 12
       ),
+      gap = "16px",
 
-      # Sidebar Panel
+      # Sidebar Panel with HFV styling
       div(
         class = "hfv-sidebar",
+        
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
 
         # Metric select
         div(
-          style = "margin-bottom: 15px;",
+          style = "margin-bottom: 16px;",
           selectInput(
             "metric",
             "Select Metric:",
@@ -323,7 +180,7 @@ ui <- page_fillable(
 
         # Building type filter
         div(
-          style = "margin-bottom: 15px;",
+          style = "margin-bottom: 16px;",
           checkboxGroupInput(
             "types",
             "Building Types:",
@@ -339,7 +196,7 @@ ui <- page_fillable(
 
         # Geography selectors
         div(
-          style = "margin-bottom: 15px;",
+          style = "margin-bottom: 16px;",
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput(
@@ -347,7 +204,7 @@ ui <- page_fillable(
               "Metro Area:",
               choices = NULL,
               width = "100%",
-              selectize = TRUE
+              selectize = FALSE
             )
           ),
           conditionalPanel(
@@ -357,45 +214,58 @@ ui <- page_fillable(
               "Locality:",
               choices = NULL,
               width = "100%",
-              selectize = TRUE
+              selectize = FALSE
             )
           )
         ),
 
-        # Horizontal line
-        hr(style = "margin: 15px 0;"),
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
 
-        # Source information
+        # Data source
         div(
-          style = "font-size: 10px; color: #666; margin-top: 8px;",
-          p("Source: U.S. Census Bureau Building Permits Survey.")
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+          p(
+            strong("Data Source:"), br(),
+            "U.S. Census Bureau Building Permits Survey",
+            style = "margin-bottom: 0;"
+          )
         )
       ),
 
-      # Main Panel (tabs)
+      # Main Panel with tabs
       div(
-        style = "width: 100%;",
-
         navset_tab(
           id = "tabs",
+          
           nav_panel(
             title = "State",
             value = "state",
-            padding = 5,
-            # MOBILE OPTIMIZATION #7: Direct plot output without uiOutput wrappers
-            div(class = "girafe-container", girafeOutput("state_plot"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
             title = "Metro Area",
-            value = "cbsa",
-            padding = 5,
-            div(class = "girafe-container", girafeOutput("cbsa_plot"))
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
             title = "Locality",
             value = "local",
-            padding = 5,
-            div(class = "girafe-container", girafeOutput("local_plot"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
+            )
           )
         )
       )
@@ -482,9 +352,9 @@ server <- function(input, output, session) {
   create_plot <- function(data, metric_col, title, subtitle) {
     # Map colors to building types
     color_mapping <- c(
-      "1-unit" = hfv_colors$sky,
-      "2-4 units" = hfv_colors$shadow,
-      "5+ units" = hfv_colors$lilac
+      "1-unit" = "#40C0C0",
+      "2-4 units" = "#011E41",
+      "5+ units" = "#8B85CA"
     )
 
     # Format tooltip text
@@ -546,20 +416,17 @@ server <- function(input, output, session) {
         caption = " ", # Empty caption to leave space for logo
         fill = "Building Type"
       ) +
-      theme_minimal(base_family = "Arial") +
+      theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "bottom",
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1, family = "Arial"),
-        axis.text.y = element_text(family = "Arial"),
-        plot.title = element_text(face = "bold", family = "Arial"),
-        plot.subtitle = element_text(family = "Arial"),
-        plot.caption = element_text(family = "Arial"),
-        legend.title = element_text(family = "Arial"),
-        legend.text = element_text(family = "Arial"),
         plot.title.position = "plot",
+        plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
-        plot.margin = margin(t = 5, r = 5, b = 10, l = 5) # Increased bottom margin for logo
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
 
     # Add logo directly using external URL
@@ -587,7 +454,12 @@ server <- function(input, output, session) {
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_sizing(rescale = TRUE)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
@@ -647,7 +519,7 @@ server <- function(input, output, session) {
     )
   })
 
-  # MOBILE OPTIMIZATION #9: Handle responsive window events
+  # Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })

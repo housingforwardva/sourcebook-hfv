@@ -1,16 +1,68 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)
-library(systemfonts)
-library(here)
-library(grid)
-library(png)
-library(bslib)
-library(cowplot)
-library(scales)
-library(shinyjs)
-library(magick)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 library(arrow)
+
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
 
 # Define HFV color palette
 hfv_colors <- list(
@@ -34,244 +86,56 @@ race_ethnicity_colors <- c(
   "Incomplete/No Data" = "#CCCCCC"
 )
 
-# Create a Bootstrap theme
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333",
-  primary = hfv_colors$sky,
-  secondary = hfv_colors$shadow,
-  success = hfv_colors$grass,
-  info = hfv_colors$lilac,
-  warning = hfv_colors$desert,
-  danger = hfv_colors$berry,
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
 
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
-  useShinyjs(),
+  useShinyjs(), # Initialize shinyjs
 
-  # Mobile optimization viewport
-  tags$head(
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    )
-  ),
-
-  # CSS styles (same as reference app)
-  tags$head(
-    tags$style(HTML(
-      "
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        .hfv-header {
-          margin-bottom: 8px !important;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px !important;
-        }
-        
-        .girafe-container {
-          height: 280px !important;
-          min-height: 280px !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      
-      .hfv-container {
-        max-width: 1200px; 
-        margin: 0 auto; 
-        padding: 45px;
-      }
-      
-      .hfv-header {
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 15px; 
-        border-bottom: 2px solid #40C0C0; 
-        padding-bottom: 8px;
-      }
-      
-      .hfv-header img {
-        height: 30px;
-        margin-right: 10px;
-      }
-      
-      .title-text {
-        margin: 0; 
-        color: #011E41;
-        font-size: 20px;
-      }
-      
-      .hfv-sidebar {
-        background-color: #E8EDF2;
-        padding: 15px;
-        border-radius: 5px;
-      }
-      
-      .girafe-container {
-        width: 100%;
-        height: auto;
-        min-height: 350px;
-        overflow: visible;
-      }
-      
-      .girafe-container svg {
-        width: 100% !important;
-        height: 100% !important;
-      }
-      
-      @media (max-width: 992px) {
-        .hfv-container {
-          padding: 10px;
-        }
-        
-        .title-text {
-          font-size: 18px;
-        }
-        
-        .girafe-container {
-          height: 400px;
-        }
-      }
-      
-      @media (max-width: 768px) {
-        .hfv-container {
-          padding: 8px;
-          border-width: 1px;
-        }
-        
-        .title-text {
-          font-size: 16px;
-        }
-        
-        .hfv-header {
-          margin-bottom: 10px;
-        }
-        
-        .hfv-sidebar {
-          padding: 10px;
-          margin-bottom: 10px;
-        }
-        
-        .control-label {
-          font-size: 12px;
-        }
-        
-        .form-check-label {
-          font-size: 11px;
-        }
-        
-        .form-select {
-          font-size: 12px;
-        }
-        
-        .form-control {
-          font-size: 12px;
-        }
-        
-        .girafe-container {
-          height: 350px;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .hfv-container {
-          padding: 5px;
-        }
-        
-        .hfv-header img {
-          height: 25px;
-        }
-        
-        .title-text {
-          font-size: 14px;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px;
-        }
-        
-        .girafe-container {
-          height: 300px;
-        }
-        
-        .nav-tabs .nav-link {
-          font-size: 13px;
-          padding: 6px 10px;
-        }
-      }
-      
-      /* Filter styling */
-      .hfv-sidebar .control-label {
-        font-size: 11px !important;
-      }
-      
-      .hfv-sidebar .form-control,
-      .hfv-sidebar .form-select {
-        font-size: 11px !important;
-      }
-      
-      /* Add space between tabs and plot */
-      .nav-tabs {
-        margin-bottom: 20px;
-      }
-      "
-    ))
-  ),
-
-  # Main container
+  # Main container using HFV classes
   div(
     class = "hfv-container",
     
-    # Header with logo and title
+    # Header using HFV styling
     div(
       class = "hfv-header",
-      img(
-        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
-        alt = "HousingForward VA Logo"
-      ),
-      h4("Mortgage Denial Rates by Race and Ethnicity", class = "title-text")
+      h4("Mortgage Denial Rates by Race and Ethnicity", class = "hfv-title")
     ),
 
-    # Responsive layout
+    # Layout using bslib layout_columns
     layout_columns(
-      fillable = TRUE,
       col_widths = c(
         lg = c(3, 9),
-        md = c(4, 8),
-        sm = c(12, 12)
+        md = c(4, 8), 
+        sm = 12
       ),
-
-      # Sidebar Panel
+      gap = "16px",
+      
+      # Sidebar Panel with HFV styling
       div(
         class = "hfv-sidebar",
         
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
         # Year selector
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           selectInput("year", "Year:", 
                      choices = c(2018:2024), 
                      selected = 2024, 
@@ -281,7 +145,7 @@ ui <- page_fillable(
         
         # Loan purpose selector
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           selectInput("loan_purpose", "Loan Purpose:", 
                      choices = c("Home purchase", "Home improvement", "Refinancing", "Cash-out refinancing", "Other purpose"),
                      selected = "Home purchase", 
@@ -291,7 +155,7 @@ ui <- page_fillable(
         
         # Occupancy type selector
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           selectInput("occupancy_type", "Occupancy Type:", 
                      choices = c("Principal residence", "Second residence", "Investment property"),
                      selected = "Principal residence", 
@@ -299,9 +163,9 @@ ui <- page_fillable(
                      selectize = FALSE)
         ),
         
-        # Geographic selectors (conditional)
+        # Geography selectors
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
@@ -312,37 +176,53 @@ ui <- page_fillable(
           )
         ),
         
-        # Horizontal line
-        hr(style = "margin: 3px 0;"),
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
         
-        # Source information
+        # Data source
         div(
-          style = "font-size: 10px; color: #666; margin-top: 2px;",
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
-            "Source: Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data.",
+            strong("Data Source:"), br(),
+            "Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data",
             style = "margin-bottom: 0;"
           )
         )
       ),
-      
-      # Main Panel (tabs)
+        
+      # Main Panel with tabs
       div(
         navset_tab(
           id = "tabs",
+          
           nav_panel(
-            title = "State", 
+            title = "State",
             value = "state",
-            div(class = "girafe-container", girafeOutput("state_plot", height = "100%"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
-            title = "Metro Area", 
-            value = "cbsa",
-            div(class = "girafe-container", girafeOutput("cbsa_plot", height = "100%"))
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
-            title = "Locality", 
+            title = "Locality",
             value = "local",
-            div(class = "girafe-container", girafeOutput("local_plot", height = "100%"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
+            )
           )
         )
       )
@@ -500,11 +380,11 @@ server <- function(input, output, session) {
       ) +
       labs(
         title = title_text,
-        caption = " ",
+        caption = " ", # Add empty caption to leave space for logo
         y = "Denial Rate",
         x = "Race/Ethnicity"
       ) +
-      theme_minimal() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
         plot.title.position = "plot",
@@ -513,7 +393,7 @@ server <- function(input, output, session) {
         axis.text = element_text(size = 10),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 20, 30, 5)
+        plot.margin = margin(5, 20, 30, 5) # Extra bottom margin for logo
       )
     
     # Add logo
@@ -531,7 +411,7 @@ server <- function(input, output, session) {
     return(p_with_logo)
   }
   
-  # Convert to interactive girafe
+  # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
       ggobj = plot_obj,
@@ -546,21 +426,25 @@ server <- function(input, output, session) {
         ),
         opts_sizing(rescale = TRUE),
         opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_denial_plot(state_data(), state_title()))
+    suppressWarnings(create_interactive_plot(create_denial_plot(state_data(), state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_denial_plot(cbsa_data(), cbsa_title()))
+    suppressWarnings(create_interactive_plot(create_denial_plot(cbsa_data(), cbsa_title())))
   })
   
   output$local_plot <- renderGirafe({
-    create_interactive_plot(create_denial_plot(locality_data(), locality_title()))
+    suppressWarnings(create_interactive_plot(create_denial_plot(locality_data(), locality_title())))
   })
   
   # Handle responsive window events

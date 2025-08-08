@@ -1,44 +1,87 @@
+library(shiny)
 library(tidyverse)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 library(mapgl)
 library(tigris)
 library(sf)
 library(tidycensus)
-library(shiny)
-library(bslib)
 library(plotly)
-library(here)
-library(systemfonts) # For font_google
-library(grid) # For grobs
-library(png) # For reading PNG files
-library(shinyjs) # For dynamic UI updates
-library(cowplot) # For adding logo to plots
-library(magick) # For image handling
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA",
-  shadow = "#011E41",
-  shadow_light = "#102C54", # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5, # Use Bootstrap 5
-  bg = "#ffffff", # Background color
-  fg = "#333333", # Text color
-  primary = hfv_colors$sky, # Primary color
-  secondary = hfv_colors$shadow, # Secondary color
-  success = hfv_colors$grass, # Success color
-  info = hfv_colors$lilac, # Info color
-  warning = hfv_colors$desert, # Warning color
-  danger = hfv_colors$berry, # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8 # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # UI for the Shiny app
@@ -541,13 +584,15 @@ output$map_id <- renderMaplibre({
           labs(
             title = paste("Homeownership Rate for", data$county_name, "-", data$tract_name)
           ) +
-          theme_minimal() +
+          theme_minimal(base_family = "Open Sans") +
           theme(
             legend.position = "bottom",
             legend.box = "horizontal",
             legend.margin = margin(t = 10, b = 10),
             axis.title = element_blank(),
-            panel.grid.minor = element_blank()
+            panel.grid.minor = element_blank(),
+            plot.title = element_text(size = 14, face = "bold"),
+            plot.title.position = "plot"
           ) +
           scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(20,100))
         

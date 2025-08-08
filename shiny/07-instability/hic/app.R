@@ -1,12 +1,71 @@
+library(shiny)
 library(tidyverse)
+library(ggiraph)     # For interactive ggplots
+library(here)        # For here() function in file paths
+library(grid)        # For grobs
+library(png)         # For reading PNG files
+library(bslib)       # For modern UI components
+library(cowplot)     # For adding logo to plots
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 library(mapgl)
 library(rmapshaper)
 library(sf)
-library(shiny)
-library(bslib)
 library(plotly)
-library(systemfonts)
-library(shinyjs)
+
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
 
 # Load and prepare data
 va_hic <- read_rds("hic_va_data.rds") 
@@ -27,274 +86,96 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
-# Create a Bootstrap theme
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333",
-  primary = hfv_colors$sky,
-  secondary = hfv_colors$shadow,
-  success = hfv_colors$grass,
-  info = hfv_colors$lilac,
-  warning = hfv_colors$desert,
-  danger = hfv_colors$berry,
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
 
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
-  useShinyjs(),
+  useShinyjs(), # Initialize shinyjs
 
-  tags$head(
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    )
-  ),
-
-  tags$head(
-    tags$style(HTML(
-      "
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-        overflow: hidden;
-        font-family: 'Open Sans', sans-serif;
-      }
-      
-      .hfv-container {
-        width: 100%;
-        height: 100vh;
-        max-width: 800px;
-        max-height: 500px;
-        margin: 0 auto;
-        padding: 10px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      
-      .hfv-header {
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 8px; 
-        border-bottom: 2px solid #40C0C0; 
-        padding-bottom: 5px;
-        flex-shrink: 0;
-      }
-      
-      .hfv-header img {
-        height: 20px;
-        margin-right: 8px;
-      }
-      
-      .title-text {
-        margin: 0; 
-        color: #011E41;
-        font-size: 14px;
-        font-weight: bold;
-      }
-      
-      .main-content {
-        display: flex;
-        flex: 1;
-        min-height: 0;
-        gap: 10px;
-      }
-      
-      .hfv-sidebar {
-        background-color: #E8EDF2;
-        padding: 8px;
-        border-radius: 5px;
-        width: 200px;
-        flex-shrink: 0;
-        font-size: 11px;
-        overflow-y: auto;
-      }
-      
-      .hfv-sidebar h5 {
-        margin-bottom: 5px;
-        font-size: 12px;
-        font-weight: bold;
-      }
-      
-      .hfv-sidebar p {
-        margin-bottom: 5px;
-        line-height: 1.3;
-      }
-      
-      .hfv-sidebar hr {
-        margin: 8px 0;
-      }
-      
-      .content-area {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        gap: 8px;
-      }
-      
-      .map-section {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .plot-section {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .section-title {
-        margin: 0 0 5px 0;
-        font-size: 12px;
-        font-weight: bold;
-        flex-shrink: 0;
-      }
-      
-      .map-container {
-        flex: 1;
-        min-height: 0;
-        cursor: default !important;
-        border-radius: 3px;
-        overflow: hidden;
-      }
-      
-      .map-container * {
-        cursor: default !important;
-      }
-      
-      .plot-container {
-        flex: 1;
-        min-height: 0;
-        border-radius: 3px;
-        overflow: hidden;
-      }
-      
-      /* Mobile responsive - stack vertically on small screens */
-      @media (max-width: 768px) {
-        .hfv-container {
-          max-width: 100vw;
-          max-height: 100vh;
-          padding: 5px;
-        }
-        
-        .main-content {
-          flex-direction: column;
-          gap: 5px;
-        }
-        
-        .hfv-sidebar {
-          width: 100%;
-          padding: 5px;
-          order: 3;
-        }
-        
-        .content-area {
-          gap: 5px;
-        }
-        
-        .title-text {
-          font-size: 12px;
-        }
-        
-        .hfv-header img {
-          height: 16px;
-        }
-      }
-      
-      /* Very small screens */
-      @media (max-width: 480px) {
-        .hfv-container {
-          padding: 3px;
-        }
-        
-        .main-content {
-          gap: 3px;
-        }
-        
-        .content-area {
-          gap: 3px;
-        }
-        
-        .hfv-sidebar {
-          padding: 3px;
-        }
-        
-        .title-text {
-          font-size: 10px;
-        }
-        
-        .section-title {
-          font-size: 10px;
-        }
-      }
-    "
-    ))
-  ),
-
+  # Main container using HFV classes
   div(
     class = "hfv-container",
-
+    style = "width: 100%; height: 100vh; max-width: 800px; max-height: 500px; margin: 0 auto; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;",
+    
+    # Header using HFV styling
     div(
       class = "hfv-header",
-      img(
-        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
-        alt = "HousingForward VA Logo"
-      ),
-      h4("Virginia Homeless Assistance Programs Housing Inventory Counts", class = "title-text")
+      style = "display: flex; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #40C0C0; padding-bottom: 5px; flex-shrink: 0;",
+      h4("Virginia Homeless Assistance Programs Housing Inventory Counts", class = "hfv-title", style = "margin: 0; color: #011E41; font-size: 14px; font-weight: bold;")
     ),
 
+    # Layout using custom flex structure for this map-based app
     div(
-      class = "main-content",
+      style = "display: flex; flex: 1; min-height: 0; gap: 10px;",
       
-      # Sidebar Panel
+      # Sidebar Panel with HFV styling
       div(
         class = "hfv-sidebar",
-        h5("Selected CoC"),
+        style = "background-color: #E8EDF2; padding: 8px; border-radius: 5px; width: 200px; flex-shrink: 0; font-size: 11px; overflow-y: auto;",
+        
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 8px; font-size: 12px; font-weight: bold;"),
+        
+        h5("Selected CoC", style = "margin-bottom: 5px; font-size: 12px; font-weight: bold;"),
         textOutput("selected_coc"),
-        tags$hr(),
+        hr(style = "margin: 8px 0;"),
         actionButton("reset_btn", "Reset Selection", 
                     style = "width: 100%; font-size: 10px; padding: 3px;",
                     class = "btn-outline-primary btn-sm"),
-        tags$hr(),
-        h5("About"),
-        p("Click on any Continuum of Care region to see homelessness assistance programs housing inventory counts by category."),
+        hr(style = "margin: 8px 0;"),
+        
+        h5("About", style = "margin-bottom: 5px; font-size: 12px; font-weight: bold;"),
+        p("Click on any Continuum of Care region to see homelessness assistance programs housing inventory counts by category.", 
+          style = "margin-bottom: 5px; line-height: 1.3;"),
+        
+        # Data source
         div(
           style = "font-size: 9px; color: #666; margin-top: 5px;",
-          p("Data source: HUD Point-in-Time Count")
+          p(
+            strong("Data Source:"), br(),
+            "HUD Point-in-Time Count",
+            style = "margin-bottom: 0;"
+          )
         )
       ),
-
+        
       # Main content area with map and plot
       div(
-        class = "content-area",
+        style = "flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 8px;",
         
         # Map Section
         div(
-          class = "map-section",
-          h5("Continuum of Care Regions", class = "section-title"),
+          style = "flex: 1; min-height: 0; display: flex; flex-direction: column;",
+          h5("Continuum of Care Regions", style = "margin: 0 0 5px 0; font-size: 12px; font-weight: bold; flex-shrink: 0;"),
           div(
-            class = "map-container",
+            class = "hfv-chart-container",
+            style = "flex: 1; min-height: 0; cursor: default !important; border-radius: 3px; overflow: hidden;",
             maplibreOutput("map_id", height = "100%")
           )
         ),
         
         # Plot Section
         div(
-          class = "plot-section",
-          h5("Housing Inventory Count by Category", class = "section-title"),
+          style = "flex: 1; min-height: 0; display: flex; flex-direction: column;",
+          h5("Housing Inventory Count by Category", style = "margin: 0 0 5px 0; font-size: 12px; font-weight: bold; flex-shrink: 0;"),
           div(
-            class = "plot-container",
+            class = "hfv-chart-container",
+            style = "flex: 1; min-height: 0; border-radius: 3px; overflow: hidden;",
             plotlyOutput("bar_chart", height = "100%")
           )
         )
@@ -421,7 +302,7 @@ server <- function(input, output, session) {
           y = "Count",
           fill = "Category"
         ) +
-        theme_minimal() +
+        theme_minimal(base_family = "Open Sans") +
         theme(
           legend.position = "none",
           panel.grid.minor = element_blank(),
@@ -443,6 +324,11 @@ server <- function(input, output, session) {
           font = list(size = 8)
         )
     }
+  })
+
+  # Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 

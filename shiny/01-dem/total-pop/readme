@@ -1,0 +1,24 @@
+# SOURCEBOOK SHINY APP STRUCTURE 
+
+
+shiny/
+  run-update.R                            # Script that runs an update 
+
+  └──app-folder/
+          ├── app.R                       # Primary application file; must be named app.R to work on Posit Connect Cloud
+          ├── manifest.json               # Required for Posit Connect Cloud Deployment
+          ├── write_data.R                # Script to pull down data from S3 bucket and write to app folder
+          ├── write_manifest.R            # Writes the manifest.json with required dependencies
+          ├── data.rds or other           # Required data to run the application
+          └── www/
+                ├── hfv_logo.png
+                └── styles/
+                      ├── variables.scss      # Color palette & design tokens
+                      ├── components.scss     # Reusable component styles  
+                      ├── responsive.scss     # Mobile & responsive rules
+                      └── hfv-theme.scss      # Main file that imports all others
+        
+        
+
+        
+        

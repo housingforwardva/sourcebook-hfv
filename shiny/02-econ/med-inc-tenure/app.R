@@ -1,215 +1,202 @@
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
-library(systemfonts) # For font_google
 library(here)        # For here() function in file paths
 library(grid)        # For grobs
 library(png)         # For reading PNG files
 library(bslib)       # For modern UI components
 library(cowplot)     # For adding logo to plots
-library(scales)      # For dollar_format
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5,                        # Use Bootstrap 5
-  bg = "#ffffff",                     # Background color
-  fg = "#333333",                     # Text color
-  primary = hfv_colors$sky,           # Primary color
-  secondary = hfv_colors$shadow,      # Secondary color
-  success = hfv_colors$grass,         # Success color
-  info = hfv_colors$lilac,            # Info color
-  warning = hfv_colors$desert,        # Warning color
-  danger = hfv_colors$berry,          # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8                    # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
-# Load data outside of server
-state_data <- read_rds(here("data", "rds", "b25119_state.rds")) %>% 
-  mutate(year = as.character(year))
-
-cbsa_data <- read_rds(here("data", "rds", "b25119_cbsa.rds")) %>% 
-  mutate(year = as.character(year))
-
-local_data <- read_rds(here("data", "rds", "b25119_local.rds")) %>% 
-  mutate(year = as.character(year))
-
-# Create lists for filters
-state_list <- sort(unique(state_data$state))
-cbsa_list <- sort(unique(cbsa_data$cbsa))
-locality_list <- sort(unique(local_data$locality))
-tenure_list <- c("All households", "Homeowner", "Renter")
 
 # Define UI
-ui <- page_fluid(
+ui <- page_fillable(
   theme = hfv_theme,
-  
-  # Add CSS with iframe optimization
-  tags$head(
-    tags$style(HTML(
-      "
-      /* Base styles */
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      /* Iframe optimization for 800x500 dimensions */
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      "
-    ))
-  ),
-  
-  # Fixed dimensions container
-  tags$div(
+  useShinyjs(), # Initialize shinyjs
+
+  # Main container using HFV classes
+  div(
     class = "hfv-container",
-    style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; padding: 10px;",
     
-    # Header with logo and title
+    # Header using HFV styling
     div(
-      style = "display: flex; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #40C0C0; padding-bottom: 5px;",
-      img(src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png", 
-          height = "30px", style = "margin-right: 10px;"),
-      h4("Median Household Income by Tenure", style = "margin: 0; color: #011E41;")
+      class = "hfv-header",
+      h4("Median Household Income by Tenure", class = "hfv-title")
     ),
-    
-    # Main content area with reduced margins
-    div(
-      style = "height: 435px; overflow: hidden;",
+
+    # Layout using bslib layout_columns
+    layout_columns(
+      col_widths = c(
+        lg = c(3, 9),
+        md = c(4, 8), 
+        sm = 12
+      ),
+      gap = "16px",
       
-      # Use layout_columns for a compact layout
-      layout_columns(
-        col_widths = c(3, 9),
-        gap = "10px",
+      # Sidebar Panel with HFV styling
+      div(
+        class = "hfv-sidebar",
         
-        # Sidebar Panel (more compact) - now with the lighter background color
-        card(
-          height = "435px",
-          padding = "8px",  # Reduced padding for compactness
-          margin = 0,
-          full_screen = FALSE,
-          style = "background-color: #E8EDF2;",  # Light shade derived from shadow color
-          
-          # Tenure select with minimal padding
-          div(
-            style = "margin-bottom: 0;",
-            selectInput("tenure", "Select Tenure:", 
-                        choices = tenure_list, 
-                        selected = "All households", 
-                        width = "100%",
-                        selectize = FALSE)
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
+        # Tenure selector
+        div(
+          style = "margin-bottom: 16px;",
+          selectInput("tenure", "Select Tenure:", choices = NULL, width = "100%", selectize = FALSE)
+        ),
+        
+        # Dollar type toggle
+        div(
+          style = "margin-bottom: 16px;",
+          radioButtons("dollar_type", "Dollar Type:",
+                       choices = list("Current Dollars" = "estimate", 
+                                      "Inflation-Adjusted" = "adjusted"),
+                       selected = "adjusted",
+                       inline = FALSE)
+        ),
+        
+        # Geography selectors
+        div(
+          style = "margin-bottom: 16px;",
+          conditionalPanel(
+            condition = "input.tabs == 'state'",
+            selectInput("state_select", "Select State:", choices = NULL, width = "100%", selectize = FALSE)
           ),
-          
-          # Dollar type toggle
-          div(
-            style = "margin-bottom: 0;",
-            radioButtons("dollar_type", "Dollar Type:",
-                         choices = list("Current Dollars" = "estimate", 
-                                        "Inflation-Adjusted" = "adjusted"),
-                         selected = "adjusted",
-                         inline = FALSE)
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa'",
+            selectInput("cbsa_select", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
           ),
-          
-          # Geography selectors with minimal height
-          div(
-            style = "margin-bottom: 0;",
-            conditionalPanel(
-              condition = "input.tabs == 'state'",
-              selectInput("state_select", "Select State:", 
-                          choices = state_list,
-                          selected = "Virginia",
-                          width = "100%", 
-                          selectize = FALSE)
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'cbsa'",
-              selectInput("cbsa_select", "Metro Area:", 
-                          choices = cbsa_list,
-                          selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'local'",
-              selectInput("locality_select", "Locality:", 
-                          choices = locality_list,
-                          selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            )
-          ),
-          
-          # Horizontal line
-          hr(style = "margin: 3px 0;"),
-          
-          # Source information
-          div(
-            style = "font-size: 10px; color: #666; margin-top: 2px;",
-            p(
-              "Source: U.S. Census Bureau, ACS 5-year estimates, Table B25119.",
-              style = "margin-bottom: 0;"
-            ),
-            conditionalPanel(
-              condition = "input.dollar_type == 'adjusted'",
-              p(
-                "Note: Income has been adjusted to 2023 dollars using the Consumer Price Index.",
-                style = "margin-bottom: 0; margin-top: 3px;"
-              )
-            )
+          conditionalPanel(
+            condition = "input.tabs == 'local'",
+            selectInput("locality_select", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
           )
         ),
         
-        # Main Panel (tabs)
-        card(
-          height = "435px",
-          padding = 0,
-          margin = 0,
-          full_screen = FALSE,
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
+        
+        # Data source
+        div(
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+          p(
+            strong("Data Source:"), br(),
+            "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25119",
+            style = "margin-bottom: 0;"
+          ),
+          conditionalPanel(
+            condition = "input.dollar_type == 'adjusted'",
+            p(
+              strong("Note:"), "Income adjusted to 2023 dollars using CPI",
+              style = "margin-bottom: 0; margin-top: 8px;"
+            )
+          )
+        )
+      ),
+        
+      # Main Panel with tabs
+      div(
+        navset_tab(
+          id = "tabs",
           
-          navset_tab(
-            id = "tabs",
-            nav_panel(
-              title = "State", 
-              value = "state",
-              padding = 5,
-              girafeOutput("state_plot", height = "390px")
-            ),
-            nav_panel(
-              title = "Metro Area", 
-              value = "cbsa",
-              padding = 5,
-              girafeOutput("cbsa_plot", height = "390px")
-            ),
-            nav_panel(
-              title = "Locality", 
-              value = "local",
-              padding = 5,
-              girafeOutput("local_plot", height = "390px")
+          nav_panel(
+            title = "State",
+            value = "state",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Locality",
+            value = "local",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
             )
           )
         )
@@ -220,12 +207,65 @@ ui <- page_fluid(
 
 # Server function
 server <- function(input, output, session) {
+  # Load the data
+  state_data <- reactive({
+    read_rds(here("data", "rds", "b25119_state.rds")) %>% 
+      mutate(year = as.character(year))
+  })
+  
+  cbsa_data <- reactive({
+    read_rds(here("data", "rds", "b25119_cbsa.rds")) %>% 
+      mutate(year = as.character(year))
+  })
+  
+  local_data <- reactive({
+    read_rds(here("data", "rds", "b25119_local.rds")) %>% 
+      mutate(year = as.character(year))
+  })
+  
+  # Get available options
+  state_list <- reactive({
+    sort(unique(state_data()$state))
+  })
+  
+  cbsa_list <- reactive({
+    sort(unique(cbsa_data()$cbsa))
+  })
+  
+  locality_list <- reactive({
+    sort(unique(local_data()$locality))
+  })
+  
+  tenure_list <- c("All households", "Homeowner", "Renter")
+  
+  # Initialize dropdowns
+  observe({
+    # Tenure
+    updateSelectInput(session, "tenure", 
+                      choices = tenure_list,
+                      selected = "All households")
+    
+    # States
+    updateSelectInput(session, "state_select", 
+                      choices = state_list(),
+                      selected = if("Virginia" %in% state_list()) "Virginia" else state_list()[1])
+    
+    # CBSAs
+    updateSelectInput(session, "cbsa_select", 
+                      choices = cbsa_list(),
+                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+    
+    # Localities
+    updateSelectInput(session, "locality_select", 
+                      choices = locality_list(),
+                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+  })
   
   # Create filtered datasets
   filtered_state <- reactive({
     req(input$state_select, input$tenure)
     
-    state_data %>%
+    state_data() %>%
       filter(state == input$state_select,
              tenure == input$tenure)
   })
@@ -233,7 +273,7 @@ server <- function(input, output, session) {
   filtered_cbsa <- reactive({
     req(input$cbsa_select, input$tenure)
     
-    cbsa_data %>%
+    cbsa_data() %>%
       filter(cbsa == input$cbsa_select,
              tenure == input$tenure)
   })
@@ -241,7 +281,7 @@ server <- function(input, output, session) {
   filtered_locality <- reactive({
     req(input$locality_select, input$tenure)
     
-    local_data %>%
+    local_data() %>%
       filter(locality == input$locality_select,
              tenure == input$tenure)
   })
@@ -293,9 +333,9 @@ server <- function(input, output, session) {
         size = 3
       ) +
       scale_color_manual(values = c(
-        "All households" = hfv_colors$shadow,
-        "Homeowner" = hfv_colors$sky,
-        "Renter" = hfv_colors$berry
+        "All households" = "#011E41",
+        "Homeowner" = "#40C0C0",
+        "Renter" = "#B1005F"
       )) +
       scale_y_continuous(labels = dollar_format()) +
       labs(
@@ -305,24 +345,33 @@ server <- function(input, output, session) {
         y = y_label,
         x = NULL
       ) +
-      theme_bw() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "right",
         legend.title = element_blank(),
+        legend.text = element_text(size = 10),
         plot.title.position = "plot",
+        plot.title = element_text(size = 14, face = "bold"),
+        axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
-    # Add logo to the plot
-    logo_path <- "www/hfv_logo.png"
-    p_with_logo <- cowplot::ggdraw(p) +
-      cowplot::draw_image(logo_path, 
-                          x = 0.8, y = -0.05, 
-                          width = 0.15, height = 0.15)
+    # Add logo directly using external URL
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    # Add logo to the plot using the URL
+    p_with_logo <- ggdraw(p) +
+      draw_image(
+        logo_url, # Use URL directly
+        x = 0.85, # Horizontal position (right side)
+        y = 0.05, # Vertical position (bottom)
+        width = 0.15,
+        height = 0.15
+      )
     
     return(p_with_logo)
   }
@@ -336,27 +385,36 @@ server <- function(input, output, session) {
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
-          opacity = 0.9, 
+          opacity = 0.9,
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_toolbar(hidden = c("lasso_deselect", "lasso_select")),
-        opts_sizing(rescale = TRUE, width = 1)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_line_plot(filtered_state(), state_title()))
+    suppressWarnings(create_interactive_plot(create_line_plot(filtered_state(), state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_line_plot(filtered_cbsa(), cbsa_title()))
+    suppressWarnings(create_interactive_plot(create_line_plot(filtered_cbsa(), cbsa_title())))
   })
   
   output$local_plot <- renderGirafe({
-    create_interactive_plot(create_line_plot(filtered_locality(), locality_title()))
+    suppressWarnings(create_interactive_plot(create_line_plot(filtered_locality(), locality_title())))
+  })
+
+  # Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 

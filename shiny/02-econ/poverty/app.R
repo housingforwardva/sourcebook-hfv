@@ -1,39 +1,82 @@
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
-library(systemfonts) # For font_google
 library(here)        # For here() function in file paths
 library(grid)        # For grobs
 library(png)         # For reading PNG files
 library(bslib)       # For modern UI components
 library(cowplot)     # For adding logo to plots
-library(scales)      # For percent_format
+library(scales)      # For number_format
+library(shinyjs)     # For dynamic UI updates
+library(magick)      # For image handling
+library(sass)        # For SCSS compilation
+library(gdtools)
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
+# =============================================================================
+# HFV STYLING SYSTEM INTEGRATION
+# =============================================================================
 
-# Create a Bootstrap theme
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
-  version = 5,                        # Use Bootstrap 5
-  bg = "#ffffff",                     # Background color
-  fg = "#333333",                     # Text color
-  primary = hfv_colors$sky,           # Primary color
-  secondary = hfv_colors$shadow,      # Secondary color
-  success = hfv_colors$grass,         # Success color
-  info = hfv_colors$lilac,            # Info color
-  warning = hfv_colors$desert,        # Warning color
-  danger = hfv_colors$berry,          # Danger color
-  base_font = font_google("Open Sans"),
-  heading_font = font_google("Poppins"),
-  font_scale = 0.8                    # Compact the text more for small window
+  version = 5,
+  bg = "#ffffff",
+  fg = "#333333", 
+  primary = "#40C0C0",
+  secondary = "#011E41",
+  success = "#259591",
+  info = "#8B85CA",
+  warning = "#E0592A",
+  danger = "#B1005F",
+  base_font = "Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif",
+  heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
+  font_scale = 0.8
 )
 
 # Load data outside of server
@@ -47,181 +90,156 @@ cbsa_list_age <- sort(unique(poverty_age$cbsa_title))
 locality_list_age <- sort(unique(poverty_age$locality))
 
 # Define UI
-ui <- page_fluid(
+ui <- page_fillable(
   theme = hfv_theme,
-  
-  # Add CSS with iframe optimization
-  tags$head(
-    tags$style(HTML(
-      "
-      /* Base styles */
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      /* Iframe optimization for 800x500 dimensions */
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      "
-    ))
-  ),
-  
-  # Fixed dimensions container
-  tags$div(
+  useShinyjs(), # Initialize shinyjs
+
+  # Main container using HFV classes
+  div(
     class = "hfv-container",
-    style = "width: 800px; height: 500px; margin: 0 auto; overflow: hidden; padding: 10px;",
     
-    # Header with logo and title
+    # Header using HFV styling
     div(
-      style = "display: flex; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #40C0C0; padding-bottom: 5px;",
-      img(src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png", 
-          height = "30px", style = "margin-right: 10px;"),
-      h4("Poverty Rate Analysis", style = "margin: 0; color: #011E41;")
+      class = "hfv-header",
+      h4("Poverty Rate Analysis", class = "hfv-title")
     ),
     
-    # Main content area with reduced margins
-    div(
-      style = "height: 435px; overflow: hidden;",
+    # Layout using bslib layout_columns
+    layout_columns(
+      col_widths = c(
+        lg = c(3, 9),
+        md = c(4, 8), 
+        sm = 12
+      ),
+      gap = "16px",
       
-      # Use layout_columns for a compact layout
-      layout_columns(
-        col_widths = c(3, 9),
-        gap = "10px",
+      # Sidebar Panel with HFV styling
+      div(
+        class = "hfv-sidebar",
         
-        # Sidebar Panel (more compact) - now with the lighter background color
-        card(
-          height = "435px",
-          padding = "8px",  # Reduced padding for compactness
-          margin = 0,
-          full_screen = FALSE,
-          style = "background-color: #E8EDF2;",  # Light shade derived from shadow color
-          
-          # Analysis type selector
-          div(
-            style = "margin-bottom: 0;",
-            radioButtons("analysis_type", "Analysis Type:",
-                         choices = list("By Race/Ethnicity" = "race", 
-                                        "By Age Group" = "age"),
-                         selected = "race",
-                         inline = FALSE)
+        h5("Dashboard Controls", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
+        # Analysis type selector
+        div(
+          style = "margin-bottom: 16px;",
+          radioButtons("analysis_type", "Analysis Type:",
+                       choices = list("By Race/Ethnicity" = "race", 
+                                      "By Age Group" = "age"),
+                       selected = "race",
+                       inline = FALSE)
+        ),
+        
+        # Geography selectors
+        div(
+          style = "margin-bottom: 16px;",
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa' && input.analysis_type == 'race'",
+            selectInput("race_cbsa_select", "Metro Area:", 
+                        choices = cbsa_list_race,
+                        selected = if("Richmond, VA" %in% cbsa_list_race) "Richmond, VA" else cbsa_list_race[1],
+                        width = "100%", 
+                        selectize = FALSE)
           ),
-          
-          # Geography selectors with minimal height
-          div(
-            style = "margin-bottom: 0;",
-            conditionalPanel(
-              condition = "input.tabs == 'cbsa' && input.analysis_type == 'race'",
-              selectInput("race_cbsa_select", "Metro Area:", 
-                          choices = cbsa_list_race,
-                          selected = if("Richmond, VA" %in% cbsa_list_race) "Richmond, VA" else cbsa_list_race[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'local' && input.analysis_type == 'race'",
-              selectInput("race_locality_select", "Locality:", 
-                          choices = locality_list_race,
-                          selected = if("Richmond city" %in% locality_list_race) "Richmond city" else locality_list_race[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'cbsa' && input.analysis_type == 'age'",
-              selectInput("age_cbsa_select", "Metro Area:", 
-                          choices = cbsa_list_age,
-                          selected = if("Richmond, VA" %in% cbsa_list_age) "Richmond, VA" else cbsa_list_age[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            ),
-            conditionalPanel(
-              condition = "input.tabs == 'local' && input.analysis_type == 'age'",
-              selectInput("age_locality_select", "Locality:", 
-                          choices = locality_list_age,
-                          selected = if("Richmond city" %in% locality_list_age) "Richmond city" else locality_list_age[1],
-                          width = "100%", 
-                          selectize = FALSE)
-            )
+          conditionalPanel(
+            condition = "input.tabs == 'local' && input.analysis_type == 'race'",
+            selectInput("race_locality_select", "Locality:", 
+                        choices = locality_list_race,
+                        selected = if("Richmond city" %in% locality_list_race) "Richmond city" else locality_list_race[1],
+                        width = "100%", 
+                        selectize = FALSE)
           ),
-          
-          # Horizontal line
-          hr(style = "margin: 3px 0;"),
-          
-          # Tooltip info
-          div(
-            style = "margin-top: 5px; margin-bottom: 5px; font-size: 10px;",
-            p("Hover over points to see details", style = "margin-bottom: 5px;"),
-            verbatimTextOutput("hover_info", placeholder = TRUE)
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa' && input.analysis_type == 'age'",
+            selectInput("age_cbsa_select", "Metro Area:", 
+                        choices = cbsa_list_age,
+                        selected = if("Richmond, VA" %in% cbsa_list_age) "Richmond, VA" else cbsa_list_age[1],
+                        width = "100%", 
+                        selectize = FALSE)
           ),
-          
-          # Source information
-          div(
-            style = "font-size: 10px; color: #666; margin-top: 2px;",
-            p(
-              "Source: U.S. Census Bureau, American Community Survey 5-Year Estimates.",
-              style = "margin-bottom: 0;"
-            )
+          conditionalPanel(
+            condition = "input.tabs == 'local' && input.analysis_type == 'age'",
+            selectInput("age_locality_select", "Locality:", 
+                        choices = locality_list_age,
+                        selected = if("Richmond city" %in% locality_list_age) "Richmond city" else locality_list_age[1],
+                        width = "100%", 
+                        selectize = FALSE)
           )
         ),
         
-        # Main Panel (tabs)
-        card(
-          height = "435px",
-          padding = 0,
-          margin = 0,
-          full_screen = FALSE,
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
+        
+        # Tooltip info
+        div(
+          style = "margin-bottom: 16px; font-size: 0.75rem;",
+          p("Hover over points to see details", style = "margin-bottom: 8px;"),
+          verbatimTextOutput("hover_info", placeholder = TRUE)
+        ),
+        
+        # Data source
+        div(
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+          p(
+            strong("Data Source:"), br(),
+            "U.S. Census Bureau, American Community Survey 5-Year Estimates",
+            style = "margin-bottom: 0;"
+          )
+        )
+      ),
+        
+      # Main Panel with tabs
+      div(
+        navset_tab(
+          id = "tabs",
           
-          navset_tab(
-            id = "tabs",
-            nav_panel(
-              title = "State", 
-              value = "state",
-              padding = 5,
+          nav_panel(
+            title = "State",
+            value = "state",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
               conditionalPanel(
                 condition = "input.analysis_type == 'race'",
-                girafeOutput("race_state_plot", height = "390px")
+                girafeOutput("race_state_plot", height = "100%")
               ),
               conditionalPanel(
                 condition = "input.analysis_type == 'age'",
-                girafeOutput("age_state_plot", height = "390px")
+                girafeOutput("age_state_plot", height = "100%")
               )
-            ),
-            nav_panel(
-              title = "Metro Area", 
-              value = "cbsa",
-              padding = 5,
+            )
+          ),
+          
+          nav_panel(
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
               conditionalPanel(
                 condition = "input.analysis_type == 'race'",
-                girafeOutput("race_cbsa_plot", height = "390px")
+                girafeOutput("race_cbsa_plot", height = "100%")
               ),
               conditionalPanel(
                 condition = "input.analysis_type == 'age'",
-                girafeOutput("age_cbsa_plot", height = "390px")
+                girafeOutput("age_cbsa_plot", height = "100%")
               )
-            ),
-            nav_panel(
-              title = "Locality", 
-              value = "local",
-              padding = 5,
+            )
+          ),
+          
+          nav_panel(
+            title = "Locality",
+            value = "local",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
               conditionalPanel(
                 condition = "input.analysis_type == 'race'",
-                girafeOutput("race_locality_plot", height = "390px")
+                girafeOutput("race_locality_plot", height = "100%")
               ),
               conditionalPanel(
                 condition = "input.analysis_type == 'age'",
-                girafeOutput("age_locality_plot", height = "390px")
+                girafeOutput("age_locality_plot", height = "100%")
               )
             )
           )
@@ -236,12 +254,12 @@ server <- function(input, output, session) {
   
   # Define race colors
   race_colors <- c(
-    "White alone, not Hispanic" = hfv_colors$sky,
-    "Black alone" = hfv_colors$shadow,
-    "Asian alone" = hfv_colors$grass,
-    "Hispanic (any race)" = hfv_colors$desert,
-    "Two or more races" = hfv_colors$berry,
-    "American Indian alone" = hfv_colors$lilac,
+    "White alone, not Hispanic" = "#40C0C0",
+    "Black alone" = "#011E41",
+    "Asian alone" = "#259591",
+    "Hispanic (any race)" = "#E0592A",
+    "Two or more races" = "#B1005F",
+    "American Indian alone" = "#8B85CA",
     "Pacific Islander alone" = "#FFC658",  # Additional color
     "Some other race alone" = "#FF7276"    # Additional color
   )
@@ -249,12 +267,12 @@ server <- function(input, output, session) {
   # Define age colors
   age_colors <- c(
     "17 years and under" = "#FFC658",    # Desert variant
-    "18 to 24 years" = hfv_colors$desert, # Desert
-    "25 to 34 years" = hfv_colors$grass,  # Grass
-    "35 to 44 years" = hfv_colors$sky,    # Sky
-    "45 to 54 years" = hfv_colors$lilac,  # Lilac
-    "55 to 64 years" = hfv_colors$berry,  # Berry
-    "65 years and over" = hfv_colors$shadow # Shadow
+    "18 to 24 years" = "#E0592A", # Desert
+    "25 to 34 years" = "#259591",  # Grass
+    "35 to 44 years" = "#40C0C0",    # Sky
+    "45 to 54 years" = "#8B85CA",  # Lilac
+    "55 to 64 years" = "#B1005F",  # Berry
+    "65 years and over" = "#011E41" # Shadow
   )
   
   #----- RACE DATA PROCESSING -----#
@@ -413,25 +431,33 @@ server <- function(input, output, session) {
         y = "Poverty Rate",
         x = "Year"
       ) +
-      theme_bw() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
-        strip.text = element_text(size = 10, face = "bold"),
         legend.position = "none",
-        panel.spacing = unit(1, "lines"),
-        panel.grid.minor = element_blank(),
+        plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        plot.margin = margin(5, 15, 15, 5), # Extra right margin for labels and bottom for logo
         axis.title = element_text(size = 10),
         axis.text = element_text(size = 8),
-        axis.text.x = element_text(angle = 45, hjust = 1)
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 10, face = "bold"),
+        panel.spacing = unit(1, "lines"),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+        plot.margin = margin(5, 15, 30, 5) # Extra right margin for labels and bottom margin for logo
       )
     
-    # Add logo to the plot
-    logo_path <- "www/hfv_logo.png"
-    p_with_logo <- cowplot::ggdraw(p) +
-      cowplot::draw_image(logo_path, 
-                          x = 0.8, y = -0.05, 
-                          width = 0.15, height = 0.15)
+    # Add logo directly using external URL
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    # Add logo to the plot using the URL
+    p_with_logo <- ggdraw(p) +
+      draw_image(
+        logo_url, # Use URL directly
+        x = 0.85, # Horizontal position (right side)
+        y = 0.05, # Vertical position (bottom)
+        width = 0.15,
+        height = 0.15
+      )
     
     return(p_with_logo)
   }
@@ -491,25 +517,33 @@ server <- function(input, output, session) {
         y = "Poverty Rate",
         x = "Year"
       ) +
-      theme_bw() +
+      theme_minimal(base_family = "Open Sans") +
       theme(
-        strip.text = element_text(size = 10, face = "bold"),
         legend.position = "none",
-        panel.spacing = unit(1, "lines"),
-        panel.grid.minor = element_blank(),
+        plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        plot.margin = margin(5, 15, 15, 5), # Extra right margin for labels and bottom for logo
         axis.title = element_text(size = 10),
         axis.text = element_text(size = 8),
-        axis.text.x = element_text(angle = 45, hjust = 1)
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 10, face = "bold"),
+        panel.spacing = unit(1, "lines"),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+        plot.margin = margin(5, 15, 30, 5) # Extra right margin for labels and bottom margin for logo
       )
     
-    # Add logo to the plot
-    logo_path <- "www/hfv_logo.png"
-    p_with_logo <- cowplot::ggdraw(p) +
-      cowplot::draw_image(logo_path, 
-                          x = 0.8, y = -0.05, 
-                          width = 0.15, height = 0.15)
+    # Add logo directly using external URL
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    # Add logo to the plot using the URL
+    p_with_logo <- ggdraw(p) +
+      draw_image(
+        logo_url, # Use URL directly
+        x = 0.85, # Horizontal position (right side)
+        y = 0.05, # Vertical position (bottom)
+        width = 0.15,
+        height = 0.15
+      )
     
     return(p_with_logo)
   }
@@ -523,12 +557,16 @@ server <- function(input, output, session) {
       options = list(
         opts_hover(css = "fill-opacity:0.8;"),
         opts_tooltip(
-          opacity = 0.9, 
+          opacity = 0.9,
           css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
           use_fill = TRUE
         ),
-        opts_toolbar(hidden = c("lasso_deselect", "lasso_select")),
-        opts_sizing(rescale = TRUE)
+        opts_sizing(rescale = TRUE),
+        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
@@ -658,6 +696,11 @@ server <- function(input, output, session) {
     } else {
       "Hover over a point for details"
     }
+  })
+
+  # Handle responsive window events
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 
