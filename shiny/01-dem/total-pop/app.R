@@ -84,51 +84,6 @@ ui <- page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
-  # Head section with styles and meta tags
-  tags$head(
-    # Mobile viewport
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    ),
-    
-    # Google Fonts import
-    tags$link(
-      rel = "preconnect", 
-      href = "https://fonts.googleapis.com"
-    ),
-    tags$link(
-      rel = "preconnect", 
-      href = "https://fonts.gstatic.com", 
-      crossorigin = "anonymous"
-    ),
-    tags$link(
-      rel = "stylesheet",
-      href = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap"
-    ),
-    
-    # Include HFV CSS if it exists, otherwise use fallback
-    if (compile_hfv_styles_if_needed()) {
-      tags$link(rel = "stylesheet", href = "../../www/styles/hfv-theme.css")
-    } else {
-      # Fallback: minimal inline CSS with HFV colors and reliable fonts
-      tags$style(HTML("
-        body { font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
-        h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
-        .hfv-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-        .hfv-header { display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid #40C0C0; }
-        .hfv-logo { height: 24px; margin-right: 16px; }
-        .hfv-title { margin: 0; color: #011E41; font-family: 'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif !important; }
-        .hfv-sidebar { background-color: #E8EDF2; padding: 16px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .hfv-chart-container { width: 100%; height: auto; min-height: 350px; }
-        .text-primary { color: #40C0C0 !important; }
-        @media (max-height: 600px) { .hfv-container { padding: 10px !important; max-height: 500px !important; } .hfv-chart-container { min-height: 280px !important; } }
-        @media (max-width: 768px) { .hfv-container { padding: 8px; } .hfv-sidebar { padding: 10px; margin-bottom: 10px; } }
-        @media (max-width: 480px) { .hfv-container { padding: 5px; } .hfv-logo { height: 20px; } }
-      "))
-    }
-  ),
-
   # Main container using HFV classes
   div(
     class = "hfv-container",
@@ -386,15 +341,15 @@ server <- function(input, output, session) {
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_pop_plot(state_data(), state_title()))
+    suppressWarnings(create_interactive_plot(create_pop_plot(state_data(), state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_pop_plot(filtered_cbsa(), cbsa_title()))
+    suppressWarnings(create_interactive_plot(create_pop_plot(filtered_cbsa(), cbsa_title())))
   })
   
   output$local_plot <- renderGirafe({
-    create_interactive_plot(create_pop_plot(filtered_locality(), locality_title()))
+    suppressWarnings(create_interactive_plot(create_pop_plot(filtered_locality(), locality_title())))
   })
 
   # Handle responsive window events
