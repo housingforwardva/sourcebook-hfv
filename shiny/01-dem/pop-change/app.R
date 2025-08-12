@@ -11,6 +11,8 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
+
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
