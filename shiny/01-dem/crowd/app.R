@@ -1,3 +1,5 @@
+# Overcrowding Visualization ---------------------------------------------------
+
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
@@ -114,7 +116,7 @@ ui <- page_fillable(
         div(
           style = "margin-bottom: 16px;",
           selectInput("year", "Select Year:", 
-                      choices = 2017:2023, 
+                      choices = 2010:2023, 
                       selected = 2023, 
                       width = "100%",
                       selectize = FALSE)
@@ -150,11 +152,11 @@ ui <- page_fillable(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
             strong("Data Source:"), br(),
-            "U.S. Census Bureau, American Community Survey, Table B25014",
+            "U.S. Census Bureau, 5-Year American Community Survey, Table B25014.",
             style = "margin-bottom: 8px;"
           ),
           p(
-            strong("Note:"), "Severely overcrowded = more than 1.5 persons per room. Overcrowded = 1.01 to 1.5 persons per room.",
+            strong("Note:"), "Very overcrowded = more than 1.5 persons per room. Overcrowded = 1.01 to 1.5 persons per room.",
             style = "margin-bottom: 0;"
           )
         )
@@ -205,7 +207,7 @@ server <- function(input, output, session) {
   # Load the data
   b25014 <- reactive({
     # Load data and convert "Owner" tenure to "Homeowner"
-    readRDS(here("data", "rds", "b25014.rds")) %>%
+    readRDS("b25014_data.rds") %>%
       mutate(tenure = case_when(
         tenure == "Owner" ~ "Homeowner",
         TRUE ~ tenure
@@ -308,7 +310,7 @@ server <- function(input, output, session) {
                  "Percent: ", scales::percent(percent, accuracy = 0.1)
                ))
       y_label <- "Percent of Households"
-      y_scale <- scale_y_continuous(labels = scales::percent_format())
+      y_scale <- scale_y_continuous(labels = scales::percent_format(), limits = c(0, .05))
     } else {
       plot_data <- data %>%
         mutate(value = estimate,
@@ -324,7 +326,7 @@ server <- function(input, output, session) {
     # Color by overcrowding category rather than tenure
     overcrowding_colors <- c(
       "Overcrowded" = "#E0592A",
-      "Severely overcrowded" = "#B1005F"
+      "Very overcrowded" = "#B1005F"
     )
     
     # Create base plot with facets by tenure
@@ -349,7 +351,7 @@ server <- function(input, output, session) {
       ) +
       theme_minimal(base_family = "Open Sans") +
       theme(
-        legend.position = "top",
+        legend.position = "none",
         legend.title = element_blank(),
         legend.text = element_text(size = 10),
         strip.background = element_rect(fill = "#102C54"),
@@ -358,7 +360,6 @@ server <- function(input, output, session) {
         plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
         axis.text = element_text(size = 10),
-        axis.text.x = element_blank(),  # Hide x-axis labels since they're redundant with legend
         axis.ticks.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),

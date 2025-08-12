@@ -290,7 +290,6 @@ ui <- page_fillable(
           font-size: 13px;
           padding: 6px 10px;
         }
-      }
       "
     ))
   ),

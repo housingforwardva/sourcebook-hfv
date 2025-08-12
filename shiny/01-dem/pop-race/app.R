@@ -91,7 +91,7 @@ hfv_colors <- list(
 )
 
 # Load data outside of server
-race_data <- read_rds(here("data", "rds", "race-ethnicity.rds"))
+race_data <- read_rds("race_ethnicity.rds")
 
 # Create lists for filters
 cbsa_list <- sort(unique(race_data$cbsa_title))
@@ -297,14 +297,12 @@ server <- function(input, output, session) {
         position = "dodge"
       ) +
       scale_fill_manual(values = c(
-        "White alone, not Hispanic" = hfv_colors$sky,
-        "Black alone" = hfv_colors$shadow,
-        "Asian alone" = hfv_colors$grass,
-        "Hispanic (any race)" = hfv_colors$desert,
-        "Two or more races" = hfv_colors$berry,
-        "American Indian alone" = hfv_colors$lilac,
-        "Pacific Islander alone" = "#FFC658",  # Additional color
-        "Some other race alone" = "#FF7276"    # Additional color
+        "White, non-Hispanic" = hfv_colors$sky,
+        "Black" = hfv_colors$shadow,
+        "Asian" = hfv_colors$grass,
+        "Hispanic or Latino" = hfv_colors$desert,
+        "Multiracial" = hfv_colors$berry,
+        "Another race" = hfv_colors$lilac
       )) +
       scale_y_continuous(
         labels = percent_format(), 
@@ -329,18 +327,24 @@ server <- function(input, output, session) {
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
-    # Add logo directly using external URL
-    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
-    # Add logo to the plot using the URL
-    p_with_logo <- ggdraw(p) +
-      draw_image(
-        logo_url, # Use URL directly
-        x = 0.85, # Horizontal position (right side)
-        y = 0.05, # Vertical position (bottom)
-        width = 0.15,
-        height = 0.15
-      )
+    # Add logo using local file instead of external URL for better performance
+    tryCatch({
+      logo_path <- "www/hfv_rgb_logo.png"
+      if (file.exists(logo_path)) {
+        p_with_logo <- ggdraw(p) +
+          draw_image(
+            logo_path,
+            x = 0.85, # Horizontal position (right side)
+            y = 0.05, # Vertical position (bottom)
+            width = 0.15,
+            height = 0.15
+          )
+      } else {
+        p_with_logo <- p  # Return plot without logo if file doesn't exist
+      }
+    }, error = function(e) {
+      p_with_logo <- p  # Return plot without logo on error
+    })
     
     return(p_with_logo)
   }

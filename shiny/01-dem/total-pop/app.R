@@ -1,3 +1,5 @@
+# Total Population Visualization ------------------------------------------
+
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots

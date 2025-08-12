@@ -1,3 +1,5 @@
+# Average Household Size Visualization -----------------------------------------
+
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots

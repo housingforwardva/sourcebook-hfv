@@ -91,7 +91,7 @@ hfv_colors <- list(
 )
 
 # Load data outside of server
-pop_change <- read_rds("./pop_change.rds")
+pop_change <- read_rds("pop_change.rds")
 
 # Create lists for filters
 cbsa_list <- sort(unique(pop_change$cbsa_title))
@@ -164,17 +164,6 @@ ui <- page_fillable(
               width = "100%",
               selectize = FALSE
             )
-          )
-        ),
-
-        # Component legend
-        div(
-          style = "margin-bottom: 16px;",
-          div(
-            style = "font-size: 12px;",
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #011E41; margin-right: 8px;'></span>Domestic Migration</div>"),
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #40C0C0; margin-right: 8px;'></span>International Migration</div>"),
-            HTML("<div style='margin-bottom: 5px;'><span style='display: inline-block; width: 12px; height: 12px; background-color: #8B85CA; margin-right: 8px;'></span>Natural Increase/Decrease</div>")
           )
         ),
 

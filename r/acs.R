@@ -270,7 +270,8 @@ b25014_vars <- load_table_vars("B25014_", 2023) %>%
       occupants == "1.01 to 1.50" ~ "Overcrowded",
       TRUE ~ "Very overcrowded"
     )
-  )
+  ) %>% 
+  drop_na()
   
 ## TABLE B17001 - Poverty Status  ----------------------------------------------
 

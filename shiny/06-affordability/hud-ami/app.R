@@ -102,7 +102,7 @@ ui <- page_fillable(
     # Header using HFV styling
     div(
       class = "hfv-header",
-      h4("HUD Area Median Income Limits", class = "hfv-title")
+      h4("HUD AMI Limits", class = "hfv-title")
     ),
 
     # Layout using bslib layout_columns
@@ -155,7 +155,7 @@ ui <- page_fillable(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
             strong("Data Source:"), br(),
-            "U.S. Department of Housing and Urban Development (HUD), Income Limits",
+            "U.S. Department of Housing and Urban Development (HUD), Section 8 Income Limits.",
             style = "margin-bottom: 0;"
           )
         )
@@ -245,7 +245,7 @@ server <- function(input, output, session) {
       ) +
       scale_y_continuous(labels = scales::dollar_format()) +
       labs(
-        title = paste("HUD Area Median Income Limits for", input$county),
+        title = paste("HUD AMI Limits for", input$county),
         subtitle = paste("Household Size:", input$hh_size),
         caption = " ", # Add empty caption to leave space for logo
         y = "Income Limit",
@@ -254,11 +254,12 @@ server <- function(input, output, session) {
       ) +
       theme_minimal(base_family = "Open Sans") +
       theme(
-        legend.position = "bottom",
+        legend.position = "none",
         legend.title = element_blank(),
         plot.title.position = "plot",
         axis.text = element_text(size = 10),
         panel.grid.minor = element_blank(),
+        axis.title = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )

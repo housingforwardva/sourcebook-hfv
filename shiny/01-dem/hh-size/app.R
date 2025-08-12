@@ -1,3 +1,5 @@
+# Household Size Visualization -------------------------------------------------
+
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
@@ -221,11 +223,7 @@ ui <- page_fillable(
 server <- function(input, output, session) {
   # Load the data
   hh_size <- reactive({
-    readRDS(here("data", "rds", "hh_size.rds")) %>% 
-      mutate(tenure = case_when(
-        tenure == "Owner" ~ "Homeowner",
-        TRUE ~ tenure
-      ))
+    readRDS("b25009_data.rds")
   })
   
   # Create a list of all unique CBSAs and localities in Virginia
@@ -273,6 +271,9 @@ server <- function(input, output, session) {
   # Pre-process data - Locality data
   locality_size <- reactive({
     hh_size() %>% 
+      # First aggregate by household size categories to handle multiple "4 or more person" entries
+      group_by(year, name_long, hhsize, tenure) %>%
+      summarise(estimate = sum(estimate), .groups = "drop") %>%
       pivot_wider(
         id_cols = c(year, name_long, hhsize),
         names_from = tenure,
@@ -295,6 +296,7 @@ server <- function(input, output, session) {
   # CBSA data  
   cbsa_size <- reactive({
     hh_size() %>% 
+      # First aggregate by household size categories to handle multiple "4 or more person" entries
       group_by(year, cbsa_title, tenure, hhsize) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>% 
       pivot_wider(
@@ -319,6 +321,7 @@ server <- function(input, output, session) {
   # State data
   state_size <- reactive({
     hh_size() %>%
+      # First aggregate by household size categories to handle multiple "4 or more person" entries
       group_by(year, tenure, hhsize) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>%  
       pivot_wider(
@@ -332,8 +335,6 @@ server <- function(input, output, session) {
         names_to = "tenure",
         values_to = "estimate"
       ) %>%
-      group_by(year, tenure, hhsize) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
       arrange(tenure, year) %>% 
       group_by(tenure, hhsize) %>% 
       mutate(pct_change = (estimate - lag(estimate))/lag(estimate)) %>% 
@@ -574,7 +575,7 @@ server <- function(input, output, session) {
         plot.title = element_text(size = 11), # Smaller plot title
         plot.subtitle = element_text(size = 9), # Smaller subtitle
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 15, 5) # Extra bottom margin for logo
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
     
     # Add logo directly using external URL

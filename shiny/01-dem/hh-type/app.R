@@ -1,11 +1,10 @@
-# Household Composition Shiny App
+# Household Composition Visualization ------------------------------------------
 # This app visualizes household composition data across Virginia
 # with tabs for statewide, CBSA, and locality views
 
 library(shiny)
 library(tidyverse)
 library(ggtext)
-library(hdatools) 
 library(ggiraph)     # For interactive ggplots
 library(here)        # For here() function in file paths
 library(grid)        # For grobs
@@ -17,25 +16,6 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
-library(shinyWidgets) # Added for toggle switch
-
-# Determine the app directory and set the data path
-# Option 1: Using here package (recommended)
-data_path <- here::here("data","rds", "hh_type.rds")
-
-# Load the data with error handling
-tryCatch({
-  hh_type <- read_rds(data_path)
-  # Create a list of all unique CBSAs and localities in Virginia
-  cbsa_list <- sort(unique(hh_type$cbsa_title))
-  locality_list <- sort(unique(hh_type$name_long))
-  year_list <- sort(unique(hh_type$year), decreasing = TRUE)
-}, error = function(e) {
-  # This will be displayed when the app starts if there's an error loading the data
-  stop(paste("Error loading data file:", e$message, 
-             "\nPlease check the path to your data file. If your app is in a subdirectory of your project,",
-             "you may need to adjust the path in the app.R file."))
-})
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -88,6 +68,9 @@ compile_hfv_styles_if_needed <- function() {
   return(file.exists(css_file))
 }
 
+# Compile styles if needed
+compile_hfv_styles_if_needed()
+
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
@@ -115,11 +98,13 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
+
+
 # UI
 ui <- page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
-
+  
   # Main container using HFV classes
   div(
     class = "hfv-container",
@@ -129,7 +114,7 @@ ui <- page_fillable(
       class = "hfv-header",
       h4("Household Composition", class = "hfv-title")
     ),
-
+    
     # Layout using bslib layout_columns
     layout_columns(
       col_widths = c(
@@ -138,47 +123,37 @@ ui <- page_fillable(
         sm = 12
       ),
       gap = "16px",
-
+      
       # Sidebar Panel with HFV styling
       div(
         class = "hfv-sidebar",
         
         h5("Dashboard Controls", 
            class = "text-primary", style = "margin-bottom: 16px;"),
-
-        # Year toggle for state
+        
+        # Year selector (common to all tabs)
         div(
           style = "margin-bottom: 15px;",
-          conditionalPanel(
-            condition = "input.tabs == 'statewide'",
-            switchInput(
-              inputId = "state_year_toggle",
-              label = paste("Toggle between", min(year_list), "and", max(year_list)),
-              value = TRUE,
-              onLabel = max(year_list),
-              offLabel = min(year_list),
-              size = "small",
-              width = "100%"
-            )
-          ),
+          selectInput(
+            "selected_year",
+            "Select Year:",
+            choices = NULL,
+            width = "100%",
+            selectize = FALSE
+          )
+        ),
+        
+        # Geography selectors
+        div(
+          style = "margin-bottom: 15px;",
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput(
               "cbsa",
               "Select CBSA:",
-              choices = cbsa_list,
-              selected = cbsa_list[1],
+              choices = NULL,
               width = "100%",
-              selectize = TRUE
-            ),
-            switchInput(
-              inputId = "cbsa_year_toggle",
-              label = "Switch Year",
-              value = TRUE,
-              onLabel = max(year_list),
-              offLabel = min(year_list),
-              size = "small",
-              width = "100%"
+              selectize = FALSE
             )
           ),
           conditionalPanel(
@@ -186,110 +161,14 @@ ui <- page_fillable(
             selectInput(
               "locality",
               "Select Locality:",
-              choices = locality_list,
-              selected = locality_list[1],
+              choices = NULL,
               width = "100%",
-              selectize = TRUE
-            ),
-            switchInput(
-              inputId = "locality_year_toggle",
-              label = paste("Toggle between", min(year_list), "and", max(year_list)),
-              value = TRUE,
-              onLabel = max(year_list),
-              offLabel = min(year_list),
-              size = "small",
-              width = "100%"
-            )
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'compare'",
-            selectInput(
-              "compare_type",
-              "Compare by:",
-              choices = c("Years", "Localities"),
-              selected = "Years",
-              width = "100%",
-              selectize = TRUE
-            ),
-            conditionalPanel(
-              condition = "input.compare_type == 'Years'",
-              selectInput(
-                "compare_locality",
-                "Select Locality:",
-                choices = locality_list,
-                selected = locality_list[1],
-                width = "100%",
-                selectize = TRUE
-              ),
-              selectInput(
-                "compare_year1",
-                "First Year:",
-                choices = year_list,
-                selected = year_list[2],
-                width = "100%",
-                selectize = TRUE
-              ),
-              selectInput(
-                "compare_year2",
-                "Second Year:",
-                choices = year_list,
-                selected = year_list[1],
-                width = "100%",
-                selectize = TRUE
-              )
-            ),
-            conditionalPanel(
-              condition = "input.compare_type == 'Localities'",
-              switchInput(
-                inputId = "compare_year_toggle",
-                label = paste("Toggle between", min(year_list), "and", max(year_list)),
-                value = TRUE,
-                onLabel = max(year_list),
-                offLabel = min(year_list),
-                size = "small",
-                width = "100%"
-              ),
-              selectInput(
-                "compare_locality1",
-                "First Locality:",
-                choices = locality_list,
-                selected = locality_list[1],
-                width = "100%",
-                selectize = TRUE
-              ),
-              selectInput(
-                "compare_locality2",
-                "Second Locality:",
-                choices = locality_list,
-                selected = locality_list[2],
-                width = "100%",
-                selectize = TRUE
-              )
+              selectize = FALSE
             )
           )
         ),
-
-        # Download buttons
-        div(
-          style = "margin-bottom: 15px;",
-          conditionalPanel(
-            condition = "input.tabs == 'statewide'",
-            downloadButton("download_state", "Download Plot", class = "btn-primary", width = "100%")
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            downloadButton("download_cbsa", "Download Plot", class = "btn-primary", width = "100%")
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'locality'",
-            downloadButton("download_locality", "Download Plot", class = "btn-primary", width = "100%")
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'compare'",
-            downloadButton("download_compare", "Download Plot", class = "btn-primary", width = "100%")
-          )
-        ),
-
+        
+        
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
         
@@ -298,20 +177,20 @@ ui <- page_fillable(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
             strong("Data Source:"), br(),
-            "U.S. Census Bureau, American Community Survey 5-year estimates, Table B11021",
+            "U.S. Census Bureau, 5-Year American Community Survey 5-year estimates, Table B11021.",
             style = "margin-bottom: 0;"
           )
         )
       ),
-
+      
       # Main Panel with tabs
       div(
         navset_tab(
           id = "tabs",
           
           nav_panel(
-            title = "Statewide",
-            value = "statewide",
+            title = "State",
+            value = "state",
             div(
               class = "hfv-chart-container",
               style = "height: 450px; margin-top: 16px;",
@@ -320,8 +199,8 @@ ui <- page_fillable(
           ),
           
           nav_panel(
-            title = "CBSA",
-            value = "cbsa",
+            title = "Metro Area",
+            value = "cbsa", 
             div(
               class = "hfv-chart-container",
               style = "height: 450px; margin-top: 16px;",
@@ -337,16 +216,6 @@ ui <- page_fillable(
               style = "height: 450px; margin-top: 16px;",
               girafeOutput("locality_plot", height = "100%")
             )
-          ),
-          
-          nav_panel(
-            title = "Compare",
-            value = "compare",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("compare_plot", height = "100%")
-            )
           )
         )
       )
@@ -357,103 +226,125 @@ ui <- page_fillable(
 # Server
 server <- function(input, output, session) {
   
-  # Create reactive expressions for toggle switches to get selected years
-  state_year <- reactive({
-    if(input$state_year_toggle) max(year_list) else min(year_list)
+  # Load the data with error handling
+  if (!file.exists("b11012_data.rds")) {
+    stop("Data file 'b11012_data.rds' not found. Please ensure it exists in the app directory.")
+  }
+  
+  hh_type <- read_rds("b11012_data.rds")
+  
+  # Create lists (NOT reactive expressions)
+  cbsa_list <- sort(unique(hh_type$cbsa_title))
+  locality_list <- sort(unique(hh_type$name_long))
+  year_list <- sort(unique(hh_type$year), decreasing = TRUE)
+  
+  
+  # Initialize dropdowns - CORRECTED
+  observe({
+    updateSelectInput(session, "selected_year", 
+                      choices = year_list,
+                      selected = year_list[1])
+    
+    updateSelectInput(session, "cbsa", 
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
+    
+    updateSelectInput(session, "locality", 
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
-  cbsa_year <- reactive({
-    if(input$cbsa_year_toggle) max(year_list) else min(year_list)
+  # Create reactive expression for selected year
+  selected_year <- reactive({
+    req(input$selected_year)  # Ensure input exists
+    input$selected_year
   })
   
-  locality_year <- reactive({
-    if(input$locality_year_toggle) max(year_list) else min(year_list)
-  })
-  
-  compare_year <- reactive({
-    if(input$compare_year_toggle) max(year_list) else min(year_list)
-  })
-  
-  # Pre-process data for better performance
-  # Aggregate data to the locality-level
+  # Locality data - with better error handling
   locality_hh <- reactive({
-    selected_year <- locality_year()
+    req(input$locality, selected_year())  # Require inputs
     
-    hh_type %>% 
-      group_by(year, name_long) %>% 
-      mutate(percent = estimate/sum(estimate)) %>%
-      filter(year == selected_year, 
-             name_long == input$locality) %>% 
-      group_by(type) %>% 
-      mutate(rank_within_type = rank(percent, ties.method = "first")) %>% 
+    year_selected <- selected_year()
+    
+    result <- hh_type %>% 
+      filter(year == year_selected, name_long == input$locality) %>%
+      group_by(type, sub) %>% 
+      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+      group_by(type) %>%
+      mutate(
+        total_by_type = sum(estimate),
+        percent = estimate / total_by_type,
+        rank_within_type = rank(percent, ties.method = "first")
+      ) %>%
       ungroup()
+    
+    # Debug: Print result info
+    print(paste("Locality data for", input$locality, "in", year_selected))
+    print(paste("Rows returned:", nrow(result)))
+    
+    return(result)
   })
   
-  # Aggregate data to the CBSA-level
+  # CBSA data - with better error handling  
   cbsa_hh <- reactive({
-    selected_year <- cbsa_year()
+    req(input$cbsa, selected_year())
     
-    hh_type %>% 
-      group_by(year, cbsa_title, type, subtype) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, cbsa_title) %>% 
-      mutate(percent = estimate/sum(estimate)) %>%
-      filter(year == selected_year, 
-             cbsa_title == input$cbsa) %>% 
-      group_by(type) %>% 
-      mutate(rank_within_type = rank(percent, ties.method = "first")) %>% 
+    year_selected <- selected_year()
+    
+    result <- hh_type %>% 
+      filter(year == year_selected, cbsa_title == input$cbsa) %>%
+      group_by(type, sub) %>% 
+      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+      group_by(type) %>%
+      mutate(
+        total_by_type = sum(estimate),
+        percent = estimate / total_by_type,
+        rank_within_type = rank(percent, ties.method = "first")
+      ) %>%
       ungroup()
+    
+    print(paste("CBSA data for", input$cbsa, "in", year_selected))
+    print(paste("Rows returned:", nrow(result)))
+    
+    return(result)
   })
   
-  # Aggregate data to the state-level
+  # State data - with better error handling
   state_hh <- reactive({
-    selected_year <- state_year()
+    req(selected_year())
     
-    hh_type %>% 
-      group_by(year, type, subtype) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year) %>% 
-      mutate(percent = estimate/sum(estimate)) %>%
-      filter(year == selected_year) %>% 
-      group_by(type) %>% 
-      mutate(rank_within_type = rank(percent, ties.method = "first")) %>% 
+    year_selected <- selected_year()
+    
+    result <- hh_type %>% 
+      filter(year == year_selected) %>%
+      group_by(type, sub) %>% 
+      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+      group_by(type) %>%
+      mutate(
+        total_by_type = sum(estimate),
+        percent = estimate / total_by_type,
+        rank_within_type = rank(percent, ties.method = "first")
+      ) %>%
       ungroup()
+    
+    print(paste("State data for", year_selected))
+    print(paste("Rows returned:", nrow(result)))
+    
+    return(result)
   })
   
   # Generate title text
   title_text <- "<b><span style='color:#011E41'>Householder with no partner</span></b> and 
 <b><span style='color:#40C0C0'>Married or cohabitating couple</span></b>"
   
-  # Create a custom theme function to be applied consistently
-  custom_theme <- function() {
-    theme_hfv() %+replace%
-      theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-      )
-  }
-  
-  # Create interactive plot for Statewide tab
-  output$state_plot <- renderGirafe({
-    state_data <- state_hh()
-    selected_year <- state_year()
-    
-    p <- ggplot(state_data,
-                aes(x = reorder(subtype, rank_within_type),
+  # Function to create interactive plots (consolidated)
+  create_interactive_plot <- function(data, subtitle_text) {
+    p <- ggplot(data,
+                aes(x = reorder(sub, rank_within_type),
                     y = percent,
                     fill = type)) + 
-      # Make sure text colors match fill colors
-      scale_color_manual(values = c("#011E41", "#40C0C0")) +
-      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
       geom_col_interactive(
-        aes(tooltip = paste0(subtype, ": ", scales::percent(percent, accuracy = 0.1))),
+        aes(tooltip = paste0(sub, ": ", scales::percent(percent, accuracy = 0.1))),
         hover_nearest = TRUE
       ) +
       # Match text color to bar fill color
@@ -465,20 +356,43 @@ server <- function(input, output, session) {
         vjust = -0.5,
         size = 3.5
       ) +
+      # Make sure text colors match fill colors
+      scale_color_manual(values = c(hfv_colors$shadow, hfv_colors$sky)) +
+      scale_fill_manual(values = c(hfv_colors$shadow, hfv_colors$sky)) +
       labs(title = title_text,
-           subtitle = paste("Virginia:", selected_year),
+           subtitle = subtitle_text,
            caption = " ", # Empty caption to leave space for logo
            x = NULL,
            y = "Percent of Households") +
       scale_y_continuous(labels = scales::percent_format()) +
       # Hide the color legend since it's redundant with the fill legend
       guides(color = "none") +
-      custom_theme() +
+      theme_minimal(base_family = "Open Sans") +
+      theme(
+        legend.position = "none",
+        plot.title = element_markdown(),
+        plot.subtitle = element_text(size = 12, margin = margin(b = 10)),
+        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+        plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
+      ) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
       facet_grid(cols = vars(type), scales = "free_x", space = "free") 
     
+    # Add logo directly using external URL
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    # Add logo to the plot using the URL
+    p_with_logo <- ggdraw(p) +
+      draw_image(
+        logo_url, # Use URL directly
+        x = 0.85, # Horizontal position (right side)
+        y = 0.05, # Vertical position (bottom)
+        width = 0.15,
+        height = 0.15
+      )
+    
     girafe(
-      ggobj = p,
+      ggobj = p_with_logo,
       width_svg = 8,
       height_svg = 5,
       options = list(
@@ -496,386 +410,27 @@ server <- function(input, output, session) {
         addGFontHtmlDependency(family = "Poppins")
       )
     )
-  })
-  
-  # Create interactive plot for CBSA tab
-  output$cbsa_plot <- renderGirafe({
-    cbsa_data <- cbsa_hh()
-    selected_year <- cbsa_year()
-    
-    p <- ggplot(cbsa_data,
-                aes(x = reorder(subtype, rank_within_type),
-                    y = percent,
-                    fill = type)) + 
-      geom_col_interactive(
-        aes(tooltip = paste0(subtype, ": ", scales::percent(percent, accuracy = 0.1))),
-        hover_nearest = TRUE
-      ) +
-      # Match text color to bar fill color
-      geom_text_interactive(
-        aes(label = scales::percent(percent, accuracy = 1),
-            color = type,
-            tooltip = paste0("Count: ", format(estimate, big.mark = ","))),
-        position = position_dodge(width = 0.9),
-        vjust = -0.5,
-        size = 3.5
-      ) +
-      # Make sure text colors match fill colors
-      scale_color_manual(values = c("#011E41", "#40C0C0")) +
-      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
-      labs(title = title_text,
-           subtitle = paste(input$cbsa, ":", selected_year),
-           caption = " ", # Empty caption to leave space for logo
-           x = NULL,
-           y = "Percent of Households") +
-      scale_y_continuous(labels = scales::percent_format()) +
-      # Hide the color legend since it's redundant with the fill legend
-      guides(color = "none") +
-      custom_theme() +
-      scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-      facet_grid(cols = vars(type), scales = "free_x", space = "free")
-    
-    girafe(
-      ggobj = p,
-      width_svg = 8,
-      height_svg = 5,
-      options = list(
-        opts_hover(css = "fill-opacity:0.8;"),
-        opts_tooltip(
-          opacity = 0.9,
-          css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
-          use_fill = TRUE
-        ),
-        opts_sizing(rescale = TRUE),
-        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
-      ),
-      fonts = list(
-        addGFontHtmlDependency(family = "Open Sans"),
-        addGFontHtmlDependency(family = "Poppins")
-      )
-    )
-  })
-  
-  # Create interactive plot for Locality tab
-  output$locality_plot <- renderGirafe({
-    locality_data <- locality_hh()
-    selected_year <- locality_year()
-    
-    p <- ggplot(locality_data,
-                aes(x = reorder(subtype, rank_within_type),
-                    y = percent,
-                    fill = type)) + 
-      geom_col_interactive(
-        aes(tooltip = paste0(subtype, ": ", scales::percent(percent, accuracy = 0.1))),
-        hover_nearest = TRUE
-      ) +
-      # Match text color to bar fill color
-      geom_text_interactive(
-        aes(label = scales::percent(percent, accuracy = 1),
-            color = type,
-            tooltip = paste0("Count: ", format(estimate, big.mark = ","))),
-        position = position_dodge(width = 0.9),
-        vjust = -0.5,
-        size = 3.5
-      ) +
-      # Make sure text colors match fill colors
-      scale_color_manual(values = c("#011E41", "#40C0C0")) +
-      labs(title = title_text,
-           subtitle = paste(input$locality, ":", selected_year),
-           caption = " ", # Empty caption to leave space for logo
-           x = NULL,
-           y = "Percent of Households") +
-      scale_y_continuous(labels = scales::percent_format()) +
-      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
-      # Hide the color legend since it's redundant with the fill legend
-      guides(color = "none") +
-      custom_theme() +
-      scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-      facet_grid(cols = vars(type), scales = "free_x", space = "free")
-    
-    girafe(
-      ggobj = p,
-      width_svg = 8,
-      height_svg = 5,
-      options = list(
-        opts_hover(css = "fill-opacity:0.8;"),
-        opts_tooltip(
-          opacity = 0.9,
-          css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
-          use_fill = TRUE
-        ),
-        opts_sizing(rescale = TRUE),
-        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
-      ),
-      fonts = list(
-        addGFontHtmlDependency(family = "Open Sans"),
-        addGFontHtmlDependency(family = "Poppins")
-      )
-    )
-  })
-  
-  # Helper function to create static plots for downloads
-  create_static_plot <- function(data, subtitle) {
-    ggplot(data,
-           aes(x = reorder(subtype, rank_within_type),
-               y = percent,
-               fill = type)) + 
-      geom_col() +
-      # Match text color to bar fill color
-      geom_text(aes(label = scales::percent(percent, accuracy = 1),
-                    color = type),
-                position = position_dodge(width = 0.9),
-                vjust = -0.5,
-                size = 3.5) +
-      # Make sure text colors match fill colors
-      scale_color_manual(values = c("#011E41", "#40C0C0")) +
-      labs(title = "Household Composition by Type",
-           subtitle = subtitle,
-           caption = "Source: ACS 5-year estimates",
-           x = NULL,
-           y = "Percent of Households") +
-      scale_y_continuous(labels = scales::percent_format()) +
-      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
-      theme_minimal() +
-      # Hide the color legend since it's redundant with the fill legend
-      guides(color = "none") +
-      theme(
-        axis.text.x = element_text(
-          angle = 0,
-          hjust = 0.5,
-          vjust = 0.5,
-          lineheight = 0.8,
-          margin = margin(t = 5)
-        ),
-        plot.title = element_markdown(),
-        plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-      ) +
-      scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-      facet_grid(cols = vars(type), scales = "free_x", space = "free")
   }
   
-  # Download handlers for each plot
-  output$download_state <- downloadHandler(
-    filename = function() {
-      selected_year <- state_year()
-      paste("virginia-household-composition-", selected_year, ".png", sep = "")
-    },
-    content = function(file) {
-      selected_year <- state_year()
-      p <- create_static_plot(state_hh(), paste("Virginia:", selected_year))
-      ggsave(file, plot = p, width = 10, height = 6, dpi = 300)
-    }
-  )
-  
-  output$download_cbsa <- downloadHandler(
-    filename = function() {
-      selected_year <- cbsa_year()
-      clean_name <- gsub("[^a-zA-Z0-9]", "-", input$cbsa)
-      paste(clean_name, "-household-composition-", selected_year, ".png", sep = "")
-    },
-    content = function(file) {
-      selected_year <- cbsa_year()
-      p <- create_static_plot(cbsa_hh(), paste(input$cbsa, ":", selected_year))
-      ggsave(file, plot = p, width = 10, height = 6, dpi = 300)
-    }
-  )
-  
-  output$download_locality <- downloadHandler(
-    filename = function() {
-      selected_year <- locality_year()
-      clean_name <- gsub("[^a-zA-Z0-9]", "-", input$locality)
-      paste(clean_name, "-household-composition-", selected_year, ".png", sep = "")
-    },
-    content = function(file) {
-      selected_year <- locality_year()
-      p <- create_static_plot(locality_hh(), paste(input$locality, ":", selected_year))
-      ggsave(file, plot = p, width = 10, height = 6, dpi = 300)
-    }
-  )
-  
-  # Comparison plot data preparation
-  compare_data <- reactive({
-    if (input$compare_type == "Years") {
-      # Compare the same locality across different years
-      data1 <- hh_type %>% 
-        filter(name_long == input$compare_locality, year == input$compare_year1) %>%
-        group_by(year, name_long) %>% 
-        mutate(percent = estimate/sum(estimate)) %>%
-        group_by(type) %>% 
-        mutate(rank_within_type = rank(percent, ties.method = "first")) %>%
-        ungroup() %>%
-        mutate(comparison = paste(name_long, ":", input$compare_year1))
-      
-      data2 <- hh_type %>% 
-        filter(name_long == input$compare_locality, year == input$compare_year2) %>%
-        group_by(year, name_long) %>% 
-        mutate(percent = estimate/sum(estimate)) %>%
-        group_by(type) %>% 
-        mutate(rank_within_type = rank(percent, ties.method = "first")) %>%
-        ungroup() %>%
-        mutate(comparison = paste(name_long, ":", input$compare_year2))
-      
-      bind_rows(data1, data2)
-    } else {
-      # Compare different localities in the same year
-      selected_year <- compare_year()
-      
-      data1 <- hh_type %>% 
-        filter(name_long == input$compare_locality1, year == selected_year) %>%
-        group_by(year, name_long) %>% 
-        mutate(percent = estimate/sum(estimate)) %>%
-        group_by(type) %>% 
-        mutate(rank_within_type = rank(percent, ties.method = "first")) %>%
-        ungroup() %>%
-        mutate(comparison = input$compare_locality1)
-      
-      data2 <- hh_type %>% 
-        filter(name_long == input$compare_locality2, year == selected_year) %>%
-        group_by(year, name_long) %>% 
-        mutate(percent = estimate/sum(estimate)) %>%
-        group_by(type) %>% 
-        mutate(rank_within_type = rank(percent, ties.method = "first")) %>%
-        ungroup() %>%
-        mutate(comparison = input$compare_locality2)
-      
-      bind_rows(data1, data2)
-    }
+  # Create interactive plots for each tab
+  output$state_plot <- renderGirafe({
+    state_data <- state_hh()
+    year_selected <- selected_year()
+    create_interactive_plot(state_data, paste("Virginia:", year_selected))
   })
   
-  # Render comparison plot
-  output$compare_plot <- renderGirafe({
-    comparison_data <- compare_data()
-    
-    # Generate appropriate title based on comparison type
-    if (input$compare_type == "Years") {
-      plot_title <- paste("Comparing", input$compare_locality, "between", input$compare_year1, "and", input$compare_year2)
-    } else {
-      selected_year <- compare_year()
-      plot_title <- paste("Comparing", input$compare_locality1, "and", input$compare_locality2, "in", selected_year)
-    }
-    
-    p <- ggplot(comparison_data,
-                aes(x = reorder(subtype, rank_within_type),
-                    y = percent,
-                    fill = comparison)) + 
-      geom_col_interactive(
-        aes(tooltip = paste0(subtype, ": ", scales::percent(percent, accuracy = 0.1))),
-        position = "dodge",
-        hover_nearest = TRUE
-      ) +
-      # Match text color to bar fill color
-      geom_text_interactive(
-        aes(label = scales::percent(percent, accuracy = 1),
-            color = comparison,
-            tooltip = paste0("Count: ", format(estimate, big.mark = ","))),
-        position = position_dodge(width = 0.9),
-        vjust = -0.5,
-        size = 3
-      ) +
-      # Make sure text colors match fill colors
-      scale_color_manual(values = c("#011E41", "#40C0C0")) +
-      labs(title = title_text,
-           subtitle = plot_title,
-           caption = " ", # Empty caption to leave space for logo
-           x = NULL,
-           y = "Percent of Households",
-           fill = "Comparison",
-           color = "Comparison") +
-      scale_y_continuous(labels = scales::percent_format()) +
-      scale_fill_manual(values = c("#011E41", "#40C0C0")) +
-      custom_theme() +
-      theme(
-        legend.position = "top"
-      ) +
-      scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-      facet_grid(cols = vars(type), scales = "free_x", space = "free")
-    
-    girafe(
-      ggobj = p,
-      width_svg = 8,
-      height_svg = 5,
-      options = list(
-        opts_hover(css = "fill-opacity:0.8;"),
-        opts_tooltip(
-          opacity = 0.9,
-          css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
-          use_fill = TRUE
-        ),
-        opts_sizing(rescale = TRUE),
-        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
-      ),
-      fonts = list(
-        addGFontHtmlDependency(family = "Open Sans"),
-        addGFontHtmlDependency(family = "Poppins")
-      )
-    )
+  output$cbsa_plot <- renderGirafe({
+    cbsa_data <- cbsa_hh()
+    year_selected <- selected_year()
+    create_interactive_plot(cbsa_data, paste(input$cbsa, ":", year_selected))
   })
   
-  # Download handler for comparison plot
-  output$download_compare <- downloadHandler(
-    filename = function() {
-      if (input$compare_type == "Years") {
-        clean_name <- gsub("[^a-zA-Z0-9]", "-", input$compare_locality)
-        paste(clean_name, "-comparison-", input$compare_year1, "-vs-", input$compare_year2, ".png", sep = "")
-      } else {
-        selected_year <- compare_year()
-        clean_name1 <- gsub("[^a-zA-Z0-9]", "-", input$compare_locality1)
-        clean_name2 <- gsub("[^a-zA-Z0-9]", "-", input$compare_locality2)
-        paste(clean_name1, "-vs-", clean_name2, "-", selected_year, ".png", sep = "")
-      }
-    },
-    content = function(file) {
-      comparison_data <- compare_data()
-      
-      # Generate appropriate title based on comparison type
-      if (input$compare_type == "Years") {
-        plot_title <- paste("Comparing", input$compare_locality, "between", input$compare_year1, "and", input$compare_year2)
-      } else {
-        selected_year <- compare_year()
-        plot_title <- paste("Comparing", input$compare_locality1, "and", input$compare_locality2, "in", selected_year)
-      }
-      
-      p <- ggplot(comparison_data,
-                  aes(x = reorder(subtype, rank_within_type),
-                      y = percent,
-                      fill = comparison)) + 
-        geom_col(position = "dodge") +
-        # Match text color to bar fill color
-        geom_text(aes(label = scales::percent(percent, accuracy = 1),
-                      color = comparison),
-                  position = position_dodge(width = 0.9),
-                  vjust = -0.5,
-                  size = 3) +
-        # Make sure text colors match fill colors
-        scale_color_manual(values = c("#011E41", "#40C0C0")) +
-        labs(title = "Household Composition by Type",
-             subtitle = plot_title,
-             caption = "Source: ACS 5-year estimates",
-             x = NULL,
-             y = "Percent of Households",
-             fill = "Comparison",
-             color = "Comparison") +
-        scale_y_continuous(labels = scales::percent_format()) +
-        theme_minimal() +
-        scale_fill_manual(values = c("#011E41", "#40C0C0")) +
-        theme(
-          axis.text.x = element_text(
-            angle = 0,
-            hjust = 0.5,
-            vjust = 0.5,
-            lineheight = 0.8,
-            margin = margin(t = 5)
-          ),
-          legend.position = "top",
-          plot.title = element_markdown(),
-          plot.subtitle = element_text(size = 12, margin = margin(b = 10))
-        ) +
-        scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-        facet_grid(cols = vars(type), scales = "free_x", space = "free")
-      
-      ggsave(file, plot = p, width = 10, height = 6, dpi = 300)
-    }
-  )
+  output$locality_plot <- renderGirafe({
+    locality_data <- locality_hh()
+    year_selected <- selected_year()
+    create_interactive_plot(locality_data, paste(input$locality, ":", year_selected))
+  })
+  
   
   # Handle responsive window events
   observe({

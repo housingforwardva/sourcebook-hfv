@@ -208,84 +208,66 @@ ui <- page_fillable(
   )
 )
 
+# Load data outside server for faster loading
+lvng_arr <- readRDS("b09021_data.rds")
+
+# Create lists for filters
+year_list <- sort(unique(lvng_arr$year), decreasing = TRUE)
+age_list <- sort(unique(lvng_arr$age))
+cbsa_list <- sort(unique(lvng_arr$cbsa_title))
+locality_list <- sort(unique(lvng_arr$name_long))
+
+# Pre-aggregate data
+# Locality data
+locality_la <- lvng_arr %>% 
+  group_by(year, name_long, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>%
+  group_by(year, name_long, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
+# CBSA data
+cbsa_la <- lvng_arr %>% 
+  group_by(year, cbsa_title, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, cbsa_title, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
+# State data
+state_la <- lvng_arr %>% 
+  group_by(year, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
 # Server function
 server <- function(input, output, session) {
-  # Load data
-  lvng_arr <- reactive({
-    readRDS(here("data", "rds", "lvng_arr.rds"))
-  })
-  
-  # Create lists for filters
-  year_list <- reactive({
-    sort(unique(lvng_arr()$year), decreasing = TRUE)
-  })
-  
-  age_list <- reactive({
-    sort(unique(lvng_arr()$age))
-  })
-  
-  cbsa_list <- reactive({
-    sort(unique(lvng_arr()$cbsa_title))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(lvng_arr()$name_long))
-  })
-  
-  # Pre-aggregate data
-  # Locality data
-  locality_la <- reactive({
-    lvng_arr() %>% 
-      group_by(year, name_long, age, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>%
-      group_by(year, name_long, age) %>% 
-      mutate(percent = estimate/sum(estimate))
-  })
-  
-  # CBSA data
-  cbsa_la <- reactive({
-    lvng_arr() %>% 
-      group_by(year, cbsa_title, age, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, cbsa_title, age) %>% 
-      mutate(percent = estimate/sum(estimate))
-  })
-  
-  # State data
-  state_la <- reactive({
-    lvng_arr() %>% 
-      group_by(year, age, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, age) %>% 
-      mutate(percent = estimate/sum(estimate))
-  })
   
   # Initialize dropdowns
   observe({
     updateSelectInput(session, "year", 
-                      choices = year_list(),
-                      selected = max(year_list()))
+                      choices = year_list,
+                      selected = max(year_list))
     
     updateSelectInput(session, "age", 
-                      choices = age_list(),
-                      selected = "All ages")
+                      choices = age_list,
+                      selected = "18 to 34")
     
     # CBSAs
     updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Filter data for plots
   filtered_state <- reactive({
     req(input$year, input$age)
     
-    state_la() %>%
+    state_la %>%
       filter(year == input$year,
              age == input$age)
   })
@@ -293,7 +275,7 @@ server <- function(input, output, session) {
   filtered_cbsa <- reactive({
     req(input$year, input$age, input$cbsa)
     
-    cbsa_la() %>%
+    cbsa_la %>%
       filter(year == input$year,
              age == input$age,
              cbsa_title == input$cbsa)
@@ -302,7 +284,7 @@ server <- function(input, output, session) {
   filtered_locality <- reactive({
     req(input$year, input$age, input$locality)
     
-    locality_la() %>%
+    locality_la %>%
       filter(year == input$year,
              age == input$age,
              name_long == input$locality)
@@ -349,20 +331,18 @@ server <- function(input, output, session) {
                 size = 3.5) +
       # Use the HFV colors for fill and text
       scale_fill_manual(values = c(
-        "Alone" = hfv_colors$sky,
-        "Spouse" = hfv_colors$grass,
-        "Unmarried partner" = hfv_colors$lilac,
-        "Other nonrelatives only" = hfv_colors$shadow,
-        "Child of householder" = hfv_colors$berry,
-        "Other relatives of householder" = hfv_colors$desert
+        "Lives alone" = hfv_colors$sky,
+        "Lives with married or unmarried partner" = hfv_colors$grass,
+        "Lives with other nonrelative(s)" = hfv_colors$lilac,
+        "Lives with other relative(s)" = hfv_colors$shadow,
+        "Lives with parent(s)" = hfv_colors$berry
       )) +
       scale_color_manual(values = c(
-        "Alone" = hfv_colors$sky,
-        "Spouse" = hfv_colors$grass,
-        "Unmarried partner" = hfv_colors$lilac,
-        "Other nonrelatives only" = hfv_colors$shadow,
-        "Child of householder" = hfv_colors$berry,
-        "Other relatives of householder" = hfv_colors$desert
+        "Lives alone" = hfv_colors$sky,
+        "Lives with married or unmarried partner" = hfv_colors$grass,
+        "Lives with other nonrelative(s)" = hfv_colors$lilac,
+        "Lives with other relative(s)" = hfv_colors$shadow,
+        "Lives with parent(s)" = hfv_colors$berry
       )) +
       scale_y_continuous(labels = scales::percent_format()) +
       labs(
@@ -386,18 +366,24 @@ server <- function(input, output, session) {
       ) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 10))
     
-    # Add logo directly using external URL
-    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
-    # Add logo to the plot using the URL
-    p_with_logo <- ggdraw(p) +
-      draw_image(
-        logo_url, # Use URL directly
-        x = 0.85, # Horizontal position (right side)
-        y = 0.05, # Vertical position (bottom)
-        width = 0.15,
-        height = 0.15
-      )
+    # Add logo using local file instead of external URL for better performance
+    tryCatch({
+      logo_path <- "www/hfv_rgb_logo.png"
+      if (file.exists(logo_path)) {
+        p_with_logo <- ggdraw(p) +
+          draw_image(
+            logo_path,
+            x = 0.85, # Horizontal position (right side)
+            y = 0.05, # Vertical position (bottom)
+            width = 0.15,
+            height = 0.15
+          )
+      } else {
+        p_with_logo <- p  # Return plot without logo if file doesn't exist
+      }
+    }, error = function(e) {
+      p_with_logo <- p  # Return plot without logo on error
+    })
     
     return(p_with_logo)
   }
