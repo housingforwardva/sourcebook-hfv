@@ -691,6 +691,38 @@
         "Built": "R 4.5.0; ; 2025-03-31 21:43:26 UTC; unix"
       }
     },
+    "crul": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "crul",
+        "Title": "HTTP Client",
+        "Description": "A simple HTTP client, with tools for making HTTP requests,\n    and mocking HTTP requests. The package is built on R6, and takes\n    inspiration from Ruby's 'faraday' gem (<https://rubygems.org/gems/faraday>).\n    The package name is a play on curl, the widely used command line tool\n    for HTTP, and this package is built on top of the R package 'curl', an\n    interface to 'libcurl' (<https://curl.se/libcurl/>).",
+        "Version": "1.6.0",
+        "License": "MIT + file LICENSE",
+        "Authors@R": "c(\n    person(\"Scott\", \"Chamberlain\", role = c(\"aut\", \"cre\"),\n    email = \"myrmecocystus@gmail.com\",\n    comment = c(ORCID = \"0000-0003-1444-9135\"))\n    )",
+        "URL": "https://docs.ropensci.org/crul/, https://github.com/ropensci/crul,\nhttps://books.ropensci.org/http-testing/",
+        "BugReports": "https://github.com/ropensci/crul/issues",
+        "Encoding": "UTF-8",
+        "Language": "en-US",
+        "Imports": "curl (>= 3.3), R6 (>= 2.2.0), urltools (>= 1.6.0), httpcode\n(>= 0.2.0), jsonlite, mime, rlang, lifecycle",
+        "Suggests": "testthat (>= 3.0.0), roxygen2 (>= 7.1.1), fauxpas (>= 0.1.0),\nwebmockr (>= 2.2.0), withr, knitr, rmarkdown",
+        "VignetteBuilder": "knitr",
+        "RoxygenNote": "7.3.2",
+        "Config/testthat/edition": "3",
+        "Config/testthat/parallel": "true",
+        "X-schema.org-applicationCategory": "Web",
+        "X-schema.org-keywords": "http, https, API, web-services, curl, download,\nlibcurl, async, mocking, caching",
+        "X-schema.org-isPartOf": "https://ropensci.org",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-07-21 16:40:35 UTC; sckott",
+        "Author": "Scott Chamberlain [aut, cre] (ORCID:\n    <https://orcid.org/0000-0003-1444-9135>)",
+        "Maintainer": "Scott Chamberlain <myrmecocystus@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-07-23 12:30:02 UTC",
+        "Built": "R 4.5.0; ; 2025-07-23 13:59:43 UTC; unix"
+      }
+    },
     "curl": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -1205,6 +1237,34 @@
         "Built": "R 4.5.0; ; 2025-05-10 00:42:34 UTC; unix"
       }
     },
+    "gfonts": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "gfonts",
+        "Title": "Offline 'Google' Fonts for 'Markdown' and 'Shiny'",
+        "Version": "0.2.0",
+        "Authors@R": "c(\n  person(\"Victor\", \"Perrier\", email = \"victor.perrier@dreamrs.fr\", role = c(\"aut\", \"cre\")),\n  person(\"Fanny\", \"Meyer\", role = \"aut\"),\n  person(\"Mario\", \"Ranftl\", role = c(\"ctb\", \"cph\"), comment = \"google-webfonts-helper\"))",
+        "Description": "Download 'Google' fonts and generate 'CSS' to use in 'rmarkdown' documents and \n  'shiny' applications. Some popular fonts are included and ready to use.",
+        "URL": "https://dreamrs.github.io/gfonts/,\nhttps://github.com/dreamRs/gfonts",
+        "BugReports": "https://github.com/dreamRs/gfonts/issues",
+        "License": "GPL-3",
+        "Encoding": "UTF-8",
+        "LazyData": "true",
+        "Depends": "R (>= 2.10)",
+        "Imports": "utils, htmltools, shiny, crul, jsonlite, glue, crayon",
+        "RoxygenNote": "7.2.2",
+        "Suggests": "knitr, rmarkdown, testthat (>= 2.1.0), vcr, covr",
+        "VignetteBuilder": "knitr",
+        "NeedsCompilation": "no",
+        "Packaged": "2023-01-08 18:26:46 UTC; victor",
+        "Author": "Victor Perrier [aut, cre],\n  Fanny Meyer [aut],\n  Mario Ranftl [ctb, cph] (google-webfonts-helper)",
+        "Maintainer": "Victor Perrier <victor.perrier@dreamrs.fr>",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-01-08 18:50:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 21:49:03 UTC; unix"
+      }
+    },
     "ggiraph": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -1567,6 +1627,31 @@
         "Repository": "CRAN",
         "Date/Publication": "2023-12-06 06:00:06 UTC",
         "Built": "R 4.5.0; ; 2025-04-01 23:26:28 UTC; unix"
+      }
+    },
+    "httpcode": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "httpcode",
+        "Title": "'HTTP' Status Code Helper",
+        "Description": "Find and explain the meaning of 'HTTP' status codes.\n    Functions included for searching for codes by full or partial number,\n    by message, and get appropriate dog and cat images for many\n    status codes.",
+        "Version": "0.3.0",
+        "Authors@R": "person(\"Scott\", \"Chamberlain\", role = c(\"aut\",\"cre\"),\n    email = \"myrmecocystus@gmail.com\", \n    comment = c(ORCID = \"0000-0003-1444-9135\"))",
+        "License": "MIT + file LICENSE",
+        "URL": "https://github.com/sckott/httpcode",
+        "BugReports": "https://github.com/sckott/httpcode/issues",
+        "Encoding": "UTF-8",
+        "Language": "en-US",
+        "Suggests": "testthat",
+        "RoxygenNote": "7.1.0",
+        "NeedsCompilation": "no",
+        "Packaged": "2020-04-10 03:18:28 UTC; sckott",
+        "Author": "Scott Chamberlain [aut, cre] (<https://orcid.org/0000-0003-1444-9135>)",
+        "Maintainer": "Scott Chamberlain <myrmecocystus@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2020-04-10 06:20:02 UTC",
+        "Built": "R 4.5.0; ; 2025-03-31 22:39:27 UTC; unix"
       }
     },
     "httpuv": {
@@ -3250,6 +3335,35 @@
         "Built": "R 4.5.0; ; 2025-04-15 16:30:36 UTC; unix"
       }
     },
+    "triebeard": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "triebeard",
+        "Type": "Package",
+        "Title": "'Radix' Trees in 'Rcpp'",
+        "Version": "0.4.1",
+        "Author": "Os Keyes [aut, cre], Drew Schmidt [aut], Yuuki Takano [cph]",
+        "Maintainer": "Os Keyes <ironholds@gmail.com>",
+        "Description": "'Radix trees', or 'tries', are key-value data structures optimised for efficient lookups, similar in purpose\n             to hash tables. 'triebeard' provides an implementation of 'radix trees' for use in R programming and in\n             developing packages with 'Rcpp'.",
+        "License": "MIT + file LICENSE",
+        "LinkingTo": "Rcpp",
+        "Encoding": "UTF-8",
+        "Imports": "Rcpp",
+        "RoxygenNote": "7.1.2",
+        "Suggests": "knitr, rmarkdown, testthat",
+        "VignetteBuilder": "knitr",
+        "URL": "https://github.com/Ironholds/triebeard/",
+        "BugReports": "https://github.com/Ironholds/triebeard/issues",
+        "Date": "2023-03-04",
+        "NeedsCompilation": "yes",
+        "Packaged": "2023-03-04 21:40:31 UTC; ironholds",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-03-04 23:30:07 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 22:00:29 UTC; unix",
+        "Archs": "triebeard.so.dSYM"
+      }
+    },
     "tzdb": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -3278,6 +3392,38 @@
         "Date/Publication": "2025-03-15 22:50:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 06:32:38 UTC; unix",
         "Archs": "tzdb.so.dSYM"
+      }
+    },
+    "urltools": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "urltools",
+        "Type": "Package",
+        "Title": "Vectorised Tools for URL Handling and Parsing",
+        "Version": "1.7.3.1",
+        "Date": "2019-04-14",
+        "Authors@R": "c(person(given = \"Os\",\n                    family = \"Keyes\",\n                    role = c(\"aut\", \"cre\"),\n                    email = \"ironholds@gmail.com\"),\n             person(given = \"Jay\",\n                    family = \"Jacobs\",\n                    role = \"aut\"),\n             person(given = \"Drew\",\n                    family = \"Schmidt\",\n                    role = \"aut\"),\n             person(given = \"Mark\",\n                    family = \"Greenaway\",\n                    role = \"ctb\"),\n             person(given = \"Bob\",\n                    family = \"Rudis\",\n                    role = \"ctb\"),\n             person(given = \"Alex\",\n                    family = \"Pinto\",\n                    role = \"ctb\"),\n             person(given = \"Maryam\",\n                    family = \"Khezrzadeh\",\n                    role = \"ctb\"),\n             person(given = \"Peter\",\n                    family = \"Meilstrup\",\n                    role = \"ctb\"),\n             person(given = c(\"Adam\", \"M.\"),\n                    family = \"Costello\",\n                    role = \"cph\"),\n             person(given = \"Jeff\",\n                    family = \"Bezanson\",\n                    role = \"cph\"),\n             person(given = \"Peter\",\n                    family = \"Meilstrup\",\n                    role = \"ctb\"),\n             person(given = \"Xueyuan\",\n                    family = \"Jiang\",\n                    role = \"ctb\"))",
+        "Description": "A toolkit for all URL-handling needs, including encoding and decoding,\n    parsing, parameter extraction and modification. All functions are\n    designed to be both fast and entirely vectorised. It is intended to be\n    useful for people dealing with web-related datasets, such as server-side\n    logs, although may be useful for other situations involving large sets of\n    URLs.",
+        "License": "MIT + file LICENSE",
+        "LazyData": "TRUE",
+        "LinkingTo": "Rcpp",
+        "Imports": "Rcpp, methods, triebeard",
+        "Suggests": "testthat, knitr",
+        "URL": "https://github.com/Ironholds/urltools/",
+        "BugReports": "https://github.com/Ironholds/urltools/issues",
+        "VignetteBuilder": "knitr",
+        "RoxygenNote": "6.1.1",
+        "Encoding": "UTF-8",
+        "Depends": "R (>= 2.10)",
+        "NeedsCompilation": "yes",
+        "Packaged": "2025-06-12 07:48:37 UTC; hornik",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-06-12 08:37:42 UTC",
+        "Author": "Os Keyes [aut, cre],\n  Jay Jacobs [aut],\n  Drew Schmidt [aut],\n  Mark Greenaway [ctb],\n  Bob Rudis [ctb],\n  Alex Pinto [ctb],\n  Maryam Khezrzadeh [ctb],\n  Peter Meilstrup [ctb],\n  Adam M. Costello [cph],\n  Jeff Bezanson [cph],\n  Peter Meilstrup [ctb],\n  Xueyuan Jiang [ctb]",
+        "Maintainer": "Os Keyes <ironholds@gmail.com>",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-06-12 09:32:49 UTC; unix",
+        "Archs": "urltools.so.dSYM"
       }
     },
     "utf8": {
@@ -3566,7 +3712,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "a7abcea61efca84bd8192028dbb79859"
+      "checksum": "02fd57e60a8f9ab667b2252d6bab6154"
     },
     "b25014_data.rds": {
       "checksum": "830bfe7367d590d28da1ab8669a2dee3"
