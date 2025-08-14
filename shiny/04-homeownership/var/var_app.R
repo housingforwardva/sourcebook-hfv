@@ -5,6 +5,19 @@ library(scales)
 library(shinyjs)     # For UI interactions
 library(plotly)      # For interactive plots
 
+ # Load data
+  var_data <- read_rds("home-sales.rds")
+  
+  # Define latest quarter
+  latest_quarter <- max(var_data$quarter)
+  
+  # Create a data frame for the name list - Now sorted alphabetically
+  name_list <- var_data %>%
+    select(geography, name) %>%
+    distinct() %>%
+    arrange(geography, name)  # Sort alphabetically by geography and then by name
+  
+
 # Using dashboardPage instead of fluidPage for better sidebar functionality
 ui <- navbarPage(
   title = NULL,
@@ -406,7 +419,7 @@ server <- function(input, output, session) {
   }
   
   # Load data
-  var_data <- read_rds(here("data", "rds", "home-sales.rds"))
+  var_data <- read_rds("home-sales.rds")
   
   # Define latest quarter
   latest_quarter <- max(var_data$quarter)
