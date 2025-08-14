@@ -202,13 +202,13 @@ ui <- page_fillable(
 server <- function(input, output, session) {
   # Load data
   inc_dist <- reactive({
-    read_rds(here("data", "rds", "b25118_data.rds"))
+    read_rds("data.rds")
   })
   
   # Define income order once
-  income_order <- c("Less than $15,000", "$15,000 to $24,999", "$25,000 to $49,999",
-                    "$50,000 to $74,999", "$75,000 to $99,999", "$100,000 to $149,999",
-                    "$150,000 or more")
+  income_order <- c("Under $10,000", "$10,000 to $19,999", "$20,000 to $34,999",
+                    "$35,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999",
+                    "$100,000 to $149,999","$150,000 or more")
   
   # Update year filter choices
   observe({
@@ -251,10 +251,10 @@ server <- function(input, output, session) {
     req(input$year)
     
     inc_dist() %>% 
-      group_by(year, tenure, income) %>% 
+      group_by(year, tenure, income_range) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>% 
       filter(year == input$year) %>%
-      mutate(income = factor(income, levels = income_order))
+      mutate(income = factor(income_range, levels = income_order))
   })
   
   # Create CBSA-level data
@@ -262,11 +262,11 @@ server <- function(input, output, session) {
     req(input$year, input$cbsa)
     
     inc_dist() %>% 
-      group_by(year, cbsa_title, tenure, income) %>% 
+      group_by(year, cbsa_title, tenure, income_range) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>% 
       filter(year == input$year,
              cbsa_title == input$cbsa) %>%
-      mutate(income = factor(income, levels = income_order))
+      mutate(income = factor(income_range, levels = income_order))
   })
   
   # Create local-level data
@@ -274,9 +274,10 @@ server <- function(input, output, session) {
     req(input$year, input$county)
     
     inc_dist() %>% 
+      group_by(year, name_long, tenure, income_range) |> 
       filter(year == input$year,
              name_long == input$county) %>%
-      mutate(income = factor(income, levels = income_order))
+      mutate(income = factor(income_range, levels = income_order))
   })
   
   # Create title text
