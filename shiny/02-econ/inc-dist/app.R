@@ -79,17 +79,6 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
-
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,

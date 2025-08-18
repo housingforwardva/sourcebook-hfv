@@ -4,7 +4,16 @@ library(gganimate)
 library(scales)
 
 
-var_data <- read_rds("shiny/04-homeownership/var/home-sales.rds")
+var_data <- read_rds("shiny/04-homeownership/var/home-sales.rds") 
+
+  
+top <- var_data |>
+  mutate(quarter_num = as.numeric(as.factor(quarter))) |>
+  arrange(quarter_num) |> 
+  filter(quarter == "2025 Q2") |> 
+  filter(geography == "MSA")
+
+
 
 hrra <- c("Chesapake City", "Franklin City", "Norfolk City", "Portsmouth City", "Suffolk City", 
   "Virginia Beach City", "Isle of Wight County")
@@ -12,7 +21,11 @@ hrra <- c("Chesapake City", "Franklin City", "Norfolk City", "Portsmouth City", 
 southside <- var_data |> 
   filter(name %in% hrra) |>
   mutate(quarter_num = as.numeric(as.factor(quarter))) |>
-  arrange(quarter_num)
+  arrange(quarter_num) |> 
+  filter(quarter == "2025 Q2")
+
+
+
 
 # Animated home sales plot
 p1 <- ggplot(southside,

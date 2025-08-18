@@ -269,7 +269,7 @@ add_reliability_metrics <- function(data) {
 }
   # Function to safely combine race variants
   combine_race_variants <- function(base_table, data_list) {
-    variants <- c(base_table, paste0(base_table, LETTERS[2:8]))
+    variants <- c(base_table, paste0(base_table, LETTERS[2:9]))
     
     combined_data <- map(variants, ~data_list[[.x]]) %>% 
       compact() %>% 

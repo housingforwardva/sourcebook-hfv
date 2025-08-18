@@ -32,7 +32,7 @@ survey <- "acs5"
 
 # Define all tables including race variants
 tables <- c(
-  "B25118"  # Tenure by Household Income
+  paste0("B17001", LETTERS[2:9])  # Race variants B-H
 )
 
 ## COUNTY DATA PULL --------------------------------------------------------------
@@ -86,18 +86,29 @@ cbsa_data <- map(tables, function(table) {
 # Remove NULL results
 cbsa_data <- compact(cbsa_data)
 
+message("Processing B17001 (poverty status)...")
+b17001_combined <- list(
+  county = combine_race_variants("B17001", county_data),
+  state = combine_race_variants("B17001", state_data),
+  cbsa = combine_race_variants("B17001", cbsa_data)
+)
+b17001_data <- safe_process_data(
+  list("B17001" = b17001_combined$county), 
+  list("B17001" = b17001_combined$state), 
+  list("B17001" = b17001_combined$cbsa), 
+  "B17001", b17001_vars
+)
 
-b25118_data <- safe_process_data(county_data, state_data, cbsa_data, "B25118", b25118_vars)
 
 
 # Upload to S3 bucket
 s3 <- paws::s3()
 
 temp_file <- tempfile(fileext = ".rds")
-write_rds(b25118_data, temp_file)
+write_rds(b17001_data, temp_file)
 s3$put_object(
   Bucket = "hda-data-hub",
-  Key = "census/b25118_data.rds",
+  Key = "census/b17001_data.rds",
   Body = temp_file
 )
 file.remove(temp_file)

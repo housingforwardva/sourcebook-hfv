@@ -63,6 +63,9 @@ compile_hfv_styles_if_needed <- function() {
   return(file.exists(css_file))
 }
 
+# Load shared HFV colors
+source(here::here("shiny", "shared_colors.R"))
+
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
@@ -332,11 +335,7 @@ server <- function(input, output, session) {
         aes(tooltip = tooltip, data_id = paste(year, tenure)),
         size = 3
       ) +
-      scale_color_manual(values = c(
-        "All households" = "#011E41",
-        "Homeowner" = "#40C0C0",
-        "Renter" = "#B1005F"
-      )) +
+      scale_color_manual(values = tenure_colors) +
       scale_y_continuous(labels = dollar_format()) +
       labs(
         title = title_text,

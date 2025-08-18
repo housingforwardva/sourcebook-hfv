@@ -199,6 +199,50 @@ $grass-gradient: (lighten($hfv-grass, 25%), $hfv-grass, darken($hfv-grass, 20%))
 $lilac-gradient: (lighten($hfv-lilac, 30%), $hfv-lilac, darken($hfv-lilac, 20%));
 
 // -----------------------------------------------------------------------------
+// DEMOGRAPHIC & CATEGORICAL DATA COLORS
+// -----------------------------------------------------------------------------
+
+// Race/Ethnicity Colors
+$race-colors: (
+  "White, Not Hispanic Or Latino": $hfv-sky,           // #40C0C0
+  "Black": $hfv-shadow,                                // #011E41  
+  "Asian": $hfv-grass,                                 // #259591
+  "Some Other Race": $hfv-desert,                      // #E0592A
+  "Multiracial": $hfv-berry,                           // #B1005F
+  "American Indian/Alaska Native": $hfv-lilac,         // #8B85CA
+  "Native Hawaiian/Pacific Islander": #FFC658,         // Complementary yellow
+  "All households": #FF7276                            // Complementary coral
+);
+
+// Age Group Colors
+$age-colors: (
+  "17 years and under": #FFC658,                       // Yellow - youth
+  "18 to 24 years": $hfv-desert,                       // #E0592A
+  "25 to 34 years": $hfv-grass,                        // #259591
+  "35 to 44 years": $hfv-sky,                          // #40C0C0
+  "45 to 54 years": $hfv-lilac,                        // #8B85CA
+  "55 to 64 years": $hfv-berry,                        // #B1005F
+  "65 to 74 years": $hfv-shadow,                       // #011E41
+  "75 years and over": $hfv-shadow-light               // #102C54
+);
+
+// Housing Tenure Colors
+$tenure-colors: (
+  "Owner-occupied": $hfv-sky,                          // #40C0C0 - stable/positive
+  "Renter-occupied": $hfv-desert                       // #E0592A - different state
+);
+
+// Income Bracket Colors (ordered from low to high)
+$income-colors: (
+  "Under $25,000": $hfv-berry,                         // #B1005F - lowest
+  "$25,000 to $49,999": $hfv-desert,                   // #E0592A
+  "$50,000 to $74,999": #FFC658,                       // Yellow
+  "$75,000 to $99,999": $hfv-grass,                    // #259591
+  "$100,000 to $149,999": $hfv-sky,                    // #40C0C0
+  "$150,000 and over": $hfv-lilac                      // #8B85CA - highest
+);
+
+// -----------------------------------------------------------------------------
 // ACCESSIBILITY
 // -----------------------------------------------------------------------------
 
