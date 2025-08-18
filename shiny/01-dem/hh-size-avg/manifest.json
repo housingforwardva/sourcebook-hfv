@@ -3716,21 +3716,6 @@
     },
     "b25010_data.rds": {
       "checksum": "1192fd1ec3899d55ebae7a202d505586"
-    },
-    "www/styles/components.scss": {
-      "checksum": "f2dafa4fc57468799db98f3e9d6e50fc"
-    },
-    "www/styles/hfv-theme.css": {
-      "checksum": "961d45c3b2cfca4ff470454658d7a666"
-    },
-    "www/styles/hfv-theme.scss": {
-      "checksum": "e3def82a2b99037b7f59efe00704d01c"
-    },
-    "www/styles/responsive.scss": {
-      "checksum": "7574d9c4dd66e1bfd5c5a980058d0d85"
-    },
-    "www/styles/variables.scss": {
-      "checksum": "f2289b20f4dbbeeb74ff65d76b2141ab"
     }
   },
   "users": null
