@@ -115,6 +115,30 @@ race_list <- poverty_race |>
   arrange(race) |>   # sorts them
   pull(race)         # extracts the column as a vector
 
+  # Define race colors
+  race_colors <- c(
+    "White alone, not Hispanic" = "#40C0C0",
+    "Black alone" = "#011E41",
+    "Asian alone" = "#259591",
+    "Hispanic or Latino" = "#E0592A",
+    "Two or more races" = "#B1005F",
+    "American Indian alone" = "#8B85CA",
+    "Pacific Islander alone" = "#FFC658",  # Additional color
+    "Some other race alone" = "#FF7276"    # Additional color
+  )
+  
+  # Define age colors
+  age_colors <- c(
+    "17 years and under" = "#FFC658",    # Desert variant
+    "18 to 24 years" = "#E0592A", # Desert
+    "25 to 34 years" = "#259591",  # Grass
+    "35 to 44 years" = "#40C0C0",    # Sky
+    "45 to 54 years" = "#8B85CA",  # Lilac
+    "55 to 64 years" = "#B1005F",  # Berry
+    "65 years and over" = "#011E41" # Shadow
+  )
+  
+
 
 # Define UI
 ui <- page_fillable(
@@ -279,29 +303,7 @@ ui <- page_fillable(
 # Server function
 server <- function(input, output, session) {
   
-  # Define race colors
-  race_colors <- c(
-    "White alone, not Hispanic" = "#40C0C0",
-    "Black alone" = "#011E41",
-    "Asian alone" = "#259591",
-    "Hispanic (any race)" = "#E0592A",
-    "Two or more races" = "#B1005F",
-    "American Indian alone" = "#8B85CA",
-    "Pacific Islander alone" = "#FFC658",  # Additional color
-    "Some other race alone" = "#FF7276"    # Additional color
-  )
-  
-  # Define age colors
-  age_colors <- c(
-    "17 years and under" = "#FFC658",    # Desert variant
-    "18 to 24 years" = "#E0592A", # Desert
-    "25 to 34 years" = "#259591",  # Grass
-    "35 to 44 years" = "#40C0C0",    # Sky
-    "45 to 54 years" = "#8B85CA",  # Lilac
-    "55 to 64 years" = "#B1005F",  # Berry
-    "65 years and over" = "#011E41" # Shadow
-  )
-  
+
   #----- RACE DATA PROCESSING -----#
   
   # Process race state data
@@ -309,7 +311,6 @@ server <- function(input, output, session) {
     # Process race state data
     pov_race_state <- poverty_race %>% 
       filter(geography == "state") |> 
-      filter(name ==)
       group_by(year, race) %>% 
       summarise(estimate = sum(estimate),
                 totalrace = sum(totalrace),
