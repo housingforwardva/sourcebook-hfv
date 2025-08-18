@@ -281,9 +281,13 @@ b17001_vars <- load_table_vars("B17001", 2023) %>%
     race == "Poverty Status In The Past 12 Months By Sex By Age" ~ "All households",
     TRUE ~ race
   )) %>% 
-  select(variable = name, sex, age, race) %>% 
+  select(variable = name, poverty, sex, age, race) %>% 
   drop_na() %>% 
-  mutate(across(.fns = ~str_remove_all(.x, ":")))
+  mutate(across(.fns = ~str_remove_all(.x, ":"))) |> 
+  mutate(poverty = case_when(
+    str_detect(poverty, "below") ~ "Below",
+    TRUE ~ "At or above"
+  ))
 
   
 ## TABLE B25106 - Cost Burden ACS ----------------------------------------------
@@ -375,11 +379,11 @@ survey <- "acs5"
 # Define all tables including race variants
 tables <- c(
   "B11001",  # Household Type (including Living Alone)
-  paste0("B11001", LETTERS[2:8]),  # Race variants B-H
+  paste0("B11001", LETTERS[2:9]),  # Race variants B-H
   "B11012",  # Households by Type (limited years)
   "B09021",  # Living Arrangements of Adults (limited years)
   "B25003",  # Tenure of Occupied Housing Units  
-  paste0("B25003", LETTERS[2:8]),  # Race variants B-H
+  paste0("B25003", LETTERS[2:9]),  # Race variants B-H
   "B25004",  # Vacancy Status
   "B25007",  # Tenure by Householder Age
   "B25009",  # Tenure by Household Size  
@@ -391,12 +395,12 @@ tables <- c(
   "B25118",  # Tenure by Household Income
   "B25014",  # Tenure by Occupants per Bedroom
   "B17001",  # Poverty Status
-  paste0("B17001", LETTERS[2:8]),  # Race variants B-H
+  paste0("B17001", LETTERS[2:9]),  # Race variants B-H
   "B25106",  # Cost Burden ACS
   "B19049",  # Median Household Income by Age
   "B25119",  # Median Household Income by Tenure
   "B19013",  # Median Household Income by Race
-  paste0("B19013", LETTERS[2:8]),   # Race variants B-H,
+  paste0("B19013", LETTERS[2:9]),   # Race variants B-H,
   "B25064", # Median Gross Rent
   "B25031", # Median Gross Rent by Bedrooms (limited years)
   "B25058"  # Median Contract Rent

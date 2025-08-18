@@ -80,6 +80,38 @@ hfv_theme <- bs_theme(
 )
 
 
+  # Load the data
+  state_inc_data <- read_rds("data.rds") |> 
+    filter(geography == "state")
+  
+  cbsa_inc_data <- read_rds("data.rds") |> 
+    filter(geography == "cbsa")
+  
+  locality_inc_data <- read_rds("data.rds") |> 
+    filter(geography == "county")
+  
+  # Create color vector for races
+  race_colors <- c(
+    "White, non-Hispanic" = "#40C0C0",
+    "Black" = "#011E41",
+    "Asian" = "#259591",
+    "Hispanic (any race)" = "#E0592A",
+    "Two or more races" = "#B1005F",
+    "American Indian alone" = "#8B85CA",
+    "Pacific Islander alone" = "#FFC658",
+    "Some other race alone" = "#FF7276"
+  )
+  
+  # Get available options
+  state_list <- sort(unique(state_inc_data$NAME))
+  
+  cbsa_list <- sort(unique(cbsa_inc_data$NAME))
+  
+  locality_list <- sort(unique(locality_inc_data$NAME))
+  
+  year_list <- sort(unique(state_inc_data$year), decreasing = TRUE)
+
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
@@ -196,78 +228,38 @@ ui <- page_fillable(
 
 # Server function
 server <- function(input, output, session) {
-  # Load the data
-  state_inc_data <- reactive({
-    read_rds(here("data", "rds", "b19013_state.rds"))
-  })
-  
-  cbsa_inc_data <- reactive({
-    read_rds(here("data", "rds", "b19013_cbsa.rds"))
-  })
-  
-  locality_inc_data <- reactive({
-    read_rds(here("data", "rds", "b19013_locality.rds"))
-  })
-  
-  # Create color vector for races
-  race_colors <- c(
-    "White alone, not Hispanic" = "#40C0C0",
-    "Black alone" = "#011E41",
-    "Asian alone" = "#259591",
-    "Hispanic (any race)" = "#E0592A",
-    "Two or more races" = "#B1005F",
-    "American Indian alone" = "#8B85CA",
-    "Pacific Islander alone" = "#FFC658",
-    "Some other race alone" = "#FF7276"
-  )
-  
-  # Get available options
-  state_list <- reactive({
-    sort(unique(state_inc_data()$state))
-  })
-  
-  cbsa_list <- reactive({
-    sort(unique(cbsa_inc_data()$CBSA))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(locality_inc_data()$locality))
-  })
-  
-  year_list <- reactive({
-    sort(unique(state_inc_data()$year), decreasing = TRUE)
-  })
+
   
   # Initialize dropdowns
   observe({
     # Years
     updateSelectInput(session, "year", 
-                      choices = year_list(),
-                      selected = max(year_list()))
+                      choices = year_list,
+                      selected = max(year_list))
     
     # States
     updateSelectInput(session, "state_select", 
-                      choices = state_list(),
-                      selected = if("Virginia" %in% state_list()) "Virginia" else state_list()[1])
+                      choices = state_list,
+                      selected = if("Virginia" %in% state_list) "Virginia" else state_list[1])
     
     # CBSAs
     updateSelectInput(session, "cbsa_select", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA Metro Area" %in% cbsa_list()) "Richmond, VA Metro Area" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA Metro Area" %in% cbsa_list) "Richmond, VA Metro Area" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality_select", 
-                      choices = locality_list(),
-                      selected = if("Richmond city" %in% locality_list()) "Richmond city" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond city" %in% locality_list) "Richmond city" else locality_list[1])
   })
   
   # Get filtered data based on selected tab and inputs
   filtered_state <- reactive({
     req(input$state_select, input$year)
     
-    state_inc_data() %>%
+    state_inc_data %>%
       filter(
-        state == input$state_select,
+        NAME == input$state_select,
         year == input$year
       )
   })
@@ -275,9 +267,9 @@ server <- function(input, output, session) {
   filtered_cbsa <- reactive({
     req(input$cbsa_select, input$year)
     
-    cbsa_inc_data() %>%
+    cbsa_inc_data %>%
       filter(
-        CBSA == input$cbsa_select,
+        NAME == input$cbsa_select,
         year == input$year
       )
   })
@@ -285,9 +277,9 @@ server <- function(input, output, session) {
   filtered_locality <- reactive({
     req(input$locality_select, input$year)
     
-    locality_inc_data() %>%
+    locality_inc_data %>%
       filter(
-        locality == input$locality_select,
+        NAME == input$locality_select,
         year == input$year
       )
   })
@@ -323,7 +315,6 @@ server <- function(input, output, session) {
     
     # Filter out NA values
     plot_data <- data %>% 
-      drop_na() %>%
       # Use the value column to order the races
       mutate(race = factor(race, levels = race[order(get(value_col))]))
     

@@ -306,7 +306,7 @@ server <- function(input, output, session) {
       ) +
       facet_wrap(~tenure, ncol = 1) +
       # Use Housing Forward Virginia colors
-      scale_fill_manual(values = c("Owner" = "#40C0C0", "Renter" = "#011E41")) +
+      scale_fill_manual(values = c("Homeowner" = "#40C0C0", "Renter" = "#011E41")) +
       scale_y_continuous(labels = scales::number_format(big.mark = ","),
                          expand = expansion(mult = c(0, 0.1))) +
       labs(

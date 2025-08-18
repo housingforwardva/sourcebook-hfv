@@ -21,9 +21,9 @@ data <- tryCatch({
 }, error = function(e) {
   # If decompression fails, try reading directly
   readRDS(rawConnection(s3_response$Body))
-}) %>% 
-  right_join(lookup, by = "GEOID") %>% 
-  mutate(year = as.numeric(year)) |> 
+}) |> 
+  right_join(lookup, by = "GEOID") |> 
   drop_na(tenure)
+
 
 write_rds(data, "shiny/02-econ/inc-dist/data.rds")

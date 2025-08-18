@@ -79,6 +79,25 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+  # Load the data
+  state_inc_age_data <- read_rds("./data.rds") |> 
+    filter(geography == "state")
+
+
+  cbsa_inc_age_data <- read_rds("./data.rds") |> 
+    filter(geography == "cbsa")
+  
+  local_inc_age_data <- read_rds("./data.rds") |> 
+    filter(geography == "county")
+  
+  # Get available options
+  state_list <- sort(unique(state_inc_age_data$NAME))
+
+  cbsa_list <- sort(unique(cbsa_inc_age_data$NAME))
+  
+  locality_list <- sort(unique(local_inc_age_data$NAME))
+
+
 
 # Define UI
 ui <- page_fillable(
@@ -194,67 +213,43 @@ ui <- page_fillable(
 
 # Server function
 server <- function(input, output, session) {
-  # Load the data
-  state_inc_age_data <- reactive({
-    read_rds(here("data", "rds", "b19049_state.rds"))
-  })
-  
-  cbsa_inc_age_data <- reactive({
-    read_rds(here("data", "rds", "b19049_cbsa.rds"))
-  })
-  
-  local_inc_age_data <- reactive({
-    read_rds(here("data", "rds", "b19049_locality.rds"))
-  })
-  
-  # Get available options
-  state_list <- reactive({
-    sort(unique(state_inc_age_data()$state))
-  })
-  
-  cbsa_list <- reactive({
-    sort(unique(cbsa_inc_age_data()$cbsa))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(local_inc_age_data()$locality))
-  })
+
   
   # Initialize dropdowns
   observe({
     # States
     updateSelectInput(session, "state_select", 
-                      choices = state_list(),
-                      selected = if("Virginia" %in% state_list()) "Virginia" else state_list()[1])
+                      choices = state_list,
+                      selected = if("Virginia" %in% state_list) "Virginia" else state_list[1])
     
     # CBSAs
     updateSelectInput(session, "cbsa_select", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA Metro Area" %in% cbsa_list()) "Richmond, VA Metro Area" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA Metro Area" %in% cbsa_list) "Richmond, VA Metro Area" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "local_select", 
-                      choices = locality_list(),
-                      selected = if("Chesterfield County" %in% locality_list()) "Chesterfield County" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Chesterfield County" %in% locality_list) "Chesterfield County" else locality_list[1])
   })
   
   # Create filtered datasets
   filtered_state <- reactive({
     req(input$state_select)
-    state_inc_age_data() %>%
-      filter(state == input$state_select)
+    state_inc_age_data %>%
+      filter(NAME == input$state_select)
   })
   
   filtered_cbsa <- reactive({
     req(input$cbsa_select)
-    cbsa_inc_age_data() %>%
-      filter(cbsa == input$cbsa_select)
+    cbsa_inc_age_data %>%
+      filter(NAME == input$cbsa_select)
   })
   
   filtered_local <- reactive({
     req(input$local_select)
-    local_inc_age_data() %>%
-      filter(locality == input$local_select) %>%
+    local_inc_age_data %>%
+      filter(NAME == input$local_select) %>%
       mutate(
         estimate = as.numeric(estimate),
         adjusted = as.numeric(adjusted)
@@ -301,10 +296,10 @@ server <- function(input, output, session) {
     
     # Create color mapping with HFV colors
     color_values <- c(
-      "Householder under 25 years" = "#40C0C0",
-      "Householder 25 to 44 years" = "#259591",
-      "Householder 45 to 64 years" = "#011E41",
-      "Householder 65 years and over" = "#B1005F"
+      "Under 25 years" = "#40C0C0",
+      "25 to 44 years" = "#259591",
+      "45 to 64 years" = "#011E41",
+      "65 years and over" = "#B1005F"
     )
     
     # Create base plot

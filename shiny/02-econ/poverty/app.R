@@ -80,14 +80,41 @@ hfv_theme <- bs_theme(
 )
 
 # Load data outside of server
-poverty_race <- read_rds(here("data", "rds", "poverty_race.rds"))
-poverty_age <- read_rds(here("data", "rds", "poverty_age.rds"))
+
+poverty_age <- read_rds("age_data.rds")
+poverty_race <- read_rds("race_data.rds")
 
 # Create lists for filters
-cbsa_list_race <- sort(unique(poverty_race$cbsa_title))
-locality_list_race <- sort(unique(poverty_race$locality))
-cbsa_list_age <- sort(unique(poverty_age$cbsa_title))
-locality_list_age <- sort(unique(poverty_age$locality))
+state_list <- poverty_age |> 
+  filter(geography == "state") |> 
+  distinct(NAME) |>  # gets unique values
+  arrange(NAME) |>   # sorts them
+  pull(NAME)         # extracts the column as a vector
+  
+cbsa_list <- poverty_age |> 
+  filter(geography == "cbsa") |> 
+  distinct(NAME) |>  # gets unique values
+  arrange(NAME) |>   # sorts them
+  pull(NAME)         # extracts the column as a vector
+
+locality_list <- poverty_age |> 
+  filter(geography == "locality") |> 
+  distinct(NAME) |>  # gets unique values
+  arrange(NAME) |>   # sorts them
+  pull(NAME)         # extracts the column as a vector
+
+age_list <- poverty_age |> 
+  filter(geography == "locality") |> 
+  distinct(age) |>  # gets unique values
+  arrange(age) |>   # sorts them
+  pull(age)         # extracts the column as a vector
+
+race_list <- poverty_race |> 
+  filter(geography == "locality") |> 
+  distinct(race) |>  # gets unique values
+  arrange(race) |>   # sorts them
+  pull(race)         # extracts the column as a vector
+
 
 # Define UI
 ui <- page_fillable(
@@ -136,32 +163,32 @@ ui <- page_fillable(
           conditionalPanel(
             condition = "input.tabs == 'cbsa' && input.analysis_type == 'race'",
             selectInput("race_cbsa_select", "Metro Area:", 
-                        choices = cbsa_list_race,
-                        selected = if("Richmond, VA" %in% cbsa_list_race) "Richmond, VA" else cbsa_list_race[1],
+                        choices = cbsa_list,
+                        selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
                         width = "100%", 
                         selectize = FALSE)
           ),
           conditionalPanel(
             condition = "input.tabs == 'local' && input.analysis_type == 'race'",
             selectInput("race_locality_select", "Locality:", 
-                        choices = locality_list_race,
-                        selected = if("Richmond city" %in% locality_list_race) "Richmond city" else locality_list_race[1],
+                        choices = locality_list,
+                        selected = if("Richmond city" %in% locality_list) "Richmond city" else locality_list[1],
                         width = "100%", 
                         selectize = FALSE)
           ),
           conditionalPanel(
             condition = "input.tabs == 'cbsa' && input.analysis_type == 'age'",
             selectInput("age_cbsa_select", "Metro Area:", 
-                        choices = cbsa_list_age,
-                        selected = if("Richmond, VA" %in% cbsa_list_age) "Richmond, VA" else cbsa_list_age[1],
+                        choices = cbsa_list,
+                        selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
                         width = "100%", 
                         selectize = FALSE)
           ),
           conditionalPanel(
             condition = "input.tabs == 'local' && input.analysis_type == 'age'",
             selectInput("age_locality_select", "Locality:", 
-                        choices = locality_list_age,
-                        selected = if("Richmond city" %in% locality_list_age) "Richmond city" else locality_list_age[1],
+                        choices = locality_list,
+                        selected = if("Richmond city" %in% locality_list) "Richmond city" else locality_list[1],
                         width = "100%", 
                         selectize = FALSE)
           )
@@ -281,6 +308,8 @@ server <- function(input, output, session) {
   race_state_data <- reactive({
     # Process race state data
     pov_race_state <- poverty_race %>% 
+      filter(geography == "state") |> 
+      filter(name ==)
       group_by(year, race) %>% 
       summarise(estimate = sum(estimate),
                 totalrace = sum(totalrace),
