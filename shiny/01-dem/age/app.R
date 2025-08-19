@@ -17,8 +17,6 @@ library(gfonts)
 # Population by Age Visualization
 # =============================================================================
 
-
-
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
@@ -46,9 +44,30 @@ hfv_colors <- list(
   desert = "#E0592A"         # Orange
 )
 
-# Define UI
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+  # Load the data (only once)
+  pop_age <- read_rds("pop_age.rds")
+  
+  # Define age group order (move to global or make reactive if it might change)
+  age_order <- c("Under 10", "10 to 17", "18 to 24", "25 to 29", "30 to 34", 
+                 "35 to 44", "45 to 54", "55 to 64", "65 to 74", "75 and over")
+  
+  # Get available choices (reactive because we need to call pop_age())
+  cbsa_list <- sort(unique(pop_age$cbsa_title))
+  
+  locality_list <- sort(unique(pop_age$name_long))
+
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
   # Main container using HFV classes
   div(
@@ -73,7 +92,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
                 # Year selector
@@ -153,31 +172,18 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION 
+# =============================================================================
+
 # Streamlined server function with reduced redundancy
 server <- function(input, output, session) {
-  # Load the data (only once)
-  pop_age <- reactive({
-    readRDS("pop_age.rds")
-  })
-  
-  # Define age group order (move to global or make reactive if it might change)
-  age_order <- c("Under 10", "10 to 17", "18 to 24", "25 to 29", "30 to 34", 
-                 "35 to 44", "45 to 54", "55 to 64", "65 to 74", "75 and over")
-  
-  # Get available choices (reactive because we need to call pop_age())
-  cbsa_list <- reactive({
-    sort(unique(pop_age()$cbsa_title))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(pop_age()$name_long))
-  })
+
   
   # Initialize dropdowns
   observe({
-    cbsa_choices <- cbsa_list()
-    locality_choices <- locality_list()
+    cbsa_choices <- cbsa_list
+    locality_choices <- locality_list
     
     updateSelectInput(session, "cbsa", 
                       choices = cbsa_choices,
@@ -192,7 +198,7 @@ server <- function(input, output, session) {
   filtered_data <- reactive({
     req(input$year)
     
-    base_data <- pop_age() %>%
+    base_data <- pop_age %>%
       filter(year == input$year) %>%
       mutate(agegroup = factor(agegroup, levels = age_order))
     
@@ -281,23 +287,23 @@ server <- function(input, output, session) {
       )
   }
   
-  # Single function to create interactive plots
-  create_interactive_plot <- function(plot_obj) {
-    girafe(
-      ggobj = plot_obj,
-      width_svg = 8,
-      height_svg = 5,
-      options = list(
-        opts_hover(css = "fill-opacity:0.8;"),
-        opts_tooltip(
-          opacity = 0.9,
-          css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
-          use_fill = TRUE
-        ),
-        opts_sizing(rescale = TRUE)
-      )
+create_interactive_plot <- function(plot_obj) {
+  girafe(
+    ggobj = plot_obj,
+    width_svg = 8,
+    height_svg = 5,
+    options = list(
+      opts_hover(css = "fill-opacity:0.8;"),
+      opts_tooltip(
+        opacity = 0.9,
+        css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
+        use_fill = TRUE
+      ),
+      opts_sizing(rescale = TRUE),
+      opts_selection(type = "none")
     )
-  }
+  )
+}
   
   # Render plots using the streamlined approach
   output$state_plot <- renderGirafe({

@@ -16,7 +16,7 @@ latest_pep <- 2024
 
 # Race and other PEP tables lag behind in their release.
 
-lag_pep <- 2023
+lag_pep <- 2024
 
 # Set years for BLS pull:
 
