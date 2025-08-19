@@ -1,5 +1,3 @@
-# Population by Age Visualization ----------------------------------------------
-
 library(shiny)
 library(tidyverse)
 library(ggiraph)     # For interactive ggplots
@@ -16,12 +14,10 @@ library(gdtools)
 library(gfonts)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# Population by Age Visualization
 # =============================================================================
 
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
+
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
