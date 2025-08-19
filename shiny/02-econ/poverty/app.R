@@ -111,16 +111,11 @@ race_colors <- c(
   "All households" = "#FF7276"
 )
 
+# Updated age colors for the broader age groups in your data
 age_colors <- c(
-  "17 years and under" = "#FFC658",
-  "18 to 24 years" = "#E0592A",
-  "25 to 34 years" = "#259591",
-  "35 to 44 years" = "#40C0C0",
-  "45 to 54 years" = "#8B85CA",
-  "55 to 64 years" = "#B1005F",
-  "65 to 74 years" = "#011E41",
-  "75 years and over" = "#011E41"
-
+  "Young (Under 35)" = "#40C0C0",
+  "Middle-aged (35-64)" = "#259591", 
+  "Older adults (65+)" = "#011E41"
 )
 
 # Define UI
@@ -270,16 +265,19 @@ server <- function(input, output, session) {
         mutate(demographic_ordered = factor(demographic, levels = demo_summary$demographic))
         
     } else {
-      # Age data
+      # Age data - Fixed: ensure proper ordering and faceting
       result <- filtered_data %>%
-        mutate(demographic = age_group,
-               demographic_ordered = factor(age_group, levels = names(age_colors)))
+        mutate(demographic = age_group)
+      
+      # For age data, order by the predefined age_colors order
+      result <- result %>%
+        mutate(demographic_ordered = factor(age_group, levels = names(age_colors)))
     }
     
     # Clean up data for plotting
     result <- result %>%
       filter(!is.na(rate), !is.infinite(rate), rate >= 0) %>%
-      arrange(year, demographic)
+      arrange(year, demographic_ordered)  # Changed to use demographic_ordered
     
     return(result)
   }
@@ -314,27 +312,54 @@ server <- function(input, output, session) {
         "Number in Poverty: ", format(estimate, big.mark = ",")
       ))
     
-    # Create base plot with proper grouping
-    p <- ggplot(plot_data,
-                aes(x = year,
-                    y = rate,
-                    color = demographic_ordered,
-                    group = demographic_ordered)) +
-      geom_line_interactive(
-        aes(tooltip = tooltip, data_id = paste(year, demographic)),
-        linewidth = 1,
-        na.rm = TRUE
-      ) +
-      geom_point_interactive(
-        aes(tooltip = tooltip, data_id = paste(year, demographic)),
-        size = 2,
-        na.rm = TRUE
-      ) +
-      # Add labels for latest values
-      geom_text(data = latest_data, 
-                aes(label = scales::percent(rate, accuracy = 0.1)),
-                hjust = -0.3, vjust = 0.5, size = 3) +
-      facet_wrap(~demographic_ordered, nrow = 1, labeller = labeller(demographic_ordered = function(x) str_wrap(x, width = 12))) +
+    # Create base plot with proper grouping - fix color mapping for age plots
+    if (analysis_type == "age") {
+      p <- ggplot(plot_data,
+                  aes(x = year,
+                      y = rate,
+                      color = age,  # Use age_group for color in age plots
+                      group = age)) +
+        facet_wrap(~age_group) +
+        geom_line_interactive(
+          aes(tooltip = tooltip, data_id = paste(year, demographic)),
+          linewidth = 1,
+          na.rm = TRUE
+        ) +
+        geom_point_interactive(
+          aes(tooltip = tooltip, data_id = paste(year, demographic)),
+          size = 2,
+          na.rm = TRUE
+        ) +
+        # Add labels for latest values
+        geom_text(data = latest_data, 
+                  aes(label = scales::percent(rate, accuracy = 0.1), color = age_group),
+                  hjust = -0.3, vjust = 0.5, size = 3)
+    } else {
+      p <- ggplot(plot_data,
+                  aes(x = year,
+                      y = rate,
+                      color = demographic_ordered,
+                      group = demographic_ordered)) +
+        geom_line_interactive(
+          aes(tooltip = tooltip, data_id = paste(year, demographic)),
+          linewidth = 1,
+          na.rm = TRUE
+        ) +
+        geom_point_interactive(
+          aes(tooltip = tooltip, data_id = paste(year, demographic)),
+          size = 2,
+          na.rm = TRUE
+        ) +
+        # Add labels for latest values
+        geom_text(data = latest_data, 
+                  aes(label = scales::percent(rate, accuracy = 0.1)),
+                  hjust = -0.3, vjust = 0.5, size = 3)
+    }
+    
+    p <- p +
+      # Fixed: Ensure faceting happens for both race and age data
+      facet_wrap(~demographic_ordered, nrow = 1, 
+                 labeller = labeller(demographic_ordered = function(x) str_wrap(x, width = 12))) +
       scale_color_manual(values = color_palette) +
       scale_y_continuous(labels = scales::percent_format(), 
                          limits = c(0, NA)) +
