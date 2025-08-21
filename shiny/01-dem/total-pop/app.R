@@ -11,61 +11,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# TOTAL POPULATION VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -83,9 +35,39 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
+  # Load the data
+  total_pop <- read_rds("./total_pop.rds")
+
+  
+  # Pre-compute datasets
+  state_data <- total_pop %>% 
+      group_by(year, counttype) %>% 
+      summarise(value = sum(value), .groups = "drop")
+  
+  cbsa_data <- total_pop %>% 
+      group_by(year, cbsa_title, counttype) %>% 
+      summarise(value = sum(value), .groups = "drop")
+  
+  locality_data <- total_pop
+
+  
+  # Get available CBSAs and localities
+  cbsa_list <- sort(unique(cbsa_data$cbsa_title))
+  
+  locality_list <- sort(unique(locality_data$name_long))
+  
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -184,62 +166,33 @@ ui <- page_fillable(
 
 # Server function
 server <- function(input, output, session) {
-  # Load the data
-  total_pop <- reactive({
-    read_rds("./total_pop.rds")
-  })
-  
-  # Pre-compute datasets
-  state_data <- reactive({
-    total_pop() %>% 
-      group_by(year, counttype) %>% 
-      summarise(value = sum(value), .groups = "drop")
-  })
-  
-  cbsa_data <- reactive({
-    total_pop() %>% 
-      group_by(year, cbsa_title, counttype) %>% 
-      summarise(value = sum(value), .groups = "drop")
-  })
-  
-  locality_data <- reactive({
-    total_pop()
-  })
-  
-  # Get available CBSAs and localities
-  cbsa_list <- reactive({
-    sort(unique(cbsa_data()$cbsa_title))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(locality_data()$name_long))
-  })
+
   
   # Initialize dropdowns
   observe({
     # CBSAs
     updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create filtered datasets
   filtered_cbsa <- reactive({
     req(input$cbsa)
     
-    cbsa_data() %>%
+    cbsa_data %>%
       filter(cbsa_title == input$cbsa)
   })
   
   filtered_locality <- reactive({
     req(input$locality)
     
-    locality_data() %>%
+    locality_data %>%
       filter(name_long == input$locality)
   })
   
@@ -249,7 +202,7 @@ server <- function(input, output, session) {
   })
   
   cbsa_title <- reactive({
-    paste("Population of", input$cbsa, "CBSA")
+    paste("Population of", input$cbsa, "Metro Area")
   })
   
   locality_title <- reactive({
@@ -345,7 +298,7 @@ server <- function(input, output, session) {
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_pop_plot(state_data(), state_title())))
+    suppressWarnings(create_interactive_plot(create_pop_plot(state_data, state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({

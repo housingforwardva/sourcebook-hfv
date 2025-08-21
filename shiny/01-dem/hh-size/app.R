@@ -11,60 +11,12 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# HOUSEHOLD SIZE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -93,9 +45,30 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
+
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+
+  # Load the data
+  hh_size <- read_rds("b25009_data.rds")
+  
+  # Create a list of all unique CBSAs and localities in Virginia
+  cbsa_list <- sort(unique(hh_size$cbsa_title))
+
+  locality_list <- sort(unique(hh_size$name_long))
+
+  year_list <- sort(unique(hh_size$year))
+
+  
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -220,29 +193,17 @@ ui <- page_fillable(
   )
 )
 
+# =============================================================================
+# SERVER FUNCTION 
+# =============================================================================
+
 # Server function
 server <- function(input, output, session) {
-  # Load the data
-  hh_size <- reactive({
-    readRDS("b25009_data.rds")
-  })
-  
-  # Create a list of all unique CBSAs and localities in Virginia
-  cbsa_list <- reactive({
-    sort(unique(hh_size()$cbsa_title))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(hh_size()$name_long))
-  })
-  
-  year_list <- reactive({
-    sort(unique(hh_size()$year))
-  })
-  
+
   # Initialize dropdowns
   observe({
-    years <- year_list()
+    years <- year_list
+
     updateSelectInput(session, "year_start", 
                       choices = years,
                       selected = min(years))
@@ -251,12 +212,12 @@ server <- function(input, output, session) {
                       selected = max(years))
     
     updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Ensure end year is not earlier than start year
@@ -271,7 +232,7 @@ server <- function(input, output, session) {
   
   # Pre-process data - Locality data
   locality_size <- reactive({
-    hh_size() %>% 
+    hh_size %>% 
       # First aggregate by household size categories to handle multiple "4 or more person" entries
       group_by(year, name_long, hhsize, tenure) %>%
       summarise(estimate = sum(estimate), .groups = "drop") %>%
@@ -296,7 +257,7 @@ server <- function(input, output, session) {
   
   # CBSA data  
   cbsa_size <- reactive({
-    hh_size() %>% 
+    hh_size %>% 
       # First aggregate by household size categories to handle multiple "4 or more person" entries
       group_by(year, cbsa_title, tenure, hhsize) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>% 
@@ -321,7 +282,7 @@ server <- function(input, output, session) {
   
   # State data
   state_size <- reactive({
-    hh_size() %>%
+    hh_size %>%
       # First aggregate by household size categories to handle multiple "4 or more person" entries
       group_by(year, tenure, hhsize) %>% 
       summarise(estimate = sum(estimate), .groups = "drop") %>%  

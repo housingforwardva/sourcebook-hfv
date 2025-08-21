@@ -15,55 +15,8 @@ library(gfonts)
 
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# POPULATION CHANGE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -81,9 +34,52 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+  
+# Load the data
+  total_pop <- read_rds("./total_pop.rds")
+  
+  # Shared function for calculating population changes
+  calculate_pop_changes <- function(data) {
+    data %>% 
+      mutate(diff = value - lag(value),
+             diff = replace_na(diff, 0)) %>% 
+      mutate(run_diff = cumsum(diff)) %>% 
+      filter(run_diff != 0) %>% 
+      mutate(pct = run_diff/first(value))
+  }
+  
+  # Pre-compute datasets
+  state_data <- total_pop %>% 
+      group_by(year, counttype) %>% 
+      summarise(value = sum(value), .groups = "drop") %>% 
+      ungroup() %>% 
+      calculate_pop_changes()
+
+  
+  cbsa_data <- total_pop %>% 
+    group_by(year, cbsa_title, counttype) %>% 
+    summarise(value = sum(value), .groups = "drop") %>% 
+    ungroup() |> 
+    calculate_pop_changes()
+
+  # Get available CBSAs and localities
+  cbsa_list <- sort(unique(cbsa_data$cbsa_title))
+  
+  locality_list <- sort(unique(total_pop$name_long))
+
+
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -109,7 +105,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Geography selectors
@@ -179,77 +175,37 @@ ui <- page_fillable(
   )
 )
 
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
 
-# Server function
 server <- function(input, output, session) {
-  # Load the data
-  total_pop <- reactive({
-    read_rds("./total_pop.rds")
-  })
-  
-  # Shared function for calculating population changes
-  calculate_pop_changes <- function(data) {
-    data %>% 
-      mutate(diff = value - lag(value),
-             diff = replace_na(diff, 0)) %>% 
-      mutate(run_diff = cumsum(diff)) %>% 
-      filter(run_diff != 0) %>% 
-      mutate(pct = run_diff/first(value))
-  }
-  
-  # Pre-compute datasets
-  state_data <- reactive({
-    total_pop() %>% 
-      group_by(year, counttype) %>% 
-      summarise(value = sum(value), .groups = "drop") %>% 
-      ungroup() %>% 
-      calculate_pop_changes()
-  })
-  
-  cbsa_data <- reactive({
-    total_pop() %>% 
-      group_by(year, cbsa_title, counttype) %>% 
-      summarise(value = sum(value), .groups = "drop")
-  })
-  
-  # Get available CBSAs and localities
-  cbsa_list <- reactive({
-    sort(unique(cbsa_data()$cbsa_title))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(total_pop()$name_long))
-  })
-  
+
   # Initialize dropdowns
   observe({
     # CBSAs
     updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create filtered datasets
   filtered_cbsa <- reactive({
     req(input$cbsa)
     
-    cbsa_data() %>%
-      filter(cbsa_title == input$cbsa) %>% 
-      group_by(year, counttype) %>% 
-      summarise(value = sum(value), .groups = "drop") %>% 
-      ungroup() %>% 
-      calculate_pop_changes()
+    cbsa_data %>%
+      filter(cbsa_title == input$cbsa) 
   })
   
   filtered_locality <- reactive({
     req(input$locality)
     
-    total_pop() %>%
+    total_pop %>%
       filter(name_long == input$locality) %>% 
       calculate_pop_changes()
   }) 
@@ -351,7 +307,7 @@ server <- function(input, output, session) {
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_pop_change_plot(state_data(), state_title())))
+    suppressWarnings(create_interactive_plot(create_pop_change_plot(state_data, state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({

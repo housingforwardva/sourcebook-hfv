@@ -14,19 +14,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# HOUSEHOLD TYPE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -55,11 +49,26 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+  
+  hh_type <- read_rds("b11012_data.rds")
+  
+  # Create lists 
+  cbsa_list <- sort(unique(hh_type$cbsa_title))
+  locality_list <- sort(unique(hh_type$name_long))
+  year_list <- sort(unique(hh_type$year), decreasing = TRUE)
 
 
-# UI
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
   
   # Main container using HFV classes
@@ -85,7 +94,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Year selector (common to all tabs)
@@ -180,21 +189,12 @@ ui <- page_fillable(
   )
 )
 
-# Server
+# =============================================================================
+# SERVER FUNCTION
+# ============================================================================= 
+
 server <- function(input, output, session) {
-  
-  # Load the data with error handling
-  if (!file.exists("b11012_data.rds")) {
-    stop("Data file 'b11012_data.rds' not found. Please ensure it exists in the app directory.")
-  }
-  
-  hh_type <- read_rds("b11012_data.rds")
-  
-  # Create lists (NOT reactive expressions)
-  cbsa_list <- sort(unique(hh_type$cbsa_title))
-  locality_list <- sort(unique(hh_type$name_long))
-  year_list <- sort(unique(hh_type$year), decreasing = TRUE)
-  
+
   
   # Initialize dropdowns - CORRECTED
   observe({

@@ -9,18 +9,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# COMPONENTS OF POPULATION CHANGE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -49,7 +44,10 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
-# Load data outside of server
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+  
 pop_change <- read_rds("pop_change.rds")
 
 # Create lists for filters
@@ -65,12 +63,14 @@ state_pop <- pop_change %>%
   group_by(year, component) %>% 
   summarise(value = sum(value), .groups = "drop")
 
-# Create color-coded subtitle
-subtitle_text <- "Net <span style='color:#011E41'><b>domestic migration</b></span>, <span style='color:#40C0C0'><b>international migration</b></span>, and <span style='color:#8B85CA'><b>natural increase (or decrease)</b></span>"
 
-# Define UI
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+  
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -96,7 +96,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Geography selectors
@@ -180,7 +180,10 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION
+# ============================================================================= 
+  
 server <- function(input, output, session) {
   
   # Create filtered datasets

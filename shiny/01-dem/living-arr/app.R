@@ -9,18 +9,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# LIVING ARRANGEMENTS VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -49,9 +44,49 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
-# Define UI
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+  
+# Load data outside server for faster loading
+lvng_arr <- readRDS("b09021_data.rds")
+
+# Create lists for filters
+year_list <- sort(unique(lvng_arr$year), decreasing = TRUE)
+age_list <- sort(unique(lvng_arr$age))
+cbsa_list <- sort(unique(lvng_arr$cbsa_title))
+locality_list <- sort(unique(lvng_arr$name_long))
+
+# Pre-aggregate data
+# Locality data
+locality_la <- lvng_arr %>% 
+  group_by(year, name_long, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>%
+  group_by(year, name_long, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
+# CBSA data
+cbsa_la <- lvng_arr %>% 
+  group_by(year, cbsa_title, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, cbsa_title, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
+# State data
+state_la <- lvng_arr %>% 
+  group_by(year, age, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, age) %>% 
+  mutate(percent = estimate/sum(estimate))
+
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -167,38 +202,10 @@ ui <- page_fillable(
   )
 )
 
-# Load data outside server for faster loading
-lvng_arr <- readRDS("b09021_data.rds")
+# =============================================================================
+# SERVER FUNCTION
+# ============================================================================= 
 
-# Create lists for filters
-year_list <- sort(unique(lvng_arr$year), decreasing = TRUE)
-age_list <- sort(unique(lvng_arr$age))
-cbsa_list <- sort(unique(lvng_arr$cbsa_title))
-locality_list <- sort(unique(lvng_arr$name_long))
-
-# Pre-aggregate data
-# Locality data
-locality_la <- lvng_arr %>% 
-  group_by(year, name_long, age, type) %>% 
-  summarise(estimate = sum(estimate), .groups = "drop") %>%
-  group_by(year, name_long, age) %>% 
-  mutate(percent = estimate/sum(estimate))
-
-# CBSA data
-cbsa_la <- lvng_arr %>% 
-  group_by(year, cbsa_title, age, type) %>% 
-  summarise(estimate = sum(estimate), .groups = "drop") %>% 
-  group_by(year, cbsa_title, age) %>% 
-  mutate(percent = estimate/sum(estimate))
-
-# State data
-state_la <- lvng_arr %>% 
-  group_by(year, age, type) %>% 
-  summarise(estimate = sum(estimate), .groups = "drop") %>% 
-  group_by(year, age) %>% 
-  mutate(percent = estimate/sum(estimate))
-
-# Server function
 server <- function(input, output, session) {
   
   # Initialize dropdowns

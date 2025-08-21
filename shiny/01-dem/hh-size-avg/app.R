@@ -11,19 +11,12 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
-
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# AVERAGE HOUSEHOLD SIZE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -52,9 +45,42 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+
+  # Load the data
+  avg_size <- read_rds("b25010_data.rds")
+  
+  # Get available years
+  year_list <- sort(unique(avg_size$year))
+
+  
+  # Get available localities
+  locality_list <- avg_size %>%
+      filter(geography == "county") %>%
+      pull(NAME) %>%
+      unique() %>%
+      sort()
+
+  
+  # Get available CBSAs
+  # NOTE THAT CBSAs are based on Census Bureau geography
+  cbsa_list <-  avg_size %>%
+      filter(geography == "cbsa") %>%
+      pull(NAME) %>%
+      unique() %>%
+      sort()
+
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -87,8 +113,8 @@ ui <- page_fillable(
         div(
           style = "margin-bottom: 16px;",
           selectInput("tenure", "Tenure:", 
-                      choices = c("All", "Homeowner", "Renter"),
-                      selected = "All",
+                      choices = c("All households", "Homeowner", "Renter"),
+                      selected = "All households",
                       width = "100%", 
                       selectize = FALSE)
         ),
@@ -198,44 +224,18 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION
+# ============================================================================= 
+
 server <- function(input, output, session) {
-  # Load the data
-  avg_size <- reactive({
-    read_rds(here("data", "rds", "avg_hh_size.rds")) %>% 
-      mutate(tenure = case_when(
-        tenure == "Owner" ~ "Homeowner",
-        TRUE ~ tenure
-      ))
-  })
-  
-  # Get available years
-  year_list <- reactive({
-    sort(unique(avg_size()$year))
-  })
-  
-  # Get available localities
-  locality_list <- reactive({
-    avg_size() %>%
-      filter(geography == "locality") %>%
-      pull(name) %>%
-      unique() %>%
-      sort()
-  })
-  
-  # Get available CBSAs
-  cbsa_list <- reactive({
-    avg_size() %>%
-      filter(geography == "cbsa") %>%
-      pull(name) %>%
-      unique() %>%
-      sort()
-  })
+
   
   # Initialize dropdowns
   observe({
     # Years
-    years <- year_list()
+    years <- year_list
+
     updateSelectInput(session, "year_start", 
                       choices = years,
                       selected = min(years))
@@ -244,13 +244,14 @@ server <- function(input, output, session) {
                       selected = max(years))
     
     # CBSAs
-    cbsas <- cbsa_list()
+    cbsas <- cbsa_list
+
     updateSelectInput(session, "cbsa", 
                       choices = cbsas,
                       selected = if("Richmond, VA" %in% cbsas) "Richmond, VA" else cbsas[1])
     
     # Localities
-    localities <- locality_list()
+    localities <- locality_list
     updateSelectInput(session, "locality", 
                       choices = localities,
                       selected = if("Richmond City" %in% localities) "Richmond City" else localities[1])
@@ -270,8 +271,9 @@ server <- function(input, output, session) {
   filtered_state <- reactive({
     req(input$tenure)
     
-    data <- avg_size() %>%
-      filter(geography == "state",
+    data <- avg_size %>%
+      filter(geography == "state", 
+            NAME == "Virginia",
              tenure == input$tenure)
     
     # Apply year filter if needed
@@ -291,10 +293,10 @@ server <- function(input, output, session) {
   filtered_cbsa <- reactive({
     req(input$tenure, input$cbsa)
     
-    data <- avg_size() %>%
+    data <- avg_size %>%
       filter(geography == "cbsa",
              tenure == input$tenure,
-             name == input$cbsa)
+             NAME == input$cbsa)
     
     # Apply year filter if needed
     if (!input$show_all_years) {
@@ -313,10 +315,10 @@ server <- function(input, output, session) {
   filtered_locality <- reactive({
     req(input$tenure, input$locality)
     
-    data <- avg_size() %>%
-      filter(geography == "locality",
+    data <- avg_size %>%
+      filter(geography == "county",
              tenure == input$tenure,
-             name == input$locality)
+             NAME == input$locality)
     
     # Apply year filter if needed
     if (!input$show_all_years) {
