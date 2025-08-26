@@ -9,71 +9,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
+# library(sass)        # For SCSS compilation - removed
 library(gdtools)
 library(forcats)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# COST BURDEN GAP VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
-
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A"
-)
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -91,9 +33,33 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
+# Load the data
+hud_summary <- read_rds(here("data", "rds", "hud_summary.rds"))
+
+# Define HFV color palette
+hfv_colors <- list(
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA", 
+  shadow = "#011E41",
+  shadow_light = "#102C54",  # Lighter shade of shadow color
+  berry = "#B1005F",
+  desert = "#E0592A",
+  grey = "#E8E9EB"
+)
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -214,84 +180,76 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
+
 server <- function(input, output, session) {
   
   # Define the desired factor order
   match_order <- c("Very affordable", "Affordable", "Unaffordable")
   
-  # Load the data
-  gap <- reactive({
-    read_rds(here("data", "rds", "table18c_chas.rds")) %>% 
-      mutate(
-        household_income = factor(household_income, 
-                                  levels = c("30% AMI or less", 
-                                             "31 to 50% AMI", 
-                                             "51 to 80% AMI", 
-                                             "81% AMI or greater")),
-        # Apply factor ordering immediately when loading data
-        match = factor(match, levels = match_order)
-      )
-  })
+  # Load the data (moved outside server in updated version)
+  gap <- read_rds(here("data", "rds", "table18c_chas.rds")) %>% 
+    mutate(
+      household_income = factor(household_income, 
+                                levels = c("30% AMI or less", 
+                                           "31 to 50% AMI", 
+                                           "51 to 80% AMI", 
+                                           "81% AMI or greater")),
+      # Apply factor ordering immediately when loading data
+      match = factor(match, levels = match_order)
+    )
+
   
-  # Load lookup table
-  lookup <- reactive({
-    read_csv(here("data", "local_lookup.csv")) %>% 
-      mutate(fips = fips_full)
-  })
+  # Load lookup table (moved outside server in updated version)
+  lookup <- read_csv(here("data", "local_lookup.csv")) %>% 
+    mutate(fips = fips_full)
   
   # Join data with lookup
-  gap_join <- reactive({
-    gap() %>% 
-      left_join(lookup(), by = "fips")
-  })
+  gap_join <- gap %>% 
+    left_join(lookup, by = "fips")
   
   # Pre-compute state, CBSA, and local data 
-  state_data <- reactive({
-    gap_join() %>% 
-      group_by(year, household_income, match, gapcode) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      mutate(
-        estimate = case_when(
-          gapcode == "Gap" ~ -estimate,
-          TRUE ~ estimate
-        ),
-        # Ensure factor order is preserved after grouping
-        match = factor(match, levels = match_order)
-      )
-  })
+  state_data <- gap_join %>% 
+    group_by(year, household_income, match, gapcode) %>% 
+    summarise(estimate = sum(estimate), .groups = "drop") %>% 
+    mutate(
+      estimate = case_when(
+        gapcode == "Gap" ~ -estimate,
+        TRUE ~ estimate
+      ),
+      # Ensure factor order is preserved after grouping
+      match = factor(match, levels = match_order)
+    )
   
-  cbsa_data <- reactive({
-    gap_join() %>% 
-      group_by(year, cbsa_title, household_income, match, gapcode) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      mutate(
-        estimate = case_when(
-          gapcode == "Gap" ~ -estimate,
-          TRUE ~ estimate
-        ),
-        # Ensure factor order is preserved after grouping
-        match = factor(match, levels = match_order)
-      )
-  })
+  cbsa_data <- gap_join %>% 
+    group_by(year, cbsa_title, household_income, match, gapcode) %>% 
+    summarise(estimate = sum(estimate), .groups = "drop") %>% 
+    mutate(
+      estimate = case_when(
+        gapcode == "Gap" ~ -estimate,
+        TRUE ~ estimate
+      ),
+      # Ensure factor order is preserved after grouping
+      match = factor(match, levels = match_order)
+    )
   
-  local_data <- reactive({
-    gap_join() %>% 
-      group_by(year, name_long, household_income, match, gapcode) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      mutate(
-        estimate = case_when(
-          gapcode == "Gap" ~ -estimate,
-          TRUE ~ estimate
-        ),
-        # Ensure factor order is preserved after grouping
-        match = factor(match, levels = match_order)
-      )
-  })
+  local_data <- gap_join %>% 
+    group_by(year, name_long, household_income, match, gapcode) %>% 
+    summarise(estimate = sum(estimate), .groups = "drop") %>% 
+    mutate(
+      estimate = case_when(
+        gapcode == "Gap" ~ -estimate,
+        TRUE ~ estimate
+      ),
+      # Ensure factor order is preserved after grouping
+      match = factor(match, levels = match_order)
+    )
   
   # Get available years
   observe({
-    years <- unique(gap()$year)
+    years <- unique(gap$year)
     updateSelectInput(session, "year", 
                       choices = sort(years, decreasing = TRUE),
                       selected = max(years))
@@ -299,7 +257,7 @@ server <- function(input, output, session) {
   
   # Get available CBSAs
   cbsa_list <- reactive({
-    cbsa_data() %>% 
+    cbsa_data %>% 
       filter(year == input$year) %>%
       pull(cbsa_title) %>%
       unique() %>%
@@ -307,7 +265,7 @@ server <- function(input, output, session) {
   })
   
   locality_list <- reactive({
-    local_data() %>% 
+    local_data %>% 
       filter(year == input$year) %>%
       pull(name_long) %>%
       unique() %>%
@@ -331,14 +289,14 @@ server <- function(input, output, session) {
   filtered_state <- reactive({
     req(input$year)
     
-    state_data() %>%
+    state_data %>%
       filter(year == input$year)
   })
   
   filtered_cbsa <- reactive({
     req(input$cbsa, input$year)
     
-    cbsa_data() %>%
+    cbsa_data %>%
       filter(cbsa_title == input$cbsa,
              year == input$year)
   })
@@ -346,7 +304,7 @@ server <- function(input, output, session) {
   filtered_local <- reactive({
     req(input$locality, input$year)
     
-    local_data() %>%
+    local_data %>%
       filter(name_long == input$locality,
              year == input$year)
   })

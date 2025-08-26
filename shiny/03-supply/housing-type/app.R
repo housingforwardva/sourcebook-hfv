@@ -9,59 +9,12 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# Housing Type Distribution Visualization
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -79,9 +32,59 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# Define UI
+# Define HFV color palette (matching SCSS variables)
+hfv_colors <- list(
+  sky = "#40C0C0",           # Primary teal
+  grass = "#259591",         # Dark teal 
+  lilac = "#8B85CA",         # Purple
+  shadow = "#011E41",        # Dark navy
+  shadow_light = "#102C54",  # Lighter navy
+  berry = "#B1005F",         # Magenta
+  desert = "#E0592A"         # Orange
+)
+
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+# Load the data (only once)
+b25032 <- read_rds(here("data", "rds", "b25032.rds"))
+
+# Process data for state level
+state_housing <- b25032 %>% 
+  group_by(year, tenure, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, tenure) %>% 
+  mutate(percent = estimate/sum(estimate)) %>% 
+  group_by(year) %>% 
+  mutate(percent_total = estimate/sum(estimate))
+
+# Process data for CBSA level
+cbsa_housing <- b25032 %>% 
+  group_by(year, cbsa_title, tenure, type) %>% 
+  summarise(estimate = sum(estimate), .groups = "drop") %>% 
+  group_by(year, cbsa_title, tenure) %>% 
+  mutate(percent = estimate/sum(estimate)) %>% 
+  group_by(year, cbsa_title) %>% 
+  mutate(percent_total = estimate/sum(estimate))
+
+# Process data for local level
+local_housing <- b25032 %>% 
+  group_by(year, name_long, tenure, type) %>% 
+  mutate(percent = estimate/sum(estimate)) %>% 
+  group_by(year, name_long) %>% 
+  mutate(percent_total = estimate/sum(estimate))
+
+# Get available choices
+cbsa_list <- sort(unique(cbsa_housing$cbsa_title))
+locality_list <- sort(unique(local_housing$name_long))
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -183,13 +186,11 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION 
+# =============================================================================
+
 server <- function(input, output, session) {
-  
-  # Read in data
-  b25032 <- reactive({
-    read_rds(here("data", "rds", "b25032.rds"))
-  })
   
   # Initialize year dropdown
   observe({
@@ -198,65 +199,32 @@ server <- function(input, output, session) {
                       selected = 2023)
   })
   
-  # Process data for state level
-  state_housing <- reactive({
-    b25032() %>% 
-      group_by(year, tenure, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
-  
-  # Process data for CBSA level
-  cbsa_housing <- reactive({
-    b25032() %>% 
-      group_by(year, cbsa_title, tenure, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, cbsa_title, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year, cbsa_title) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
-  
-  # Process data for local level
-  local_housing <- reactive({
-    b25032() %>% 
-      group_by(year, name_long, tenure, type) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year, name_long) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
-  
   # Populate CBSA dropdown
   observe({
-    cbsa_choices <- sort(unique(cbsa_housing()$cbsa_title))
-    updateSelectInput(session, "cbsa", choices = cbsa_choices, 
-                      selected = if("Richmond, VA" %in% cbsa_choices) "Richmond, VA" else cbsa_choices[1])
+    updateSelectInput(session, "cbsa", choices = cbsa_list, 
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
   })
   
   # Populate locality dropdown
   observe({
-    locality_choices <- sort(unique(local_housing()$name_long))
-    updateSelectInput(session, "locality", choices = locality_choices,
-                      selected = if("Richmond City" %in% locality_choices) "Richmond City" else locality_choices[1])
+    updateSelectInput(session, "locality", choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Filter data based on inputs
   filtered_state <- reactive({
-    state_housing() %>% 
+    state_housing %>% 
       filter(year == input$year)
   })
   
   filtered_cbsa <- reactive({
-    cbsa_housing() %>% 
+    cbsa_housing %>% 
       filter(year == input$year,
              cbsa_title == input$cbsa)
   })
   
   filtered_local <- reactive({
-    local_housing() %>% 
+    local_housing %>% 
       filter(year == input$year,
              name_long == input$locality)
   })

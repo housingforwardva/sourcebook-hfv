@@ -9,65 +9,13 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
-library(tidycensus)
-
-# Load data - ONLY load from the specified path, no simulated data
-bps <- read_rds("./bps.rds")
+library(gfonts)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# Building Permit Trends Visualization
 # =============================================================================
 
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
-
-# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
@@ -82,6 +30,23 @@ hfv_theme <- bs_theme(
   heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
+
+# Define HFV color palette (matching SCSS variables)
+hfv_colors <- list(
+  sky = "#40C0C0",           # Primary teal
+  grass = "#259591",         # Dark teal 
+  lilac = "#8B85CA",         # Purple
+  shadow = "#011E41",        # Dark navy
+  shadow_light = "#102C54",  # Lighter navy
+  berry = "#B1005F",         # Magenta
+  desert = "#E0592A"         # Orange
+)
+
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+# Load the data (only once)
+bps <- read_rds("./bps.rds")
 
 # Prepare aggregated datasets with recategorized building types
 # First, create a function to recode building types
@@ -130,9 +95,13 @@ locality <- bps %>%
     .groups = 'drop'
   )
 
-# Define UI
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -273,29 +242,11 @@ ui <- page_fillable(
   )
 )
 
-# Define server logic
+# =============================================================================
+# SERVER FUNCTION 
+# =============================================================================
+
 server <- function(input, output, session) {
-  # Add this at the beginning of your server function:
-  logo_data <- NULL
-
-  # At the start of your server function, load and encode the logo:
-  observe({
-    # Try to read logo file from www directory
-    tryCatch(
-      {
-        # This path works in both local and deployed environments
-        logo_file <- "www/hfv_logo.png"
-
-        # Read the binary data and convert to base64
-        logo_binary <- readBin(logo_file, "raw", file.info(logo_file)$size)
-        logo_data <<- logo_binary
-      },
-      error = function(e) {
-        # Log error message
-        message("Could not load logo: ", e$message)
-      }
-    )
-  })
 
   # Update metro area choices
   observe({

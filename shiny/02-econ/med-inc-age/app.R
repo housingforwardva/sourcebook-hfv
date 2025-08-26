@@ -9,59 +9,11 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# MEDIAN HOUSEHOLD INCOME BY AGE OF HOUSEHOLDER VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -79,15 +31,21 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
   # Load the data
-  state_inc_age_data <- read_rds("./data.rds") |> 
+
+data <- read_rds("./data.rds")
+
+  state_inc_age_data <- data |> 
     filter(geography == "state")
 
-
-  cbsa_inc_age_data <- read_rds("./data.rds") |> 
+  cbsa_inc_age_data <- data |> 
     filter(geography == "cbsa")
   
-  local_inc_age_data <- read_rds("./data.rds") |> 
+  local_inc_age_data <- data |> 
     filter(geography == "county")
   
   # Get available options
@@ -98,10 +56,14 @@ hfv_theme <- bs_theme(
   locality_list <- sort(unique(local_inc_age_data$NAME))
 
 
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
 
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -127,7 +89,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Dollar type selector
@@ -210,8 +172,10 @@ ui <- page_fillable(
     )
   )
 )
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
 
-# Server function
 server <- function(input, output, session) {
 
   
@@ -230,7 +194,7 @@ server <- function(input, output, session) {
     # Localities
     updateSelectInput(session, "local_select", 
                       choices = locality_list,
-                      selected = if("Chesterfield County" %in% locality_list) "Chesterfield County" else locality_list[1])
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create filtered datasets
@@ -284,12 +248,17 @@ server <- function(input, output, session) {
     y_var <- input$dollar_type
     
     # Create tooltips
-    plot_data <- data %>%
-      mutate(tooltip = paste0(
-        "Year: ", year, "\n",
-        "Age: ", age, "\n",
-        "Income: ", scales::dollar(get(y_var))
-      ))
+plot_data <- data %>%
+  mutate(tooltip = paste0(
+    "Year: ", year, "\n",
+    "Age: ", age, "\n",
+    "Income: ", scales::dollar(get(y_var))
+  )) %>%
+  # Add this line to set the factor levels in the desired order
+  mutate(age = factor(age, levels = c("Under 25 years", 
+                                       "25 to 44 years", 
+                                       "45 to 64 years", 
+                                       "65 years and over")))
     
     # Age categories
     unique_ages <- unique(plot_data$age)

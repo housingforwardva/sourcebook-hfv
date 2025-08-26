@@ -9,8 +9,8 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 library(mapgl)
 library(tigris)
 library(sf)
@@ -18,55 +18,8 @@ library(tidycensus)
 library(plotly)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# Virginia Homeownership Explorer Visualization
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -84,9 +37,32 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# UI for the Shiny app
+# Define HFV color palette (matching SCSS variables)
+hfv_colors <- list(
+  sky = "#40C0C0",           # Primary teal
+  grass = "#259591",         # Dark teal 
+  lilac = "#8B85CA",         # Purple
+  shadow = "#011E41",        # Dark navy
+  shadow_light = "#102C54",  # Lighter navy
+  berry = "#B1005F",         # Magenta
+  desert = "#E0592A"         # Orange
+)
+
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# ============================================================================= 
+# Load the data (only once)
+va_counties <- readRDS("va_co_shape.rds")
+tract_map_data <- readRDS("tract_data_simplified.rds")
+trend_data <- readRDS("trend_data.rds")
+
+# =============================================================================
+# USER INTERFACE
+# ============================================================================= 
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # MOBILE OPTIMIZATION #1: Add the viewport meta tag for mobile devices
@@ -344,25 +320,14 @@ ui <- page_fillable(
   "))
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION 
+# =============================================================================
+
 server <- function(input, output, session) {
   
-  # Implement lazy loading with reactiveVal
-  tract_map_data <- reactiveVal(NULL)
-  va_counties <- reactiveVal(NULL)
-  
-  # Load data in a separate reactive process to avoid blocking UI
+  # Hide loading indicator when data is ready
   observe({
-    # Load counties first (smaller file)
-    va_counties(readRDS("va_co_shape.rds"))
-    
-    # Then load tract data
-    withProgress(message = 'Loading map data...', value = 0, {
-      tract_map_data(readRDS("tract_data_simplified.rds"))
-      incProgress(1)
-    })
-    
-    # Hide loading indicator when data is ready
     session$sendCustomMessage(type = 'hideLoading', message = list())
   })
 
@@ -373,35 +338,29 @@ server <- function(input, output, session) {
   
   # Store the selected tract 
   selected_data <- reactiveVal(NULL)
-
-  # Lazy load trend data only when needed
-  trend_data <- reactive({
-    readRDS("trend_data.rds")
-  })
   
   # Debug helper - print unique jurisdiction values in trend_data
   observe({
     message("Unique jurisdiction values in trend_data: ")
-    td <- trend_data()
+    td <- trend_data
     jurisdictions <- unique(td$jurisdiction[td$geography == "Jurisdiction"])
     message(paste(jurisdictions, collapse = ", "))
   })
   
  # Render the map
 output$map_id <- renderMaplibre({
-  # Wait for data to be loaded
-  req(tract_map_data(), va_counties())
+  # Use pre-loaded data
   
   # Create map object
   m <- maplibre(
     style = mapgl::carto_style("positron"),
-    bounds = tract_map_data()
+    bounds = tract_map_data
   ) 
   
   # First add tract layer
   m <- m %>% add_fill_layer(
     id = "tract_data",  
-    source = tract_map_data(),
+    source = tract_map_data,
     # Viridis palette (colorblind-friendly)
     fill_color = interpolate(
       column = "ho_rate",
@@ -416,7 +375,7 @@ output$map_id <- renderMaplibre({
   # Then add county boundaries, but specify that they should appear above the tract layer
   m <- m %>% add_line_layer(
     id = "county_lines",
-    source = va_counties(),
+    source = va_counties,
     line_color = "lightgrey",
     line_width = 1.5  # Made this slightly thicker for better visibility
   )
@@ -461,8 +420,8 @@ output$map_id <- renderMaplibre({
       message("Selected GEOID: ", geoid)
       message("Selected county name: ", county_name)
       
-      # Load required data
-      td <- trend_data()
+      # Use pre-loaded data
+      td <- trend_data
       
       # Check if county name exists in trend_data
       county_exists <- county_name %in% td$jurisdiction[td$geography == "Jurisdiction"]

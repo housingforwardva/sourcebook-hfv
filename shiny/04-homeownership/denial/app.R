@@ -9,60 +9,12 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(arrow)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# MORTGAGE DENIAL RATES BY RACE AND ETHNICITY VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Define HFV color palette
 hfv_colors <- list(
@@ -102,9 +54,44 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
+# Load the data (using path relative to project root)
+local_lookup <- read_csv("../../data/local_lookup.csv") |> 
+  mutate(fips_full = as.character(fips_full))
+
+loans_race <- read_parquet("../../data/parquet/hmda_va_clean.parquet") |> 
+  select(activity_year, lei, fips_full = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
+         occupancy_type) |> 
+  mutate(count = 1) |> 
+  group_by(activity_year, fips_full, race_ethnicity, action_taken, loan_purpose, occupancy_type) |> 
+  summarise(count = sum(count), .groups = "drop") %>% 
+  left_join(local_lookup, by = "fips_full") |> 
+  filter(state == "Virginia")
+
+# Get available options
+cbsa_list <- loans_race %>%
+  filter(!is.na(cbsa_title)) %>%
+  pull(cbsa_title) %>%
+  unique() %>%
+  sort()
+
+locality_list <- loans_race %>%
+  filter(!is.na(name_long)) %>%
+  pull(name_long) %>%
+  unique() %>%
+  sort()
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -130,7 +117,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Year selector
@@ -230,59 +217,29 @@ ui <- page_fillable(
   )
 )
 
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
+
 # Server function
 server <- function(input, output, session) {
-  
-  # Load the data (using path relative to project root)
-  local_lookup <- reactive({
-    read_csv("../../data/local_lookup.csv") |> 
-      mutate(fips_full = as.character(fips_full))
-  })
-  
-  loans_race <- reactive({
-    read_parquet("../../data/parquet/hmda_va_clean.parquet") |> 
-      select(activity_year, lei, fips_full = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
-             occupancy_type) |> 
-      mutate(count = 1) |> 
-      group_by(activity_year, fips_full, race_ethnicity, action_taken, loan_purpose, occupancy_type) |> 
-      summarise(count = sum(count), .groups = "drop") %>% 
-      left_join(local_lookup(), by = "fips_full") |> 
-      filter(state == "Virginia")
-  })
-  
-  # Get available CBSAs and localities
-  cbsa_list <- reactive({
-    loans_race() %>%
-      filter(!is.na(cbsa_title)) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
-  })
-  
-  locality_list <- reactive({
-    loans_race() %>%
-      filter(!is.na(name_long)) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-  })
   
   # Initialize dropdowns
   observe({
     # CBSAs
     updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create state-level denial data
   state_data <- reactive({
-    loans_race() |> 
+    loans_race |> 
       filter(activity_year == input$year) |> 
       group_by(state, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 
@@ -299,7 +256,7 @@ server <- function(input, output, session) {
   cbsa_data <- reactive({
     req(input$cbsa)
     
-    loans_race() |> 
+    loans_race |> 
       filter(activity_year == input$year) |> 
       group_by(cbsa_title, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 
@@ -317,7 +274,7 @@ server <- function(input, output, session) {
   locality_data <- reactive({
     req(input$locality)
     
-    loans_race() |> 
+    loans_race |> 
       filter(activity_year == input$year) |> 
       group_by(name_long, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 

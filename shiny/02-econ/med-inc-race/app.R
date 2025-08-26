@@ -9,59 +9,11 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# MEDIAN HOUSEHOLD INCOME BY RACE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -79,27 +31,31 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
 
-  # Load the data
-  state_inc_data <- read_rds("data.rds") |> 
+ data <- read_rds("./data.rds")
+
+  state_inc_data <- data  |> 
     filter(geography == "state")
   
-  cbsa_inc_data <- read_rds("data.rds") |> 
+  cbsa_inc_data <- data  |> 
     filter(geography == "cbsa")
   
-  locality_inc_data <- read_rds("data.rds") |> 
+  locality_inc_data <- data  |> 
     filter(geography == "county")
   
   # Create color vector for races
   race_colors <- c(
     "White, non-Hispanic" = "#40C0C0",
-    "Black" = "#011E41",
-    "Asian" = "#259591",
-    "Hispanic (any race)" = "#E0592A",
-    "Two or more races" = "#B1005F",
-    "American Indian alone" = "#8B85CA",
-    "Pacific Islander alone" = "#FFC658",
-    "Some other race alone" = "#FF7276"
+    "Black" = "#259591",
+    "Asian" = "#011E41",
+    "Hispanic or Latino" = "#E0592A",
+    "Multiracial" = "#B1005F",
+    "American Indian and Alaska Native" = "#8B85CA",
+    "Native Hawaiian and Other Pacific Islander" = "#FFC658",
+    "Some Other Race" = "#FF7276"
   )
   
   # Get available options
@@ -112,9 +68,14 @@ hfv_theme <- bs_theme(
   year_list <- sort(unique(state_inc_data$year), decreasing = TRUE)
 
 
-# Define UI
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -225,8 +186,10 @@ ui <- page_fillable(
     )
   )
 )
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
 
-# Server function
 server <- function(input, output, session) {
 
   
@@ -261,7 +224,8 @@ server <- function(input, output, session) {
       filter(
         NAME == input$state_select,
         year == input$year
-      )
+      ) |> 
+      drop_na()
   })
   
   filtered_cbsa <- reactive({
@@ -271,7 +235,8 @@ server <- function(input, output, session) {
       filter(
         NAME == input$cbsa_select,
         year == input$year
-      )
+      )|> 
+      drop_na()
   })
   
   filtered_locality <- reactive({
@@ -281,7 +246,8 @@ server <- function(input, output, session) {
       filter(
         NAME == input$locality_select,
         year == input$year
-      )
+      )|> 
+      drop_na()
   })
   
   # Plot titles
@@ -359,7 +325,7 @@ server <- function(input, output, session) {
         legend.position = "none",
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 12),
+        axis.title = element_blank(),
         axis.text = element_text(size = 10),
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),

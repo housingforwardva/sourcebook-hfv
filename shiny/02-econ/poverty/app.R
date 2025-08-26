@@ -9,22 +9,11 @@ library(cowplot)
 library(scales)
 library(shinyjs)
 library(magick)
-library(sass)
 library(gdtools)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# POVERTY RATE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-tryCatch({
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
 
 # Define HFV color palette
 hfv_colors <- list(
@@ -52,6 +41,10 @@ hfv_theme <- bs_theme(
   heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
+
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
 
 # Load data
 poverty_age <- read_rds("age_data.rds")
@@ -117,10 +110,14 @@ age_colors <- c(
   "Middle-aged (35-64)" = "#259591", 
   "Older adults (65+)" = "#011E41"
 )
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
 
-# Define UI
+
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(),
   
   div(
@@ -232,7 +229,10 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SEVER FUNCTION
+# =============================================================================
+
 server <- function(input, output, session) {
   
   # Consolidated data processing function

@@ -27,15 +27,17 @@ va_data <- data |>
 
 state_data <- data |> 
   filter(geography == "state") |> 
-  drop_na(race) |> 
   select(NAME, geography, year, tenure, estimate, adjusted) 
 
 cbsa_data <- data |> 
   filter(geography == "cbsa") |> 
-  drop_na(race) |> 
   filter(str_detect(NAME, "VA")) |> 
   select(NAME, geography, year, tenure, estimate, adjusted) 
 
-combined_data <- rbind(va_data, state_data, cbsa_data) 
+combined_data <- rbind(va_data, state_data, cbsa_data) |> 
+  mutate(tenure = case_when(
+    is.na(tenure) ~ "All households",
+    TRUE ~ tenure
+  ))
 
 write_rds(combined_data, "shiny/02-econ/med-inc-tenure/data.rds")

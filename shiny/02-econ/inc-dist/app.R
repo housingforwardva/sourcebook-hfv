@@ -9,59 +9,11 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# INCOME DISTRIBUTION BY TENURE VISUALIZATION
 # =============================================================================
-
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -79,9 +31,56 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
+# Load data
+  inc_dist <- read_rds("./data.rds")
+  
+  # Define income order once
+  income_order <- c("Under $10,000", "$10,000 to $19,999", "$20,000 to $34,999",
+                    "$35,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999",
+                    "$100,000 to $149,999","$150,000 or more")
+  
+    years <- unique(inc_dist$year)
+
+    cbsas <- inc_dist %>%
+      pull(cbsa_title) %>%
+      unique() %>%
+      sort()
+
+    counties <- inc_dist %>%
+      pull(name_long) %>%
+      unique() %>%
+      sort()
+  
+  # Create state-level data
+  state_data <-  inc_dist %>% 
+      group_by(year, tenure, income_range) %>% 
+      summarise(estimate = sum(estimate), .groups = "drop") %>% 
+      mutate(income = factor(income_range, levels = income_order))
+
+  # Create CBSA-level data
+  cbsa_data <- inc_dist %>% 
+      group_by(year, cbsa_title, tenure, income_range) %>% 
+      summarise(estimate = sum(estimate), .groups = "drop") %>% 
+      mutate(income = factor(income_range, levels = income_order))
+
+  
+  # Create local-level data
+  local_data <- inc_dist %>% 
+    mutate(income = factor(income_range, levels = income_order))
+
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 # Define UI
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -107,15 +106,15 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Dashboard Controls", 
+        h5("Filters", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Year select
         div(
           style = "margin-bottom: 16px;",
           selectInput("year", "Select Year:", 
-                      choices = NULL, 
-                      selected = NULL, 
+                      choices = years, 
+                      selected = max(years), 
                       width = "100%",
                       selectize = FALSE)
         ),
@@ -125,11 +124,11 @@ ui <- page_fillable(
           style = "margin-bottom: 16px;",
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
+            selectInput("cbsa", "Metro Area:", choices = cbsas, width = "100%", selectize = FALSE)
           ),
           conditionalPanel(
             condition = "input.tabs == 'local'",
-            selectInput("county", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
+            selectInput("county", "Locality:", choices = counties, width = "100%", selectize = FALSE)
           )
         ),
         
@@ -186,93 +185,46 @@ ui <- page_fillable(
     )
   )
 )
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
 
-# Server function
 server <- function(input, output, session) {
-  # Load data
-  inc_dist <- reactive({
-    read_rds("data.rds")
-  })
-  
-  # Define income order once
-  income_order <- c("Under $10,000", "$10,000 to $19,999", "$20,000 to $34,999",
-                    "$35,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999",
-                    "$100,000 to $149,999","$150,000 or more")
-  
-  # Update year filter choices
-  observe({
-    years <- unique(inc_dist()$year)
-    updateSelectInput(session, "year", 
-                      choices = years,
-                      selected = max(years))
-  })
-  
-  # Update CBSA filter choices
-  observe({
-    req(input$year)
-    cbsas <- inc_dist() %>%
-      filter(year == input$year) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
-    
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsas,
-                      selected = if("Richmond, VA" %in% cbsas) "Richmond, VA" else cbsas[1])
-  })
-  
-  # Update county filter choices
-  observe({
-    req(input$year)
-    counties <- inc_dist() %>%
-      filter(year == input$year) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-    
-    updateSelectInput(session, "county", 
-                      choices = counties,
-                      selected = if("Richmond City" %in% counties) "Richmond City" else counties[1])
-  })
-  
-  # Create state-level data
-  state_data <- reactive({
-    req(input$year)
-    
-    inc_dist() %>% 
-      group_by(year, tenure, income_range) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      filter(year == input$year) %>%
-      mutate(income = factor(income_range, levels = income_order))
-  })
-  
-  # Create CBSA-level data
-  cbsa_data <- reactive({
-    req(input$year, input$cbsa)
-    
-    inc_dist() %>% 
-      group_by(year, cbsa_title, tenure, income_range) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      filter(year == input$year,
-             cbsa_title == input$cbsa) %>%
-      mutate(income = factor(income_range, levels = income_order))
-  })
-  
-  # Create local-level data
-  local_data <- reactive({
-    req(input$year, input$county)
-    
-    inc_dist() %>% 
-      group_by(year, name_long, tenure, income_range) |> 
-      filter(year == input$year,
-             name_long == input$county) %>%
-      mutate(income = factor(income_range, levels = income_order))
-  })
   
   # Create title text
   title_text <- reactive({
     paste("Income Distribution in", input$year)
   })
+
+  filtered_state <- reactive({
+    req(input$year)
+
+    state_data |> 
+      filter(year == input$year)
+  
+    }
+  )
+
+  filtered_local <- reactive({
+    req(input$year)
+
+    local_data |> 
+      filter(year == input$year) |> 
+      filter(name_long == input$county)
+  
+    }
+  )
+
+    filtered_cbsa <- reactive({
+    req(input$year)
+
+    cbsa_data |> 
+      filter(year == input$year) |> 
+      filter(cbsa_title == input$cbsa)
+  
+    }
+  )
+
   
   # Create a plot function for income distribution
   create_plot <- function(data) {
@@ -307,7 +259,6 @@ server <- function(input, output, session) {
       theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
-        strip.text = element_blank(),
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
@@ -360,17 +311,17 @@ server <- function(input, output, session) {
   
   # Render the state plot
   output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(state_data())))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_state())))
   })
   
   # Render the CBSA plot
   output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(cbsa_data())))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa())))
   })
   
   # Render the local plot
   output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(local_data())))
+    suppressWarnings(create_interactive_plot(create_plot(filtered_local())))
   })
 
   # Handle responsive window events

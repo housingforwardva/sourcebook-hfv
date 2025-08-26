@@ -13,58 +13,9 @@ library(sass)        # For SCSS compilation
 library(gdtools)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# MEDIAN HOUSEHOLD INCOME BY TENURE VISUALIZATION
 # =============================================================================
 
-# Register Google Fonts for ggiraph plots and system
-register_gfont("Open Sans")
-register_gfont("Poppins")
-
-# Register fonts with systemfonts using Google Fonts URLs
-tryCatch({
-  # For local development and server rendering, we'll use fallback fonts
-  # The web fonts are handled by the HTML dependencies in girafe
-  message("Google Fonts registered for web rendering")
-}, error = function(e) {
-  message("Font registration warning: ", e$message)
-})
-
-# Compile HFV styles if needed (for deployment compatibility)
-compile_hfv_styles_if_needed <- function() {
-  css_file <- "www/styles/hfv-theme.css"
-  scss_file <- "www/styles/hfv-theme.scss"
-  
-  # Only compile if CSS doesn't exist or SCSS is newer
-  if (!file.exists(css_file) || 
-      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
-    
-    message("🔄 Compiling HFV styles...")
-    
-    # Ensure the CSS directory exists
-    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
-    
-    # Compile SCSS to CSS
-    tryCatch({
-      sass(
-        list(sass_file(scss_file)),
-        output = css_file,
-        options = sass_options(
-          output_style = "expanded",
-          source_map_embed = FALSE
-        )
-      )
-      message("✅ HFV styles compiled successfully!")
-    }, error = function(e) {
-      warning("❌ Failed to compile SCSS: ", e$message)
-      warning("📝 Using fallback inline styles...")
-    })
-  }
-  
-  return(file.exists(css_file))
-}
-
-# Load shared HFV colors
-source(here::here("shiny", "shared_colors.R"))
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -82,10 +33,38 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+  # Load the data
 
-# Define UI
+data <- read_rds("./data.rds")
+
+  state_data <- data |> 
+      mutate(year = as.character(year))
+  
+  cbsa_data <- data |> 
+      mutate(year = as.character(year))
+
+  local_data <- data |> 
+      mutate(year = as.character(year))
+  
+  # Get available options
+  state_list <- sort(unique(state_data$state))
+
+  cbsa_list <- sort(unique(cbsa_data$cbsa))
+  
+  locality_list <- sort(unique(local_data$locality))
+  
+  tenure_list <- c("All households", "Homeowner", "Renter")
+  
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
 ui <- page_fillable(
   theme = hfv_theme,
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -208,39 +187,12 @@ ui <- page_fillable(
   )
 )
 
-# Server function
+# =============================================================================
+# SERVER FUNCTION
+# =============================================================================
+
 server <- function(input, output, session) {
-  # Load the data
-  state_data <- reactive({
-    read_rds(here("data", "rds", "b25119_state.rds")) %>% 
-      mutate(year = as.character(year))
-  })
-  
-  cbsa_data <- reactive({
-    read_rds(here("data", "rds", "b25119_cbsa.rds")) %>% 
-      mutate(year = as.character(year))
-  })
-  
-  local_data <- reactive({
-    read_rds(here("data", "rds", "b25119_local.rds")) %>% 
-      mutate(year = as.character(year))
-  })
-  
-  # Get available options
-  state_list <- reactive({
-    sort(unique(state_data()$state))
-  })
-  
-  cbsa_list <- reactive({
-    sort(unique(cbsa_data()$cbsa))
-  })
-  
-  locality_list <- reactive({
-    sort(unique(local_data()$locality))
-  })
-  
-  tenure_list <- c("All households", "Homeowner", "Renter")
-  
+
   # Initialize dropdowns
   observe({
     # Tenure
@@ -250,25 +202,25 @@ server <- function(input, output, session) {
     
     # States
     updateSelectInput(session, "state_select", 
-                      choices = state_list(),
-                      selected = if("Virginia" %in% state_list()) "Virginia" else state_list()[1])
+                      choices = state_list,
+                      selected = if("Virginia" %in% state_list) "Virginia" else state_list[1])
     
     # CBSAs
     updateSelectInput(session, "cbsa_select", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
+                      choices = cbsa_list,
+                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
     
     # Localities
     updateSelectInput(session, "locality_select", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+                      choices = locality_list,
+                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create filtered datasets
   filtered_state <- reactive({
     req(input$state_select, input$tenure)
     
-    state_data() %>%
+    state_data %>%
       filter(state == input$state_select,
              tenure == input$tenure)
   })
@@ -276,7 +228,7 @@ server <- function(input, output, session) {
   filtered_cbsa <- reactive({
     req(input$cbsa_select, input$tenure)
     
-    cbsa_data() %>%
+    cbsa_data %>%
       filter(cbsa == input$cbsa_select,
              tenure == input$tenure)
   })
@@ -284,7 +236,7 @@ server <- function(input, output, session) {
   filtered_locality <- reactive({
     req(input$locality_select, input$tenure)
     
-    local_data() %>%
+    local_data %>%
       filter(locality == input$locality_select,
              tenure == input$tenure)
   })
@@ -311,9 +263,9 @@ server <- function(input, output, session) {
     
     # Determine y-axis label based on dollar type
     y_label <- if(value_col == "adjusted") {
-      "Median Household Income (2023 Dollars)"
+      "Inflation-Adjusted Dollars"
     } else {
-      "Median Household Income (Current Dollars)"
+      "Current Dollars"
     }
     
     # Add tooltips
@@ -351,7 +303,7 @@ server <- function(input, output, session) {
         legend.text = element_text(size = 10),
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 12),
+        axis.title = element_blank(),
         axis.text = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid.minor = element_blank(),
