@@ -34,8 +34,14 @@ hfv_theme <- bs_theme(
 # =============================================================================
 
 # Load jurisdiction shapefile
-juris <- read_rds("../../../data/va_co_shape.rds")
+juris <- read_rds("./va_co_shape.rds")
 
+
+nhpd <- read_rds("./data.rds") |> 
+  mutate(property_name = case_when(
+    is.na(property_name) ~ "No name provided",
+    TRUE ~ property_name
+  ))
 
 
 # =============================================================================
@@ -52,7 +58,7 @@ ui <- page_fillable(
 
     div(
       class = "hfv-header",
-      h4("National Housing Preservation Database", class = "hfv-title")
+      h4("Virginia Federally-Assisted Rental Housing Property Explorer", class = "hfv-title")
     ),
 
     layout_columns(
@@ -72,7 +78,7 @@ ui <- page_fillable(
           style = "margin-bottom: 16px;",
           p("This map shows federally subsidized rental housing properties in Virginia from the National Housing Preservation Database.",
             style = "font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px;"),
-          p("Click on any green dot to view property details including subsidies, units, and status.",
+          p("Click on any dot to view property details including subsidies, units, and status.",
             style = "font-size: 0.85rem; color: #6c757d; line-height: 1.4;")
         ),
         
@@ -84,7 +90,7 @@ ui <- page_fillable(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
             strong("Data Source:"), br(),
-            "National Housing Preservation Database",
+            "National Housing Preservation Database.",
             style = "margin-bottom: 0;"
           )
         )
@@ -112,15 +118,15 @@ server <- function(input, output, session) {
         id = "juris",
         source = juris,
         fill_opacity = 0.1,
-        fill_outline_color = "blue",
+        fill_outline_color = "#011E41",
         hover_options = list(
             fill_color = "#1B365D",
-            fill_opacity = 0.8
+            fill_opacity = 0.5
           )) |> 
       add_circle_layer(
         id = "properties",
         source = nhpd,
-        circle_color = "green",
+        circle_color = "#334a66",
         circle_radius = 2,
         circle_opacity = 0.8,
         popup = concat(
@@ -129,14 +135,15 @@ server <- function(input, output, session) {
           'color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; ',
           'max-width: 280px; position: relative;">',
 
-          # Property name with housing icon
-          '<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; ',
-          'display: flex; align-items: center; gap: 6px;">',
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
-          '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
-          '<polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
-          get_column("property_name"),
-          '</h3>',
+# Property name with housing icon
+'<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; ',
+'color: white; ',  # Add this line to make the text white
+'display: flex; align-items: center; gap: 6px;">',
+'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">', # Change stroke="currentColor" to stroke="white"
+'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
+'<polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
+get_column("property_name"),
+'</h3>',
 
           # Address
           '<div style="font-size: 12px; opacity: 0.9; margin-bottom: 10px;">',
@@ -182,7 +189,7 @@ server <- function(input, output, session) {
           '<div style="margin-bottom: 8px;">',
           '<div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Active Subsidies:</div>',
           '<div style="font-size: 10px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 4px;">',
-          get_column("active_subsidies"),
+          get_column("subsidy_subnames"),
           '</div>',
           '</div>',
 
@@ -193,7 +200,11 @@ server <- function(input, output, session) {
           '</div>',
 
           '</div>'
-        ))
+        )) |> 
+      add_geocoder_control(
+      position = "top-right", 
+      placeholder = "Enter an address"
+    )
   })
 
 }

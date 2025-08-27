@@ -171,11 +171,36 @@ write_rds(tract_ho_data, "shiny/ho_rate/tract_ho_data.rds")
 write_rds(tract_map_data, "shiny/ho_rate/tract_map_data.rds")
 write_rds(va_counties, "data/va_co_shape.rds")
 
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(va_counties, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "geo/va_co_shape.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
+
 
 
 trend_data <- rbind(county_ho_data, tract_ho_data, state_ho_data)
 
 write_rds(trend_data, "shiny/ho_rate/trend_data.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(trend_data temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "census/homeownership_trend.rds",
+  Body = temp_file
+)
+file.remove(temp_file)
+
 
 
 library(sf)
@@ -186,3 +211,14 @@ tract_data_simplified <- tract_map_data |>
 
 write_rds(tract_data_simplified, "shiny/ho_rate/tract_data_simplified.rds")
 
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(tract_data_simplified, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "geo/homeownership_tract.rds",
+  Body = temp_file
+)
+file.remove(temp_file)

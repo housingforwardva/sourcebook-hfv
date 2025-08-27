@@ -2,12 +2,14 @@ library(shiny)
 library(tidyverse)
 library(readxl)
 library(stringr)
+library(cowplot)
 library(mapgl)
 library(sf)
 library(air)
 library(here)
 library(bslib)
 library(shinyjs)
+library(ggiraph)
 
 # =============================================================================
 # NATIONAL HOUSING PRESERVATION DATABASE MAP
@@ -33,46 +35,61 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-va_subsidies <- read_rds("shiny/05-rental/nhpd/data.rds") |> 
-  mutate(name_long = address_components.county) |> 
+va_subsidies <- read_rds("./data.rds") |> 
+  filter(subsidy_status == "Active/Inconclusive")
   
+cbsa_list <- sort(unique(va_subsidies$cbsa_title))
+  
+locality_list <- sort(unique(va_subsidies$name_long))
+
 
 # =============================================================================
 # USER INTERFACE
-# =============================================================================
+# ============================================================================= 
+
 
 ui <- page_fillable(
   theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),
-  useShinyjs(),
-
+  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
+  useShinyjs(), # Initialize shinyjs
+  # Main container using HFV classes
   div(
     class = "hfv-container",
-
+    
+    # Header using HFV styling
     div(
       class = "hfv-header",
-      h4("National Housing Preservation Database", class = "hfv-title")
+      h4("Federally Assisted Rental Housing", class = "hfv-title")
     ),
-
+    
+    # Layout using bslib layout_columns
     layout_columns(
       col_widths = c(
         lg = c(3, 9),
-        md = c(4, 8),
+        md = c(4, 8), 
         sm = 12
       ),
       gap = "16px",
-
-      div( 
+      
+      # Sidebar Panel with HFV styling
+      div(
         class = "hfv-sidebar",
-        h5("Information",
-          class = "text-primary", style = "margin-bottom: 16px;"),
-
+        
+        h5("Filters", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
+        
+        # Geography selectors
         div(
           style = "margin-bottom: 16px;",
-          p("This map shows federally subsidized rental housing properties in Virginia from the National Housing Preservation Database.",
-            style = "font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px;"),
-          p("Click on any green dot to view property details including subsidies, units, and status.",
-            style = "font-size: 0.85rem; color: #6c757d; line-height: 1.4;")
+          conditionalPanel(
+            condition = "input.tabs == 'cbsa'",
+            selectInput("cbsa", "Metro Area:", choices = cbsa_list, width = "100%", selectize = FALSE)
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'local'",
+            selectInput("locality", "Locality:", choices = locality_list, width = "100%", selectize = FALSE)
+          )
         ),
         
         # Divider
@@ -83,118 +100,218 @@ ui <- page_fillable(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
             strong("Data Source:"), br(),
-            "National Housing Preservation Database",
+            "National Housing Preservation Database.",
             style = "margin-bottom: 0;"
           )
         )
       ),
-        
-      # Main Panel with map
+      
+      # Main Panel with tabs
       div(
-        class = "hfv-chart-container",
-        style = "height: 600px; margin-top: 16px;",
-        mapglOutput("nhpd_map", height = "100%")
+        navset_tab(
+          id = "tabs",
+          
+          nav_panel(
+            title = "State",
+            value = "state",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
+          ),
+          
+          nav_panel(
+            title = "Locality",
+            value = "local",
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
+            )
+          )
+        )
       )
     )
   )
 )
 
 # =============================================================================
-# SERVER FUNCTION
+# SERVER FUNCTION 
 # =============================================================================
+
+# Streamlined server function with reduced redundancy
 server <- function(input, output, session) {
+
   
-  # Render the NHPD map
-  output$nhpd_map <- renderMapgl({
-    mapboxgl(bounds = juris) |> 
-      add_fill_layer(
-        id = "juris",
-        source = juris,
-        fill_opacity = 0.1,
-        fill_outline_color = "blue",
-        hover_options = list(
-            fill_color = "#1B365D",
-            fill_opacity = 0.8
-          )) |> 
-      add_circle_layer(
-        id = "properties",
-        source = nhpd,
-        circle_color = "green",
-        circle_radius = 2,
-        circle_opacity = 0.8,
-        popup = concat(
-          '<div style="background: linear-gradient(135deg, #011E41 0%, #66788d 100%); ',
-          'padding: 12px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); ',
-          'color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; ',
-          'max-width: 280px; position: relative;">',
-
-          # Property name with housing icon
-          '<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; ',
-          'display: flex; align-items: center; gap: 6px;">',
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
-          '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
-          '<polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
-          get_column("property_name"),
-          '</h3>',
-
-          # Address
-          '<div style="font-size: 12px; opacity: 0.9; margin-bottom: 10px;">',
-          get_column("property_address"), '<br>',
-          get_column("city"), ', ', get_column("state"), ' ', get_column("zip_code"),
-          '</div>',
-
-          # Status badge
-          '<div style="background: rgba(255,255,255,0.2); padding: 6px 8px; border-radius: 4px; ',
-          'margin-bottom: 10px; font-size: 11px; font-weight: 600; text-align: center;">',
-          'Status: ', get_column("property_status"),
-          '</div>',
-
-          # Stats grid - 3 columns
-          '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px;">',
-
-          # Max assisted units card
-          '<div style="background: rgba(255,255,255,0.15); padding: 6px; border-radius: 4px; text-align: center;">',
-          '<div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px;">Max Assisted</div>',
-          '<div style="font-size: 14px; font-weight: 600;">',
-          get_column("max_assisted_units"),
-          '</div>',
-          '</div>',
-
-          # Total units card
-          '<div style="background: rgba(255,255,255,0.15); padding: 6px; border-radius: 4px; text-align: center;">',
-          '<div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px;">Total Units</div>',
-          '<div style="font-size: 14px; font-weight: 600;">',
-          get_column("total_units"),
-          '</div>',
-          '</div>',
-
-          # Subsidies count card
-          '<div style="background: rgba(255,255,255,0.15); padding: 6px; border-radius: 4px; text-align: center;">',
-          '<div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px;">Subsidies</div>',
-          '<div style="font-size: 14px; font-weight: 600;">',
-          get_column("num_subsidies"),
-          '</div>',
-          '</div>',
-          '</div>',
-
-          # Active subsidies - condensed
-          '<div style="margin-bottom: 8px;">',
-          '<div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Active Subsidies:</div>',
-          '<div style="font-size: 10px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 4px;">',
-          get_column("active_subsidies"),
-          '</div>',
-          '</div>',
-
-          # Data source footer
-          '<div style="font-size: 9px; opacity: 0.7; text-align: center; ',
-          'padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2);">',
-          'NHPD',
-          '</div>',
-
-          '</div>'
-        ))
+  # Initialize dropdowns
+  observe({
+    cbsa_choices <- cbsa_list
+    locality_choices <- locality_list
+    
+    updateSelectInput(session, "cbsa", 
+                      choices = cbsa_choices,
+                      selected = if("Richmond, VA" %in% cbsa_choices) "Richmond, VA" else cbsa_choices[1])
+    
+    updateSelectInput(session, "locality", 
+                      choices = locality_choices,
+                      selected = if("Richmond City" %in% locality_choices) "Richmond City" else locality_choices[1])
   })
-
+  
+  # Single reactive for filtered data by geography type and year
+  filtered_data <- reactive({
+    
+    base_data <- va_subsidies 
+    
+    # Return a list with all three data types
+    list(
+      state = base_data %>%
+        group_by(subsidy_name, subsidy_status) %>%
+        summarise(value = sum(assisted_units, na.rm = TRUE), .groups = "drop") |> 
+        mutate(tooltip =
+        paste0(
+          "Subsidy Name: ", subsidy_name, "\n",
+          "Assisted units: ", value
+        ))|> 
+          group_by(subsidy_name) %>%
+          mutate(max_value_per_subsidy = max(value)) %>%
+          ungroup() ,
+      
+      cbsa = if (!is.null(input$cbsa)) {
+        base_data %>%
+          filter(cbsa_title == input$cbsa) %>%
+          group_by(cbsa_title, subsidy_name, subsidy_status) %>%
+          summarise(value = sum(assisted_units, na.rm = TRUE), .groups = "drop")|> 
+        mutate(tooltip =
+        paste0(
+          "Subsidy Name: ", subsidy_name, "\n",
+          "Assisted units: ", value
+        ))|> 
+          group_by(subsidy_name) %>%
+          mutate(max_value_per_subsidy = max(value)) %>%
+          ungroup() 
+      } else NULL,
+      
+      locality = if (!is.null(input$locality)) {
+        base_data %>%
+          filter(name_long == input$locality)  %>%
+          group_by(name_long, subsidy_name, subsidy_status) %>%
+          summarise(value = sum(assisted_units,na.rm = TRUE), .groups = "drop")|> 
+        mutate(tooltip =
+        paste0(
+          "Subsidy Name: ", subsidy_name, "\n",
+          "Assisted units: ", value
+        )) |> 
+          group_by(subsidy_name) %>%
+          mutate(max_value_per_subsidy = max(value)) %>%
+          ungroup() 
+          
+      } else NULL
+    )
+  })
+  
+  # Single function to create all plots
+  create_subsidy_plot <- function(data, title_text, subtitle_text = NULL) {
+    req(nrow(data) > 0)
+    
+    # Add tooltips
+    plot_data <- data 
+    
+    # Create base plot
+    p <- ggplot(plot_data, aes(x = reorder(subsidy_name, max_value_per_subsidy), y = value, fill = subsidy_status)) +
+      geom_col_interactive(
+        aes(tooltip = tooltip, data_id = subsidy_name),
+        position = "stack"
+      ) +
+      scale_y_continuous(labels = scales::number_format(big.mark = ",")) +
+      labs(
+        title = title_text,
+        caption = " "
+      ) +
+      theme_minimal(base_family = "Open Sans") +
+      theme(
+        legend.position = "none",
+        plot.title.position = "plot",
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90, hjust = 0.5),
+        axis.title = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+        plot.margin = margin(5, 5, 30, 5)
+      )
+    
+    # Add logo (single implementation)
+    add_hfv_logo(p)
+  }
+  
+  # Helper function for logo (extracted to reduce duplication)
+  add_hfv_logo <- function(plot) {
+    logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
+    
+    ggdraw(plot) +
+      draw_image(
+        logo_url,
+        x = 0.85, y = 0.05,
+        width = 0.15, height = 0.15
+      )
+  }
+  
+create_interactive_plot <- function(plot_obj) {
+  girafe(
+    ggobj = plot_obj,
+    width_svg = 8,
+    height_svg = 5,
+    options = list(
+      opts_hover(css = "fill-opacity:0.8;"),
+      opts_tooltip(
+        opacity = 0.9,
+        css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
+        use_fill = TRUE
+      ),
+      opts_sizing(rescale = TRUE),
+      opts_selection(type = "none")
+    )
+  )
+}
+  
+  # Render plots using the streamlined approach
+  output$state_plot <- renderGirafe({
+    data <- filtered_data()$state
+    req(data)
+    plot <- create_subsidy_plot(data, "Federally-Assisted Rental Housing in Virginia")
+    create_interactive_plot(plot)
+  })
+  
+  output$cbsa_plot <- renderGirafe({
+    data <- filtered_data()$cbsa
+    req(data, input$cbsa)
+    title <- paste("Federally-Assisted Rental Housing in", input$cbsa, "Metro")
+    plot <- create_subsidy_plot(data, title)
+    create_interactive_plot(plot)
+  })
+  
+  output$local_plot <- renderGirafe({
+    data <- filtered_data()$locality
+    req(data, input$locality)
+    title <- paste("Federally-Assisted Rental Housing in", input$locality)
+    plot <- create_subsidy_plot(data, title)
+    create_interactive_plot(plot)
+  })
+  
+  # Mobile optimization
+  observe({
+    session$sendCustomMessage(type = "plot-redraw", message = list())
+  })
 }
 
 # Run the application 

@@ -4,6 +4,8 @@ library(readxl)
 
 juris <- read_rds("data/va_co_shape.rds")
 
+lookup <- read_csv("data/local_lookup.csv")
+
 # Load NHPD data
 subsidies <- read_excel("data/xls_csv/nhpd_subsidies_va.xlsx") 
   
@@ -29,14 +31,16 @@ lat_long <- va_subsidies %>%
           long = Longitude)
 
 manual_review <- lat_long |> 
-  filter(accuracy < .8 | is.na(accuracy))
+  filter(accuracy < 0.8 | is.na(accuracy))
 
+reviewed <- lat_long |> 
+  filter(accuracy >= 0.8)
 
 write_csv(manual_review, "data/va_subsidies_manual_check.csv")
 
 checked_review <- read_csv("data/va_subsidies_manual_check.csv")
 
-combined_data <- rbind(lat_long, checked_review) |> 
+combined_data <- rbind(reviewed, checked_review) |> 
   mutate(name_long = address_components.county) |> 
   left_join(lookup, by = "name_long") |> 
   select(subsidy_status,
@@ -57,6 +61,15 @@ combined_data <- rbind(lat_long, checked_review) |>
     subsidy_status == "Inconclusive" ~ "Active/Inconclusive",
     subsidy_status == "Active" ~ "Active/Inconclusive",
     TRUE ~ subsidy_status
+  )) |> 
+  mutate(subsidy_name = case_when(
+    subsidy_name == "RHS 515" ~ "USDA RD Loans (515 & 538)",
+    subsidy_name == "RHS 538" ~ "USDA RD Loans (515 & 538)",
+    subsidy_name == "Mod Rehab" ~ "Other HUD program",
+    subsidy_name == "Section 236" ~ "Other HUD program",
+    subsidy_name == "Section 202" ~ "Other HUD program",
+    subsidy_name == "National Housing Trust Fund" ~ "Other HUD program",
+    TRUE ~ subsidy_name
   ))
 
 

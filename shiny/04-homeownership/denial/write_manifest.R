@@ -5,7 +5,7 @@ rsconnect::writeManifest(
   appDir = "shiny/04-homeownership/denial",                      # Current directory
   appFiles = c(                      # Files to include
     "app.R",       # Main app file
-    "data.parquet",     # Data files
+    "data.rds",     # Data files
     "www/styles/hfv-theme.css"
   ),
   appPrimaryDoc = "app.R"  # Main file
