@@ -19,19 +19,19 @@ hpi_cbsa_raw <- read_csv("https://www.fhfa.gov/hpi/download/quarterly_datasets/h
 
 # Non-metro data is only available as an xls file; must read in via temp file
 
-# Set up temp file container
 
-temp <- tempfile(fileext = ".xls")
+# Set up temp file with correct extension
+temp <- tempfile(fileext = ".xlsx")
 
-# Write nonmetro xls file to temp file on disk
+# Write nonmetro xlsx file to temp file on disk
+httr::GET(url = "https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_nonmetro.xlsx",
+          httr::write_disk(temp, overwrite = TRUE))
 
-httr::GET(url = "https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_nonmetro.xls",
-          write_disk(temp))
+# Import xlsx and skip header rows
+hpi_nonmetro_raw <- readxl::read_excel(temp, sheet = 1, skip = 2)
 
-# Import xls and skip header rows
-
-hpi_nonmetro_raw <- read_excel(temp, sheet = 1, skip = 2)
-
+# Clean up temp file
+unlink(temp)
 
 # Data prep
 
@@ -40,10 +40,7 @@ hpi_nonmetro_raw <- read_excel(temp, sheet = 1, skip = 2)
 hpi_state_data <- hpi_state_raw %>% 
   setNames(c("name", "year", "quarter", "hpi")) %>% 
   mutate(geography = "State",
-         .before = 1) %>%
-  mutate(fips = 51,
-         .after = 2) %>% 
-  mutate(name = "Virginia") %>% 
+         .before = 1) |> 
   add_column(stderror = NA)
 
 # Prep CBSA data and filter only Virginia values

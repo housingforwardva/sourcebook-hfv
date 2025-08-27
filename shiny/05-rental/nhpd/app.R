@@ -33,47 +33,9 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-# Load jurisdiction shapefile
-juris <- read_rds("../../../data/va_co_shape.rds")
-
-# Load NHPD data
-subsidies <- read_excel("../../../data/xls_csv/nhpd_subsidies_va.xlsx") |> 
-  janitor::clean_names() |> 
-  select(nhpd_property_id,
-         subsidy_status,
-         subsidy_name,
-         subsidy_subname, 
-         start_date,
-         end_date,
-         assisted_units,
-         inactive_status_description,
-         construction_type) 
-
-properties <- read_excel("../../../data/xls_csv/nhpd_properties_va.xlsx") |> 
-  janitor::clean_names() |> 
-  select(1:27) 
-         
-properties_with_subsidies <- properties %>%
-  left_join(
-    subsidies %>%
-      group_by(nhpd_property_id) %>%
-      summarise(
-        num_subsidies = n(),
-        subsidy_names = paste(unique(subsidy_name), collapse = "; "),
-        subsidy_subnames = paste(unique(subsidy_subname), collapse = "; "),
-        active_subsidies = paste(subsidy_name[subsidy_status == "Active"], 
-                                 collapse = "; "),
-        max_assisted_units = max(assisted_units, na.rm = TRUE),
-        min_assisted_units = min(assisted_units, na.rm = TRUE),
-        earliest_start = min(start_date, na.rm = TRUE),
-        latest_end = max(end_date, na.rm = TRUE),
-        .groups = "drop"
-      ),
-    by = "nhpd_property_id"
-  )
-
-# Convert to sf object
-nhpd <- st_as_sf(properties_with_subsidies, coords = c("longitude", "latitude"), crs = 4326)
+va_subsidies <- read_rds("shiny/05-rental/nhpd/data.rds") |> 
+  mutate(name_long = address_components.county) |> 
+  
 
 # =============================================================================
 # USER INTERFACE

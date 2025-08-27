@@ -58,31 +58,22 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-# Load the data (using path relative to project root)
-local_lookup <- read_csv("../../data/local_lookup.csv") |> 
-  mutate(fips_full = as.character(fips_full))
-
-loans_race <- read_parquet("../../data/parquet/hmda_va_clean.parquet") |> 
-  select(activity_year, lei, fips_full = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
-         occupancy_type) |> 
-  mutate(count = 1) |> 
-  group_by(activity_year, fips_full, race_ethnicity, action_taken, loan_purpose, occupancy_type) |> 
-  summarise(count = sum(count), .groups = "drop") %>% 
-  left_join(local_lookup, by = "fips_full") |> 
-  filter(state == "Virginia")
+data <- read_rds("./data.rds")
 
 # Get available options
-cbsa_list <- loans_race %>%
+cbsa_list <- data %>%
   filter(!is.na(cbsa_title)) %>%
   pull(cbsa_title) %>%
   unique() %>%
   sort()
 
-locality_list <- loans_race %>%
+locality_list <- data  %>%
   filter(!is.na(name_long)) %>%
   pull(name_long) %>%
   unique() %>%
   sort()
+
+year_list <- unique(sort(data$year, decreasing = TRUE))
 
 # =============================================================================
 # USER INTERFACE
@@ -239,8 +230,8 @@ server <- function(input, output, session) {
   
   # Create state-level denial data
   state_data <- reactive({
-    loans_race |> 
-      filter(activity_year == input$year) |> 
+    data |> 
+      filter(year == input$year) |> 
       group_by(state, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 
       filter(loan_purpose == input$loan_purpose) |> 
@@ -256,8 +247,8 @@ server <- function(input, output, session) {
   cbsa_data <- reactive({
     req(input$cbsa)
     
-    loans_race |> 
-      filter(activity_year == input$year) |> 
+    data |> 
+      filter(year == input$year) |> 
       group_by(cbsa_title, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 
       filter(loan_purpose == input$loan_purpose) |> 
@@ -274,8 +265,8 @@ server <- function(input, output, session) {
   locality_data <- reactive({
     req(input$locality)
     
-    loans_race |> 
-      filter(activity_year == input$year) |> 
+    data |> 
+      filter(year == input$year) |> 
       group_by(name_long, race_ethnicity, loan_purpose, occupancy_type) |> 
       mutate(total = sum(count)) |> 
       filter(loan_purpose == input$loan_purpose) |> 

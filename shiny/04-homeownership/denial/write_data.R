@@ -10,33 +10,28 @@ s3_response <- s3$get_object(
   Key = "cfpb/hmda_va_clean.parquet"
 )
 
-# Check size
-print(paste("Downloaded size:", length(s3_response$Body), "bytes"))
+lookup <- read_csv("data/local_lookup.csv") %>% 
+  mutate(GEOID = as.character(fips_full))
 
-# Check if it starts with PAR1 (parquet magic bytes)
-if(length(s3_response$Body) >= 4) {
-  first_bytes <- rawToChar(s3_response$Body[1:4], multiple = TRUE)
-  print(paste("First 4 bytes:", paste(first_bytes, collapse = "")))
-}
+data <- tryCatch({
+  decompressed <- memDecompress(s3_response$Body, type = "gzip")
+  readRDS(rawConnection(decompressed))
+}, error = function(e) {
+  # If decompression fails, try reading directly
+  readRDS(rawConnection(s3_response$Body))
+}) 
 
-# Check if it ends with PAR1
-if(length(s3_response$Body) >= 4) {
-  last_bytes <- rawToChar(tail(s3_response$Body, 4), multiple = TRUE)
-  print(paste("Last 4 bytes:", paste(last_bytes, collapse = "")))
-}
 
-# Read all the raw bytes from the connection
-raw_data <- s3_response$Body$read()
+va_data <- data  |> 
+  select(year = activity_year, lei, GEOID = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
+         occupancy_type)|> 
+  mutate(count = 1) |> 
+  group_by(year, GEOID, race_ethnicity, action_taken, loan_purpose, occupancy_type) |> 
+  summarise(count = sum(count)) %>% 
+  left_join(lookup, by = "GEOID") |> 
+  filter(state == "Virginia") # Remove entries that are coded for loans out-of-state.
 
-# Write to temp file
-temp_file <- tempfile(fileext = ".parquet")
-writeBin(raw_data, temp_file)
 
-# Read the parquet file
-hmda_data <- read_parquet(temp_file)
 
-# Clean up
-unlink(temp_file)
 
-# Check your data
-glimpse(hmda_data)
+write_rds(va_data, "shiny/04-homeownership/denial/data.rds")

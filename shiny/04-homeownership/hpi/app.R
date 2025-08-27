@@ -9,13 +9,12 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-library(sass)        # For SCSS compilation
 library(gdtools)
 library(lubridate)
 library(zoo)
 
 # =============================================================================
-# HFV STYLING SYSTEM INTEGRATION
+# HOUSING PRICE INDEX VISUALIZATION
 # =============================================================================
 
 
@@ -46,16 +45,25 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
+# =============================================================================
+# LOAD DATA OUTSIDE SERVER
+# =============================================================================
+
 # Load data outside of server
-hpi <- read_rds(here("data", "rds", "hpi.rds")) |> 
+hpi <- read_rds("data.rds") |> 
   mutate(date = as.Date(as.yearqtr(date, format = "%Y Q%q"))) |> 
   select(geography, name, date, hpi) |> 
   filter(!is.na(hpi))
 
 # Create lists for filters
 cbsa_list <- sort(unique(hpi$name[hpi$geography == "CBSA"]))
+state_list <- sort(unique(hpi$name[hpi$geography == "State"]))
+nonmetro_list <- sort(unique(hpi$name[hpi$geography == "Nonmetro"]))
 
-# Define UI
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
 ui <- page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
@@ -67,7 +75,7 @@ ui <- page_fillable(
     # Header using HFV styling
     div(
       class = "hfv-header",
-      h4("Housing Price Index Analysis", class = "hfv-title")
+      h4("Housing Price Index", class = "hfv-title")
     ),
 
     # Layout using bslib layout_columns
@@ -89,6 +97,14 @@ ui <- page_fillable(
         # Geography selectors
         div(
           style = "margin-bottom: 16px;",
+            conditionalPanel(
+            condition = "input.tabs == 'state'",
+            selectInput("state_select", "State:", 
+                        choices = state_list,
+                        selected = if("VA" %in% state_list) "VA" else state_list[1],
+                        width = "100%", 
+                        selectize = FALSE)
+          ),
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput("cbsa_select", "Metro Area:", 
@@ -96,6 +112,14 @@ ui <- page_fillable(
                         selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
                         width = "100%", 
                         selectize = FALSE)
+          ),
+          conditionalPanel(
+            condition = "input.tabs == 'nonmetro'",
+            selectInput("nonmetro_select", "Nonmetro:", 
+            choices = nonmetro_list, 
+            selected = if("VA Nonmetro Area" %in% nonmetro_list) "VA Nonmetro Area" else nonmetro_list[1],
+            width = "100%", 
+            selectize = FALSE)
           )
         ),
         
@@ -166,7 +190,8 @@ server <- function(input, output, session) {
   # Create filtered datasets
   state_data <- reactive({
     hpi |> 
-      filter(geography == "State")
+      filter(geography == "State") |> 
+      filter(name == input$state_select)
   })
   
   filtered_cbsa <- reactive({
@@ -178,7 +203,8 @@ server <- function(input, output, session) {
   
   nonmetro_data <- reactive({
     hpi |> 
-      filter(geography == "Nonmetro")
+      filter(geography == "Nonmetro",
+    name == input$nonmetro_select)
   })
   
   # Plot titles
@@ -224,17 +250,10 @@ server <- function(input, output, session) {
       geom_point_interactive(
         aes(tooltip = tooltip, data_id = paste(date, hpi)),
         color = hfv_colors$sky,
-        size = 2
+        size = 1
       ) +
-      # Add label for latest value
-      geom_text(data = latest_data, 
-                aes(label = round(hpi, 1)),
-                hjust = -0.3, vjust = 0.5, 
-                color = hfv_colors$shadow) +
       labs(
         title = title_text,
-        y = "Housing Price Index",
-        x = "Year",
         caption = " " # Add empty caption to leave space for logo
       ) +
       theme_minimal(base_family = "Open Sans") +
@@ -243,6 +262,7 @@ server <- function(input, output, session) {
         plot.title.position = "plot",
         axis.text = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 15, 30, 5) # Extra bottom margin for logo

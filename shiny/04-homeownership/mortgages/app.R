@@ -13,25 +13,25 @@ library(gdtools)
 library(arrow)
 
 # =============================================================================
-# MORTGAGE LENDING BY RACE AND ETHNICITY VISUALIZATION
+# MORTGAGE ORIGINATIONS BY RACE AND ETHNICITY VISUALIZATION
 # =============================================================================
 
-# HFV Color Palette
+# Define HFV color palette
 hfv_colors <- list(
-  sky = "#40C0C0",           # Primary teal
-  grass = "#259591",         # Dark teal/success
-  lilac = "#8B85CA",         # Purple/info
-  shadow = "#011E41",        # Dark navy/secondary
-  shadow_light = "#102C54",  # Lighter navy
-  berry = "#B1005F",         # Magenta/danger
-  desert = "#E0592A"         # Orange/warning
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA", 
+  shadow = "#011E41",
+  shadow_light = "#2c5794ff",
+  berry = "#B1005F",
+  desert = "#E0592A"
 )
 
 # Define consistent colors for race_ethnicity categories
 race_ethnicity_colors <- c(
-  "White, non-Hispanic" = "#011E41",
-  "Black" = "#B1005F",
-  "Hispanic or Latino" = "#E0592A",
+  "White, non-Hispanic" = hfv_colors$shadow,
+  "Black" = hfv_colors$berry,
+  "Hispanic or Latino" = hfv_colors$desert,
   "Asian" = hfv_colors$grass,
   "Other Minority" = hfv_colors$lilac,
   "White Co-Applicant" = hfv_colors$shadow_light,
@@ -58,21 +58,21 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-# Load the data
-hmda_data <- read_parquet("hmda_va_clean.parquet")
+data <- read_rds("./data.rds")
 
-# Get available CBSAs and localities
-cbsa_list <- hmda_data %>%
+# Get available options
+cbsa_list <- data %>%
   filter(!is.na(cbsa_title)) %>%
   pull(cbsa_title) %>%
   unique() %>%
   sort()
 
-locality_list <- hmda_data %>%
+locality_list <- data  %>%
   filter(!is.na(name_long)) %>%
   pull(name_long) %>%
   unique() %>%
   sort()
+
 
 # =============================================================================
 # USER INTERFACE
@@ -82,219 +82,38 @@ locality_list <- hmda_data %>%
 ui <- page_fillable(
   theme = hfv_theme,
   includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
-  useShinyjs(),
+  useShinyjs(), # Initialize shinyjs
 
-  # Mobile optimization viewport
-  tags$head(
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    )
-  ),
-
-  # CSS styles (same as reference app)
-  tags$head(
-    tags$style(HTML(
-      "
-      body, html {
-        margin: 0;
-        padding: 0;
-        height: auto;
-        overflow-x: hidden;
-      }
-      
-      @media (max-height: 600px) {
-        .hfv-container {
-          padding: 10px !important;
-          margin: 0 auto !important;
-          max-height: 500px !important;
-          overflow: hidden !important;
-        }
-        
-        .hfv-header {
-          margin-bottom: 8px !important;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px !important;
-        }
-        
-        .girafe-container {
-          height: 280px !important;
-          min-height: 280px !important;
-        }
-        
-        body, html {
-          overflow: hidden !important;
-        }
-      }
-      
-      .hfv-container {
-        max-width: 1200px; 
-        margin: 0 auto; 
-        padding: 45px;
-      }
-      
-      .hfv-header {
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 15px; 
-        border-bottom: 2px solid #40C0C0; 
-        padding-bottom: 8px;
-      }
-      
-      .hfv-header img {
-        height: 30px;
-        margin-right: 10px;
-      }
-      
-      .title-text {
-        margin: 0; 
-        color: #011E41;
-        font-size: 20px;
-      }
-      
-      .hfv-sidebar {
-        background-color: #E8EDF2;
-        padding: 15px;
-        border-radius: 5px;
-      }
-      
-      .girafe-container {
-        width: 100%;
-        height: auto;
-        min-height: 350px;
-        overflow: visible;
-      }
-      
-      .girafe-container svg {
-        width: 100% !important;
-        height: 100% !important;
-      }
-      
-      @media (max-width: 992px) {
-        .hfv-container {
-          padding: 10px;
-        }
-        
-        .title-text {
-          font-size: 18px;
-        }
-        
-        .girafe-container {
-          height: 400px;
-        }
-      }
-      
-      @media (max-width: 768px) {
-        .hfv-container {
-          padding: 8px;
-          border-width: 1px;
-        }
-        
-        .title-text {
-          font-size: 16px;
-        }
-        
-        .hfv-header {
-          margin-bottom: 10px;
-        }
-        
-        .hfv-sidebar {
-          padding: 10px;
-          margin-bottom: 10px;
-        }
-        
-        .control-label {
-          font-size: 12px;
-        }
-        
-        .form-check-label {
-          font-size: 11px;
-        }
-        
-        .form-select {
-          font-size: 12px;
-        }
-        
-        .form-control {
-          font-size: 12px;
-        }
-        
-        .girafe-container {
-          height: 350px;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .hfv-container {
-          padding: 5px;
-        }
-        
-        .hfv-header img {
-          height: 25px;
-        }
-        
-        .title-text {
-          font-size: 14px;
-        }
-        
-        .hfv-sidebar {
-          padding: 8px;
-        }
-        
-        .girafe-container {
-          height: 300px;
-        }
-        
-        .nav-tabs .nav-link {
-          font-size: 13px;
-          padding: 6px 10px;
-        }
-      "
-    ))
-  ),
-
-  # Main container
+  # Main container using HFV classes
   div(
     class = "hfv-container",
     
-    # Header with logo and title
+    # Header using HFV styling
     div(
       class = "hfv-header",
-      img(
-        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
-        alt = "HousingForward VA Logo"
-      ),
-      h4("Mortgage Lending by Race and Ethnicity", class = "title-text")
+      h4("Mortgage Originations by Race and Ethnicity", class = "hfv-title")
     ),
 
-    # Responsive layout
+    # Layout using bslib layout_columns
     layout_columns(
-      fillable = TRUE,
       col_widths = c(
         lg = c(3, 9),
-        md = c(4, 8),
-        sm = c(12, 12)
+        md = c(4, 8), 
+        sm = 12
       ),
-
-      # Sidebar Panel
+      gap = "16px",
+      
+      # Sidebar Panel with HFV styling
       div(
         class = "hfv-sidebar",
         
-        # Year selector
-        div(
-          style = "margin-bottom: 10px;",
-          selectInput("year", "Year:", 
-                     choices = c(2018:2024), 
-                     selected = 2024, 
-                     width = "100%", 
-                     selectize = FALSE)
-        ),
+        h5("Filters", 
+           class = "text-primary", style = "margin-bottom: 16px;"),
+        
         
         # Loan purpose selector
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           selectInput("loan_purpose", "Loan Purpose:", 
                      choices = c("Home purchase", "Home improvement", "Refinancing", "Cash-out refinancing", "Other purpose"),
                      selected = "Home purchase", 
@@ -304,7 +123,7 @@ ui <- page_fillable(
         
         # Occupancy type selector
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           selectInput("occupancy_type", "Occupancy Type:", 
                      choices = c("Principal residence", "Second residence", "Investment property"),
                      selected = "Principal residence", 
@@ -312,9 +131,9 @@ ui <- page_fillable(
                      selectize = FALSE)
         ),
         
-        # Geographic selectors (conditional)
+        # Geography selectors
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 16px;",
           conditionalPanel(
             condition = "input.tabs == 'cbsa'",
             selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
@@ -325,37 +144,53 @@ ui <- page_fillable(
           )
         ),
         
-        # Horizontal line
-        hr(style = "margin: 3px 0;"),
+        # Divider
+        hr(style = "margin: 24px 0; border-color: #ced4da;"),
         
-        # Source information
+        # Data source
         div(
-          style = "font-size: 10px; color: #666; margin-top: 2px;",
+          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
-            "Source: Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data.",
+            strong("Data Source:"), br(),
+            "Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data",
             style = "margin-bottom: 0;"
           )
         )
       ),
-      
-      # Main Panel (tabs)
+        
+      # Main Panel with tabs
       div(
         navset_tab(
           id = "tabs",
+          
           nav_panel(
-            title = "State", 
+            title = "State",
             value = "state",
-            div(class = "girafe-container", girafeOutput("state_plot", height = "100%"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("state_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
-            title = "Metro Area", 
-            value = "cbsa",
-            div(class = "girafe-container", girafeOutput("cbsa_plot", height = "100%"))
+            title = "Metro Area",
+            value = "cbsa", 
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("cbsa_plot", height = "100%")
+            )
           ),
+          
           nav_panel(
-            title = "Locality", 
+            title = "Locality",
             value = "local",
-            div(class = "girafe-container", girafeOutput("local_plot", height = "100%"))
+            div(
+              class = "hfv-chart-container",
+              style = "height: 450px; margin-top: 16px;",
+              girafeOutput("local_plot", height = "100%")
+            )
           )
         )
       )
@@ -383,104 +218,101 @@ server <- function(input, output, session) {
                       selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
-  # Create state-level data
+  # Create state-level origination data
   state_data <- reactive({
-    hmda_data %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
+    data |> 
+      filter(loan_purpose == input$loan_purpose) |> 
+      filter(occupancy_type == input$occupancy_type) |> 
+      group_by(year, race_ethnicity, action_taken) |> 
+      summarise(count = sum(count), .groups = "drop") |> 
+      filter(action_taken == "Loan originated")
   })
   
-  # Create CBSA-level data
+  # Create CBSA-level origination data
   cbsa_data <- reactive({
     req(input$cbsa)
     
-    hmda_data %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type,
-        cbsa_title == input$cbsa
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
+    data |> 
+      filter(loan_purpose == input$loan_purpose) |> 
+      filter(occupancy_type == input$occupancy_type) |> 
+      filter(cbsa_title == input$cbsa) |> 
+      group_by(year, cbsa_title, race_ethnicity, action_taken) |> 
+      summarise(count = sum(count), .groups = "drop") |> 
+      filter(action_taken == "Loan originated")
   })
   
-  # Create locality-level data
+  # Create locality-level origination data
   locality_data <- reactive({
     req(input$locality)
     
-    hmda_data %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type,
-        name_long == input$locality
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
+    data |> 
+      filter(loan_purpose == input$loan_purpose) |> 
+      filter(occupancy_type == input$occupancy_type) |> 
+      filter(name_long == input$locality) |> 
+      group_by(year, name_long, race_ethnicity, action_taken) |> 
+      summarise(count = sum(count), .groups = "drop") |> 
+      filter(action_taken == "Loan originated") 
   })
   
   # Plot titles
   state_title <- reactive({
-    paste("Virginia Mortgage Loans by Race/Ethnicity -", input$year)
+    paste("Virginia Loan Originations by Race/Ethnicity -")
   })
   
   cbsa_title <- reactive({
-    paste("Mortgage Loans by Race/Ethnicity -", input$cbsa, "-", input$year)
+    paste("Loan Originations by Race/Ethnicity -", input$cbsa)
   })
   
   locality_title <- reactive({
-    paste("Mortgage Loans by Race/Ethnicity -", input$locality, "-", input$year)
+    paste("Loan Originations by Race/Ethnicity -", input$locality)
   })
   
-  # Function to create mortgage plots
-  create_mortgage_plot <- function(data, title_text) {
-    req(nrow(data) > 0)
-    
-    # Create tooltips
-    plot_data <- data %>%
-      mutate(tooltip = paste0(
-        "Race/Ethnicity: ", race_ethnicity, "\n",
-        "Loan Count: ", format(count, big.mark = ",")
-      ))
-    
-    # Create base plot
-    p <- ggplot(plot_data,
-                aes(x = reorder(race_ethnicity, count),
-                    y = count,
-                    fill = race_ethnicity)) +
-      geom_col_interactive(
-        aes(tooltip = tooltip, data_id = race_ethnicity),
-        width = 0.7
-      ) +
-      scale_fill_manual(values = race_ethnicity_colors, na.value = "#CCCCCC") +
-      coord_flip() +
-      scale_y_continuous(labels = comma_format()) +
-      labs(
-        title = title_text,
-        caption = " ",
-        y = "Number of Loans",
-        x = "Race/Ethnicity"
-      ) +
-      theme_minimal(base_family = "Arial") +
-      theme(
-        legend.position = "none",
-        plot.title.position = "plot",
-        plot.title = element_text(size = 14, face = "bold"),
-        axis.title.y = element_blank(),
-        axis.text = element_text(size = 10),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
-        plot.margin = margin(5, 5, 30, 5)
-      )
+ # Function to create origination plots
+create_origination_plot <- function(data, title_text) {
+  req(nrow(data) > 0)
+  
+  # Create tooltips
+  plot_data <- data %>%
+    mutate(tooltip = paste0(
+      "Race/Ethnicity: ", race_ethnicity, "\n",
+      "Originations: ", format(count, big.mark = ","), "\n"
+    ))
+  
+  # Create base plot
+  p <- ggplot(plot_data,
+              aes(x = year,
+                  y = count,
+                  fill = race_ethnicity)) +
+    geom_col_interactive(
+      aes(tooltip = tooltip, data_id = race_ethnicity),
+      width = 0.7
+    ) +
+    scale_fill_manual(values = race_ethnicity_colors, na.value = "#CCCCCC") +
+    scale_x_continuous(
+      breaks = function(x) seq(floor(min(x)), ceiling(max(x)), by = 1),
+      labels = function(x) as.character(x)
+    ) +
+    scale_y_continuous(
+      labels = scales::label_comma(),
+      expand = expansion(mult = c(0, 0.15))
+    ) +
+    labs(
+      title = title_text,
+      caption = " " # Add empty caption to leave space for logo
+    ) +
+    theme_minimal(base_family = "Open Sans") +
+    theme(
+      legend.position = "right",
+      legend.title = element_blank(),
+      plot.title.position = "plot",
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.title = element_blank(),
+      axis.text = element_text(size = 10),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
+      plot.margin = margin(5, 20, 30, 5) # Extra bottom margin for logo
+    )
+  
     
     # Add logo
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
@@ -497,7 +329,7 @@ server <- function(input, output, session) {
     return(p_with_logo)
   }
   
-  # Convert to interactive girafe
+  # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
       ggobj = plot_obj,
@@ -512,21 +344,25 @@ server <- function(input, output, session) {
         ),
         opts_sizing(rescale = TRUE),
         opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
+      ),
+      fonts = list(
+        addGFontHtmlDependency(family = "Open Sans"),
+        addGFontHtmlDependency(family = "Poppins")
       )
     )
   }
   
   # Render the plots
   output$state_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(state_data(), state_title()))
+    suppressWarnings(create_interactive_plot(create_origination_plot(state_data(), state_title())))
   })
   
   output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(cbsa_data(), cbsa_title()))
+    suppressWarnings(create_interactive_plot(create_origination_plot(cbsa_data(), cbsa_title())))
   })
   
   output$local_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(locality_data(), locality_title()))
+    suppressWarnings(create_interactive_plot(create_origination_plot(locality_data(), locality_title())))
   })
   
   # Handle responsive window events
