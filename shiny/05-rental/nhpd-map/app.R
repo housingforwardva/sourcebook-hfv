@@ -34,10 +34,10 @@ hfv_theme <- bs_theme(
 # =============================================================================
 
 # Load jurisdiction shapefile
-juris <- read_rds("./va_co_shape.rds")
+juris <- read_rds("va_co_shape.rds")
 
 
-nhpd <- read_rds("./data.rds") |> 
+nhpd <- read_rds("data.rds") |> 
   mutate(property_name = case_when(
     is.na(property_name) ~ "No name provided",
     TRUE ~ property_name
