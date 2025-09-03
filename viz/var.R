@@ -18,13 +18,74 @@ top <- var_data |>
 hrra <- c("Chesapake City", "Franklin City", "Norfolk City", "Portsmouth City", "Suffolk City", 
   "Virginia Beach City", "Isle of Wight County")
 
-southside <- var_data |> 
+southside_units <- var_data |> 
   filter(name %in% hrra) |>
   mutate(quarter_num = as.numeric(as.factor(quarter))) |>
   arrange(quarter_num) |> 
-  filter(quarter == "2025 Q2")
+  mutate(year_date = as.character(quarter)) |> 
+  mutate(year_label = substr(year_date, 1, 4)) |> 
+  group_by(year_label, name) |> 
+  summarise(units = sum(units))
+
+southside_price <- var_data |> 
+  filter(name %in% hrra)
 
 
+library(ggplot2)
+library(scales)
+
+# Assuming these are the six unique names in your data
+names <- unique(southside_units$name)
+
+# Create a named vector mapping names to HFV colors
+name_colors <- setNames(
+  c(hfv_colors$sky, hfv_colors$grass, hfv_colors$lilac, 
+    hfv_colors$berry, hfv_colors$desert, hfv_colors$shadow),
+  names
+)
+
+ggplot(southside_units, aes(x = year_label, y = units, fill = name)) +
+  geom_col(position = "stack") +
+  scale_fill_manual(values = name_colors) +
+  scale_color_manual(values = name_colors) +
+  scale_y_continuous(labels = number_format(scale = 1, big.mark = ","),
+                     expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "Homes Sold in South Hampton Roads",
+    x = "Year",
+    y = "Housing Units Sold"
+  ) +
+  theme_minimal(base_family = "Open Sans") +
+  theme(
+    legend.position = "right",
+    legend.title = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_blank(),
+    plot.margin = margin(10, 10, 40, 10) # Extra bottom margin for logo
+  )
+
+ggplot(southside_price, aes(x = quarter, y = med_price, group = name)) +
+  geom_line(aes(color = name)) +
+  scale_fill_manual(values = name_colors) +
+  scale_color_manual(values = name_colors) +
+  labs(
+    title = "Median Sales Price in South Hampton Roads"
+  ) +
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme_minimal(base_family = "Open Sans") +
+  theme(
+    legend.position = "right",
+    legend.title = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(size = 10, angle = 90),
+    axis.title = element_blank(),
+    plot.margin = margin(10, 10, 40, 10) # Extra bottom margin for logo
+  )
 
 
 # Animated home sales plot
