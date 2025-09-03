@@ -4,7 +4,7 @@ library(gganimate)
 library(scales)
 
 
-var_data <- read_rds("shiny/04-homeownership/var/home-sales.rds") 
+var_data <- read_rds("shiny/04-homeownership/var/data.rds") 
 
   
 top <- var_data |>

@@ -47,7 +47,7 @@ hfv_colors <- list(
 # LOAD DATA OUTSIDE SERVER
 # ============================================================================= 
 # Load the data (only once)
-b25127 <- readRDS(here("data", "rds", "b25127.rds"))
+b25127 <- read_rds("./data.rds")
 
 # Define structure order
 structure_order <- c("1, detached or attached", "2 to 4", "5 to 19", "20 to 49", 
@@ -86,8 +86,7 @@ locality_list <- sort(unique(locality_data$name_long))
 # USER INTERFACE
 # ============================================================================= 
 
-ui
-<- page_fillable(
+ui <- page_fillable(
   theme = hfv_theme,
   includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
@@ -298,6 +297,7 @@ server <- function(input, output, session) {
         x = NULL,
         fill = "Tenure"
       ) +
+      coord_flip() +
       theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "top",

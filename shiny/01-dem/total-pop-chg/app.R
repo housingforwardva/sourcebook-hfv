@@ -41,15 +41,15 @@ hfv_theme <- bs_theme(
 # Load the data
   total_pop <- read_rds("./total_pop.rds")
   
-  # Shared function for calculating population changes
-  calculate_pop_changes <- function(data) {
-    data %>% 
-      mutate(diff = value - lag(value),
-             diff = replace_na(diff, 0)) %>% 
-      mutate(run_diff = cumsum(diff)) %>% 
-      filter(run_diff != 0) %>% 
-      mutate(pct = run_diff/first(value))
-  }
+calculate_pop_changes <- function(data) {
+  data %>% 
+    mutate(
+      diff = value - lag(value),
+      diff = replace_na(diff, 0),
+      run_diff = cumsum(diff),
+      pct = run_diff / value[1]  # Explicitly use first row
+    ) 
+}
   
   # Pre-compute datasets
   state_data <- total_pop %>% 
@@ -63,7 +63,9 @@ hfv_theme <- bs_theme(
     group_by(year, cbsa_title, counttype) %>% 
     summarise(value = sum(value), .groups = "drop") %>% 
     ungroup() |> 
+    group_by(cbsa_title) |> 
     calculate_pop_changes()
+
 
   # Get available CBSAs and localities
   cbsa_list <- sort(unique(cbsa_data$cbsa_title))
@@ -207,6 +209,7 @@ server <- function(input, output, session) {
     
     total_pop %>%
       filter(name_long == input$locality) %>% 
+      group_by(name_long) |> 
       calculate_pop_changes()
   }) 
   

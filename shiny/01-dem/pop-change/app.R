@@ -205,15 +205,15 @@ server <- function(input, output, session) {
   
   # Plot titles
   state_title <- reactive({
-    "Virginia Components of Population Change"
+    "Virginia Components of Change"
   })
   
   cbsa_title <- reactive({
-    paste("Components of Population Change in", input$cbsa_select)
+    paste("Components of Change in", input$cbsa_select)
   })
   
   locality_title <- reactive({
-    paste("Components of Population Change in", input$locality_select)
+    paste("Components of Change in", input$locality_select)
   })
   
   # Function to create stacked bar plots for population components

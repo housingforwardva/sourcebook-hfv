@@ -19,4 +19,41 @@ total_pop <- readRDS(rawConnection(s3_response$Body)) %>%
   mutate(year = as.numeric(year))
 
 
-write_data(total_pop, "shiny/01-dem/total_pop_chg/total_pop.rds")
+
+
+write_data(total_pop, "shiny/01-dem/total-pop-chg/total_pop.rds")
+
+
+
+# Load the data
+total_pop <- read_rds("shiny/01-dem/total-pop-chg/total_pop.rds")
+  
+calculate_pop_changes <- function(data) {
+  data %>% 
+    mutate(
+      diff = value - lag(value),
+      diff = replace_na(diff, 0),
+      run_diff = cumsum(diff),
+      pct = run_diff / value[1]  # Explicitly use first row
+    ) 
+}
+  
+  # Pre-compute datasets
+  state_data <- total_pop %>% 
+      group_by(year, counttype) %>% 
+      summarise(value = sum(value), .groups = "drop") %>% 
+      ungroup() |> 
+  mutate(diff = estimate - lag(estimate),
+         diff = replace_na(diff, 0))
+
+
+  
+  cbsa_data <- total_pop %>% 
+    group_by(year, cbsa_title, counttype) %>% 
+    summarise(value = sum(value), .groups = "drop") %>% 
+    ungroup() |> 
+    group_by(cbsa_title) |> 
+    mutate(diff = value - lag(value),
+         diff = replace_na(diff, 0),
+          run_diff = cumsum(diff),
+          pct = run_diff / value[1])  # Explicitly use first row

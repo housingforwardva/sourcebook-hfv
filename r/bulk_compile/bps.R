@@ -78,7 +78,7 @@ temp_file <- tempfile(fileext = ".rds")
 write_rds(cbps_data, temp_file)
 s3$put_object(
   Bucket = "hda-data-hub",
-  Key = "bps/hic_data.rds",
+  Key = "census/bps_data.rds",
   Body = temp_file
 )
 file.remove(temp_file)

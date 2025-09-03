@@ -47,7 +47,7 @@ hfv_colors <- list(
 # LOAD DATA OUTSIDE SERVER
 # ============================================================================= 
 # Load the data (only once)
-b25042 <- read_rds(here("data", "rds", "b25042.rds"))
+b25042 <- read_rds("./data.rds")
 
 # Define the bedroom order
 bedroom_order <- c("No bedroom", "1 bedroom", "2 bedrooms", "3 bedrooms", 

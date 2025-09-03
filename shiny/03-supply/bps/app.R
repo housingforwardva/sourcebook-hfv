@@ -46,7 +46,7 @@ hfv_colors <- list(
 # LOAD DATA OUTSIDE SERVER
 # ============================================================================= 
 # Load the data (only once)
-bps <- read_rds("./bps.rds")
+bps <- read_rds("./data.rds")
 
 # Prepare aggregated datasets with recategorized building types
 # First, create a function to recode building types

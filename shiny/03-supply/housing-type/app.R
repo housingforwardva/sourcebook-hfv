@@ -47,11 +47,11 @@ hfv_colors <- list(
 # LOAD DATA OUTSIDE SERVER
 # ============================================================================= 
 # Load the data (only once)
-b25032 <- read_rds(here("data", "rds", "b25032.rds"))
+b25032 <- read_rds("./data.rds")
 
 # Process data for state level
 state_housing <- b25032 %>% 
-  group_by(year, tenure, type) %>% 
+  group_by(year, tenure, structure) %>% 
   summarise(estimate = sum(estimate), .groups = "drop") %>% 
   group_by(year, tenure) %>% 
   mutate(percent = estimate/sum(estimate)) %>% 
@@ -60,7 +60,7 @@ state_housing <- b25032 %>%
 
 # Process data for CBSA level
 cbsa_housing <- b25032 %>% 
-  group_by(year, cbsa_title, tenure, type) %>% 
+  group_by(year, cbsa_title, tenure, structure) %>% 
   summarise(estimate = sum(estimate), .groups = "drop") %>% 
   group_by(year, cbsa_title, tenure) %>% 
   mutate(percent = estimate/sum(estimate)) %>% 
@@ -69,7 +69,7 @@ cbsa_housing <- b25032 %>%
 
 # Process data for local level
 local_housing <- b25032 %>% 
-  group_by(year, name_long, tenure, type) %>% 
+  group_by(year, name_long, tenure, structure) %>% 
   mutate(percent = estimate/sum(estimate)) %>% 
   group_by(year, name_long) %>% 
   mutate(percent_total = estimate/sum(estimate))
@@ -77,6 +77,7 @@ local_housing <- b25032 %>%
 # Get available choices
 cbsa_list <- sort(unique(cbsa_housing$cbsa_title))
 locality_list <- sort(unique(local_housing$name_long))
+year_list <- sort(unique(local_housing$year), decreasing = TRUE)
 
 # =============================================================================
 # USER INTERFACE
@@ -116,7 +117,7 @@ ui <- page_fillable(
         # Year selector
         div(
           style = "margin-bottom: 16px;",
-          selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
+          selectInput("year", "Select Year:", choices = year_list, width = "100%", selectize = FALSE)
         ),
         
         # Geography selectors
@@ -191,13 +192,7 @@ ui <- page_fillable(
 # =============================================================================
 
 server <- function(input, output, session) {
-  
-  # Initialize year dropdown
-  observe({
-    updateSelectInput(session, "year", 
-                      choices = 2010:2023,
-                      selected = 2023)
-  })
+
   
   # Populate CBSA dropdown
   observe({
@@ -239,7 +234,7 @@ server <- function(input, output, session) {
     # Add tooltip text to the data
     data <- data %>%
       mutate(tooltip = paste0(
-        "Type: ", type, "\n",
+        "Type: ", structure, "\n",
         "Tenure: ", tenure, "\n",
         "Percentage: ", scales::percent(percent_total, accuracy = 0.1), "\n",
         "Count: ", format(estimate, big.mark = ",")
@@ -247,11 +242,11 @@ server <- function(input, output, session) {
     
     # Create a pure, base ggplot with no theme customizations that could cause conflicts
     p <- ggplot(data, 
-                aes(x = reorder(type, -percent_total), 
+                aes(x = reorder(structure, -percent_total), 
                     y = percent_total, 
                     fill = tenure)) +
       geom_col_interactive(
-        aes(tooltip = tooltip, data_id = type),
+        aes(tooltip = tooltip, data_id = structure),
         position = "dodge"
       ) +
       geom_text(aes(label = scales::percent(percent_total, accuracy = 1), 
@@ -261,8 +256,8 @@ server <- function(input, output, session) {
                 size = 3.5) + # Reduced text size slightly for compact view
       facet_wrap(~tenure) +
       # Use Housing Forward Virginia colors
-      scale_fill_manual(values = c("Owner" = "#40C0C0", "Renter" = "#011E41")) +
-      scale_color_manual(values = c("Owner" = "#40C0C0", "Renter" = "#011E41")) +
+      scale_fill_manual(values = c("Homeowner" = "#40C0C0", "Renter" = "#011E41")) +
+      scale_color_manual(values = c("Homeowner" = "#40C0C0", "Renter" = "#011E41")) +
       coord_flip() +
       scale_y_continuous(labels = scales::percent_format(accuracy = 1),
                          expand = expansion(mult = c(0, 0.3))) +
@@ -274,7 +269,6 @@ server <- function(input, output, session) {
       theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
-        strip.text = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_blank(),
         plot.title.position = "plot",
