@@ -67,26 +67,43 @@ ggplot(southside_units, aes(x = year_label, y = units, fill = name)) +
     plot.margin = margin(10, 10, 40, 10) # Extra bottom margin for logo
   )
 
+library(ggplot2)
+library(scales)
+library(ggrepel)
+
+# Create a data frame for labels
+label_data <- southside_price %>%
+  group_by(name) %>%
+  filter(quarter == max(quarter)) %>%
+  mutate(
+    label_x = as.numeric(max(as.Date(southside_price$quarter))) + 90, # Convert to numeric and add 90 days
+    label_y = med_price
+  )
+
 ggplot(southside_price, aes(x = quarter, y = med_price, group = name)) +
-  geom_line(aes(color = name)) +
-  scale_fill_manual(values = name_colors) +
+  geom_line(aes(color = name), size = 1.2) +
+  geom_text(
+    data = label_data,
+    aes(x = label_x, y = label_y, label = name, color = name),
+    size = 4,
+    hjust = 0 # Left-align labels
+  ) +
   scale_color_manual(values = name_colors) +
   labs(
     title = "Median Sales Price in South Hampton Roads"
   ) +
   scale_y_continuous(labels = scales::dollar_format()) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") + # Format x-axis labels as years
   theme_minimal(base_family = "Open Sans") +
   theme(
-    legend.position = "right",
-    legend.title = element_blank(),
+    legend.position = "none",
     panel.grid.minor = element_blank(),
     plot.title.position = "plot",
     plot.title = element_text(size = 14, face = "bold"),
     axis.text.x = element_text(size = 10, angle = 90),
     axis.title = element_blank(),
-    plot.margin = margin(10, 10, 40, 10) # Extra bottom margin for logo
+    plot.margin = margin(10, 10, 40, 80) # Increased right margin to 80
   )
-
 
 # Animated home sales plot
 p1 <- ggplot(southside,
