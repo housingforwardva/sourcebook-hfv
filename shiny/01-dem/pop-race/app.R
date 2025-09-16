@@ -101,7 +101,8 @@ locality_list <- sort(unique(race_data$name_long))
 year_list <- sort(as.character(unique(race_data$year)))
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -141,26 +142,6 @@ ui <- page_fillable(
                       selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", 
-                        choices = cbsa_list,
-                        selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
-                        width = "100%", 
-                        selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", 
-                        choices = locality_list,
-                        selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1],
-                        width = "100%", 
-                        selectize = FALSE)
-          )
-        ),
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -176,113 +157,90 @@ ui <- page_fillable(
         )
       ),
         
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
   
-  # Create filtered datasets
-  filtered_state <- reactive({
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(input$year)
+    geo <- current_geo()
     
-    race_data %>% 
-      group_by(year, label) %>% 
-      summarise(value = sum(value), .groups = "drop") %>% 
-      filter(year == input$year) %>% 
-      mutate(percent = value/sum(value),
-             value_label = number_format(big.mark = ",")(value),
-             percent_label = percent_format(accuracy = 0.1)(percent)) %>% 
-      mutate(tooltip = paste0(
-        "Race/Ethnicity: ", label, "\n",
-        "Count: ", value_label, "\n",
-        "Percentage: ", percent_label
-      ))
+    if (geo$type == "state") {
+      race_data %>% 
+        group_by(year, label) %>% 
+        summarise(value = sum(value), .groups = "drop") %>% 
+        filter(year == input$year) %>% 
+        mutate(percent = value/sum(value),
+               value_label = number_format(big.mark = ",")(value),
+               percent_label = percent_format(accuracy = 0.1)(percent)) %>% 
+        mutate(tooltip = paste0(
+          "Race/Ethnicity: ", label, "\n",
+          "Count: ", value_label, "\n",
+          "Percentage: ", percent_label
+        ))
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      race_data %>% 
+        group_by(year, cbsa_title, label) %>% 
+        summarise(value = sum(value), .groups = "drop") %>% 
+        filter(year == input$year,
+               cbsa_title == geo$cbsa) %>% 
+        mutate(percent = value/sum(value),
+               value_label = number_format(big.mark = ",")(value),
+               percent_label = percent_format(accuracy = 0.1)(percent)) %>% 
+        mutate(tooltip = paste0(
+          "Race/Ethnicity: ", label, "\n",
+          "Count: ", value_label, "\n",
+          "Percentage: ", percent_label
+        ))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      race_data %>% 
+        filter(year == input$year,
+               name_long == geo$locality) %>% 
+        group_by(year) %>% 
+        mutate(percent = value/sum(value),
+               value_label = number_format(big.mark = ",")(value),
+               percent_label = percent_format(accuracy = 0.1)(percent)) %>%
+        mutate(tooltip = paste0(
+          "Race/Ethnicity: ", label, "\n",
+          "Count: ", value_label, "\n",
+          "Percentage: ", percent_label
+        ))
+    } else {
+      NULL
+    }
   })
   
-  filtered_cbsa <- reactive({
-    req(input$year, input$cbsa)
-    
-    race_data %>% 
-      group_by(year, cbsa_title, label) %>% 
-      summarise(value = sum(value), .groups = "drop") %>% 
-      filter(year == input$year,
-             cbsa_title == input$cbsa) %>% 
-      mutate(percent = value/sum(value),
-             value_label = number_format(big.mark = ",")(value),
-             percent_label = percent_format(accuracy = 0.1)(percent)) %>% 
-      mutate(tooltip = paste0(
-        "Race/Ethnicity: ", label, "\n",
-        "Count: ", value_label, "\n",
-        "Percentage: ", percent_label
-      ))
-  })
-  
-  filtered_locality <- reactive({
-    req(input$year, input$locality)
-    
-    race_data %>% 
-      filter(year == input$year,
-             name_long == input$locality) %>% 
-      group_by(year) %>% 
-      mutate(percent = value/sum(value),
-             value_label = number_format(big.mark = ",")(value),
-             percent_label = percent_format(accuracy = 0.1)(percent)) %>%
-      mutate(tooltip = paste0(
-        "Race/Ethnicity: ", label, "\n",
-        "Count: ", value_label, "\n",
-        "Percentage: ", percent_label
-      ))
-  })
-  
-  # Plot titles
-  state_title <- reactive({
-    paste("Virginia Population by Race and Ethnicity in", input$year)
-  })
-  
-  cbsa_title <- reactive({
-    paste("Population by Race and Ethnicity in", input$cbsa, "(", input$year, ")")
-  })
-  
-  locality_title <- reactive({
-    paste("Population by Race and Ethnicity in", input$locality, "(", input$year, ")")
+  # Create title text
+  title_text <- reactive({
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Virginia Population by Race and Ethnicity in", input$year)
+    } else if (geo$type == "cbsa") {
+      paste("Population by Race and Ethnicity in", geo$cbsa, "(", input$year, ")")
+    } else {
+      paste("Population by Race and Ethnicity in", geo$locality, "(", input$year, ")")
+    }
   })
   
   # Function to create bar charts for race/ethnicity distribution
@@ -374,17 +332,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_race_plot(filtered_state(), state_title())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_race_plot(filtered_cbsa(), cbsa_title())))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_race_plot(filtered_locality(), locality_title())))
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_race_plot(data, title_text())))
   })
 
   # Handle responsive window events
@@ -394,4 +346,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

@@ -47,7 +47,8 @@ hfv_colors <- list(
 )
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
   # Main container using HFV classes
@@ -86,18 +87,6 @@ ui <- page_fillable(
                       selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -113,45 +102,16 @@ ui <- page_fillable(
         )
       ),
       
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server function
 # Streamlined server function with reduced redundancy
@@ -161,59 +121,45 @@ server <- function(input, output, session) {
     readRDS("pop_age.rds")
   })
   
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
   # Define age group order (move to global or make reactive if it might change)
   age_order <- c("Under 10", "10 to 17", "18 to 24", "25 to 29", "30 to 34", 
                  "35 to 44", "45 to 54", "55 to 64", "65 to 74", "75 and over")
   
-  # Get available choices (reactive because we need to call pop_age())
-  cbsa_list <- reactive({
-    sort(unique(pop_age()$cbsa_title))
-  })
   
-  locality_list <- reactive({
-    sort(unique(pop_age()$name_long))
-  })
-  
-  # Initialize dropdowns
-  observe({
-    cbsa_choices <- cbsa_list()
-    locality_choices <- locality_list()
-    
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_choices,
-                      selected = if("Richmond, VA" %in% cbsa_choices) "Richmond, VA" else cbsa_choices[1])
-    
-    updateSelectInput(session, "locality", 
-                      choices = locality_choices,
-                      selected = if("Richmond City" %in% locality_choices) "Richmond City" else locality_choices[1])
-  })
-  
-  # Single reactive for filtered data by geography type and year
+  # Single reactive for filtered data based on current geography
   filtered_data <- reactive({
     req(input$year)
+    geo <- current_geo()
     
     base_data <- pop_age() %>%
       filter(year == input$year) %>%
       mutate(agegroup = factor(agegroup, levels = age_order))
     
-    # Return a list with all three data types
-    list(
-      state = base_data %>%
+    if (geo$type == "state") {
+      base_data %>%
         group_by(agegroup) %>%
-        summarise(value = sum(value), .groups = "drop"),
-      
-      cbsa = if (!is.null(input$cbsa)) {
-        base_data %>%
-          filter(cbsa_title == input$cbsa) %>%
-          group_by(agegroup) %>%
-          summarise(value = sum(value), .groups = "drop")
-      } else NULL,
-      
-      locality = if (!is.null(input$locality)) {
-        base_data %>%
-          filter(name_long == input$locality)
-      } else NULL
-    )
+        summarise(value = sum(value), .groups = "drop")
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      base_data %>%
+        filter(cbsa_title == geo$cbsa) %>%
+        group_by(agegroup) %>%
+        summarise(value = sum(value), .groups = "drop")
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      base_data %>%
+        filter(name_long == geo$locality)
+    } else {
+      NULL
+    }
   })
   
   # Single function to create all plots
@@ -299,26 +245,20 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render plots using the streamlined approach
-  output$state_plot <- renderGirafe({
-    data <- filtered_data()$state
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
     req(data)
-    plot <- create_age_plot(data, "Virginia Population by Age Group")
-    create_interactive_plot(plot)
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    data <- filtered_data()$cbsa
-    req(data, input$cbsa)
-    title <- paste("Population by Age Group in", input$cbsa, "Metro")
-    plot <- create_age_plot(data, title)
-    create_interactive_plot(plot)
-  })
-  
-  output$local_plot <- renderGirafe({
-    data <- filtered_data()$locality
-    req(data, input$locality)
-    title <- paste("Population by Age Group in", input$locality)
+    geo <- current_geo()
+    
+    title <- if (geo$type == "state") {
+      "Virginia Population by Age Group"
+    } else if (geo$type == "cbsa") {
+      paste("Population by Age Group in", geo$cbsa, "Metro")
+    } else {
+      paste("Population by Age Group in", geo$locality)
+    }
+    
     plot <- create_age_plot(data, title)
     create_interactive_plot(plot)
   })
@@ -330,4 +270,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

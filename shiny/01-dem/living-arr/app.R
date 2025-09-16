@@ -50,7 +50,8 @@ hfv_colors <- list(
 )
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -100,18 +101,6 @@ ui <- page_fillable(
                       selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -127,45 +116,16 @@ ui <- page_fillable(
         )
       ),
         
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Load data outside server for faster loading
 lvng_arr <- readRDS("b09021_data.rds")
@@ -201,6 +161,16 @@ state_la <- lvng_arr %>%
 # Server function
 server <- function(input, output, session) {
   
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
   # Initialize dropdowns
   observe({
     updateSelectInput(session, "year", 
@@ -210,56 +180,42 @@ server <- function(input, output, session) {
     updateSelectInput(session, "age", 
                       choices = age_list,
                       selected = "18 to 34")
-    
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list,
-                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list,
-                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
-  # Filter data for plots
-  filtered_state <- reactive({
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(input$year, input$age)
+    geo <- current_geo()
     
-    state_la %>%
-      filter(year == input$year,
-             age == input$age)
-  })
-  
-  filtered_cbsa <- reactive({
-    req(input$year, input$age, input$cbsa)
-    
-    cbsa_la %>%
-      filter(year == input$year,
-             age == input$age,
-             cbsa_title == input$cbsa)
-  })
-  
-  filtered_locality <- reactive({
-    req(input$year, input$age, input$locality)
-    
-    locality_la %>%
-      filter(year == input$year,
-             age == input$age,
-             name_long == input$locality)
+    if (geo$type == "state") {
+      state_la %>%
+        filter(year == input$year,
+               age == input$age)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_la %>%
+        filter(year == input$year,
+               age == input$age,
+               cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      locality_la %>%
+        filter(year == input$year,
+               age == input$age,
+               name_long == geo$locality)
+    } else {
+      NULL
+    }
   })
   
   # Create subtitle text
-  state_subtitle <- reactive({
-    paste("Virginia -", input$year, "-", input$age)
-  })
-  
-  cbsa_subtitle <- reactive({
-    paste(input$cbsa, "-", input$year, "-", input$age)
-  })
-  
-  locality_subtitle <- reactive({
-    paste(input$locality, "-", input$year, "-", input$age)
+  subtitle_text <- reactive({
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Virginia -", input$year, "-", input$age)
+    } else if (geo$type == "cbsa") {
+      paste(geo$cbsa, "-", input$year, "-", input$age)
+    } else {
+      paste(geo$locality, "-", input$year, "-", input$age)
+    }
   })
   
   # Helper function for creating interactive plots
@@ -370,17 +326,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state(), state_subtitle())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa(), cbsa_subtitle())))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_locality(), locality_subtitle())))
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_plot(data, subtitle_text())))
   })
 
   # Handle responsive window events
@@ -390,4 +340,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

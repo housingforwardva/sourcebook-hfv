@@ -58,7 +58,8 @@ hfv_colors <- list(
 
 
 # UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
   
@@ -100,30 +101,6 @@ ui <- page_fillable(
           )
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 15px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput(
-              "cbsa",
-              "Select CBSA:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'locality'",
-            selectInput(
-              "locality",
-              "Select Locality:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          )
-        ),
         
         
         # Divider
@@ -140,45 +117,16 @@ ui <- page_fillable(
         )
       ),
       
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "locality",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("locality_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server
 server <- function(input, output, session) {
@@ -190,25 +138,25 @@ server <- function(input, output, session) {
   
   hh_type <- read_rds("b11012_data.rds")
   
-  # Create lists (NOT reactive expressions)
-  cbsa_list <- sort(unique(hh_type$cbsa_title))
-  locality_list <- sort(unique(hh_type$name_long))
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
+  # Create year list
   year_list <- sort(unique(hh_type$year), decreasing = TRUE)
   
   
-  # Initialize dropdowns - CORRECTED
+  # Initialize dropdowns
   observe({
     updateSelectInput(session, "selected_year", 
                       choices = year_list,
                       selected = year_list[1])
-    
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list,
-                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
-    
-    updateSelectInput(session, "locality", 
-                      choices = locality_list,
-                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
   
   # Create reactive expression for selected year
@@ -217,75 +165,51 @@ server <- function(input, output, session) {
     input$selected_year
   })
   
-  # Locality data - with better error handling
-  locality_hh <- reactive({
-    req(input$locality, selected_year())  # Require inputs
-    
-    year_selected <- selected_year()
-    
-    result <- hh_type %>% 
-      filter(year == year_selected, name_long == input$locality) %>%
-      group_by(type, sub) %>% 
-      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
-      group_by(type) %>%
-      mutate(
-        total_by_type = sum(estimate),
-        percent = estimate / total_by_type,
-        rank_within_type = rank(percent, ties.method = "first")
-      ) %>%
-      ungroup()
-    
-    # Debug: Print result info
-    print(paste("Locality data for", input$locality, "in", year_selected))
-    print(paste("Rows returned:", nrow(result)))
-    
-    return(result)
-  })
-  
-  # CBSA data - with better error handling  
-  cbsa_hh <- reactive({
-    req(input$cbsa, selected_year())
-    
-    year_selected <- selected_year()
-    
-    result <- hh_type %>% 
-      filter(year == year_selected, cbsa_title == input$cbsa) %>%
-      group_by(type, sub) %>% 
-      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
-      group_by(type) %>%
-      mutate(
-        total_by_type = sum(estimate),
-        percent = estimate / total_by_type,
-        rank_within_type = rank(percent, ties.method = "first")
-      ) %>%
-      ungroup()
-    
-    print(paste("CBSA data for", input$cbsa, "in", year_selected))
-    print(paste("Rows returned:", nrow(result)))
-    
-    return(result)
-  })
-  
-  # State data - with better error handling
-  state_hh <- reactive({
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(selected_year())
-    
+    geo <- current_geo()
     year_selected <- selected_year()
     
-    result <- hh_type %>% 
-      filter(year == year_selected) %>%
-      group_by(type, sub) %>% 
-      summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
-      group_by(type) %>%
-      mutate(
-        total_by_type = sum(estimate),
-        percent = estimate / total_by_type,
-        rank_within_type = rank(percent, ties.method = "first")
-      ) %>%
-      ungroup()
-    
-    print(paste("State data for", year_selected))
-    print(paste("Rows returned:", nrow(result)))
+    if (geo$type == "state") {
+      result <- hh_type %>% 
+        filter(year == year_selected) %>%
+        group_by(type, sub) %>% 
+        summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+        group_by(type) %>%
+        mutate(
+          total_by_type = sum(estimate),
+          percent = estimate / total_by_type,
+          rank_within_type = rank(percent, ties.method = "first")
+        ) %>%
+        ungroup()
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      result <- hh_type %>% 
+        filter(year == year_selected, cbsa_title == geo$cbsa) %>%
+        group_by(type, sub) %>% 
+        summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+        group_by(type) %>%
+        mutate(
+          total_by_type = sum(estimate),
+          percent = estimate / total_by_type,
+          rank_within_type = rank(percent, ties.method = "first")
+        ) %>%
+        ungroup()
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      result <- hh_type %>% 
+        filter(year == year_selected, name_long == geo$locality) %>%
+        group_by(type, sub) %>% 
+        summarise(estimate = sum(estimate, na.rm = TRUE), .groups = "drop") %>%
+        group_by(type) %>%
+        mutate(
+          total_by_type = sum(estimate),
+          percent = estimate / total_by_type,
+          rank_within_type = rank(percent, ties.method = "first")
+        ) %>%
+        ungroup()
+    } else {
+      return(NULL)
+    }
     
     return(result)
   })
@@ -369,23 +293,22 @@ server <- function(input, output, session) {
     )
   }
   
-  # Create interactive plots for each tab
-  output$state_plot <- renderGirafe({
-    state_data <- state_hh()
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    geo <- current_geo()
     year_selected <- selected_year()
-    create_interactive_plot(state_data, paste("Virginia:", year_selected))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    cbsa_data <- cbsa_hh()
-    year_selected <- selected_year()
-    create_interactive_plot(cbsa_data, paste(input$cbsa, ":", year_selected))
-  })
-  
-  output$locality_plot <- renderGirafe({
-    locality_data <- locality_hh()
-    year_selected <- selected_year()
-    create_interactive_plot(locality_data, paste(input$locality, ":", year_selected))
+    
+    subtitle <- if (geo$type == "state") {
+      paste("Virginia:", year_selected)
+    } else if (geo$type == "cbsa") {
+      paste(geo$cbsa, ":", year_selected)
+    } else {
+      paste(geo$locality, ":", year_selected)
+    }
+    
+    create_interactive_plot(data, subtitle)
   })
   
   
@@ -396,4 +319,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

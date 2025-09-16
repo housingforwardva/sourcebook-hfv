@@ -69,7 +69,8 @@ state_pop <- pop_change %>%
 subtitle_text <- "Net <span style='color:#011E41'><b>domestic migration</b></span>, <span style='color:#40C0C0'><b>international migration</b></span>, and <span style='color:#8B85CA'><b>natural increase (or decrease)</b></span>"
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -99,32 +100,6 @@ ui <- page_fillable(
         h5("Dashboard Controls", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput(
-              "cbsa_select", 
-              "Metro Area:",
-              choices = cbsa_list,
-              selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
-              width = "100%",
-              selectize = FALSE
-            )
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput(
-              "locality_select",
-              "Locality:",
-              choices = locality_list,
-              selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1],
-              width = "100%",
-              selectize = FALSE
-            )
-          )
-        ),
 
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -140,77 +115,59 @@ ui <- page_fillable(
         )
       ),
 
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
   
-  # Create filtered datasets
-  filtered_cbsa <- reactive({
-    req(input$cbsa_select)
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
+    geo <- current_geo()
     
-    cbsa_pop %>%
-      filter(cbsa_title == input$cbsa_select)
+    if (geo$type == "state") {
+      state_pop
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_pop %>%
+        filter(cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      pop_change %>%
+        filter(name_long == geo$locality) %>%
+        group_by(year, component) %>%
+        summarise(value = sum(value), .groups = "drop")
+    } else {
+      NULL
+    }
   })
   
-  filtered_locality <- reactive({
-    req(input$locality_select)
-    
-    pop_change %>%
-      filter(name_long == input$locality_select) %>%
-      group_by(year, component) %>%
-      summarise(value = sum(value), .groups = "drop")
-  })
-  
-  # Plot titles
-  state_title <- reactive({
-    "Virginia Components of Population Change"
-  })
-  
-  cbsa_title <- reactive({
-    paste("Components of Population Change in", input$cbsa_select)
-  })
-  
-  locality_title <- reactive({
-    paste("Components of Population Change in", input$locality_select)
+  # Create title text
+  title_text <- reactive({
+    geo <- current_geo()
+    if (geo$type == "state") {
+      "Virginia Components of Population Change"
+    } else if (geo$type == "cbsa") {
+      paste("Components of Population Change in", geo$cbsa)
+    } else {
+      paste("Components of Population Change in", geo$locality)
+    }
   })
   
   # Function to create stacked bar plots for population components
@@ -299,17 +256,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_pop_change_plot(state_pop, state_title())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_pop_change_plot(filtered_cbsa(), cbsa_title())))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_pop_change_plot(filtered_locality(), locality_title())))
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_pop_change_plot(data, title_text())))
   })
 
   # Handle responsive window events
@@ -319,4 +270,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")
