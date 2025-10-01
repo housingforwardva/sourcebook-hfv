@@ -12,6 +12,7 @@ library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
 library(arrow)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -119,21 +120,22 @@ hfv_theme <- bs_theme(
 )
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  useShinyjs(),
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(),
 
-  # Mobile optimization viewport
-  tags$head(
-    tags$meta(
-      name = "viewport",
-      content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    )
-  ),
+    # Mobile optimization viewport
+    tags$head(
+      tags$meta(
+        name = "viewport",
+        content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      )
+    ),
 
-  # CSS styles (same as reference app)
-  tags$head(
-    tags$style(HTML(
+    # CSS styles (same as reference app)
+    tags$head(
+      tags$style(HTML(
       "
       body, html {
         margin: 0;
@@ -351,22 +353,9 @@ ui <- page_fillable(
                      selectize = FALSE)
         ),
         
-        # Geographic selectors (conditional)
-        div(
-          style = "margin-bottom: 10px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
-        
         # Horizontal line
         hr(style = "margin: 3px 0;"),
-        
+
         # Source information
         div(
           style = "font-size: 10px; color: #666; margin-top: 2px;",
@@ -376,126 +365,85 @@ ui <- page_fillable(
           )
         )
       ),
-      
-      # Main Panel (tabs)
+
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          nav_panel(
-            title = "State", 
-            value = "state",
-            div(class = "girafe-container", girafeOutput("state_plot", height = "100%"))
-          ),
-          nav_panel(
-            title = "Metro Area", 
-            value = "cbsa",
-            div(class = "girafe-container", girafeOutput("cbsa_plot", height = "100%"))
-          ),
-          nav_panel(
-            title = "Locality", 
-            value = "local",
-            div(class = "girafe-container", girafeOutput("local_plot", height = "100%"))
-          )
-        )
+        div(class = "girafe-container", girafeOutput("plot", height = "100%"))
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
-  
+
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+
   # Load the data
   hmda_data <- reactive({
     read_parquet("hmda_va_clean.parquet")
   })
-  
-  # Get available CBSAs and localities
-  cbsa_list <- reactive({
-    hmda_data() %>%
-      filter(!is.na(cbsa_title)) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
+    req(input$year, input$loan_purpose, input$occupancy_type)
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      hmda_data() %>%
+        filter(
+          activity_year == input$year,
+          loan_purpose == input$loan_purpose,
+          occupancy_type == input$occupancy_type,
+          cbsa_title == geo$cbsa
+        ) %>%
+        group_by(race_ethnicity) %>%
+        summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+        arrange(desc(count))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      hmda_data() %>%
+        filter(
+          activity_year == input$year,
+          loan_purpose == input$loan_purpose,
+          occupancy_type == input$occupancy_type,
+          name_long == geo$locality
+        ) %>%
+        group_by(race_ethnicity) %>%
+        summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+        arrange(desc(count))
+    } else {
+      hmda_data() %>%
+        filter(
+          activity_year == input$year,
+          loan_purpose == input$loan_purpose,
+          occupancy_type == input$occupancy_type
+        ) %>%
+        group_by(race_ethnicity) %>%
+        summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+        arrange(desc(count))
+    }
   })
-  
-  locality_list <- reactive({
-    hmda_data() %>%
-      filter(!is.na(name_long)) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-  })
-  
-  # Initialize dropdowns
-  observe({
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
-  })
-  
-  # Create state-level data
-  state_data <- reactive({
-    hmda_data() %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
-  })
-  
-  # Create CBSA-level data
-  cbsa_data <- reactive({
-    req(input$cbsa)
-    
-    hmda_data() %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type,
-        cbsa_title == input$cbsa
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
-  })
-  
-  # Create locality-level data
-  locality_data <- reactive({
-    req(input$locality)
-    
-    hmda_data() %>%
-      filter(
-        activity_year == input$year,
-        loan_purpose == input$loan_purpose,
-        occupancy_type == input$occupancy_type,
-        name_long == input$locality
-      ) %>%
-      group_by(race_ethnicity) %>%
-      summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(count))
-  })
-  
-  # Plot titles
-  state_title <- reactive({
-    paste("Virginia Mortgage Loans by Race/Ethnicity -", input$year)
-  })
-  
-  cbsa_title <- reactive({
-    paste("Mortgage Loans by Race/Ethnicity -", input$cbsa, "-", input$year)
-  })
-  
-  locality_title <- reactive({
-    paste("Mortgage Loans by Race/Ethnicity -", input$locality, "-", input$year)
+
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Mortgage Loans by Race/Ethnicity -", geo$cbsa, "-", input$year)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Mortgage Loans by Race/Ethnicity -", geo$locality, "-", input$year)
+    } else {
+      paste("Virginia Mortgage Loans by Race/Ethnicity -", input$year)
+    }
   })
   
   # Function to create mortgage plots
@@ -573,24 +521,16 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(state_data(), state_title()))
+  # Render the plot
+  output$plot <- renderGirafe({
+    create_interactive_plot(create_mortgage_plot(filtered_data(), plot_title()))
   })
-  
-  output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(cbsa_data(), cbsa_title()))
-  })
-  
-  output$local_plot <- renderGirafe({
-    create_interactive_plot(create_mortgage_plot(locality_data(), locality_title()))
-  })
-  
+
   # Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

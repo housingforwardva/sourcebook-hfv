@@ -11,6 +11,7 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -95,7 +96,8 @@ bedroom_order <- c("No bedroom", "1 bedroom", "2 bedrooms", "3 bedrooms",
                    "4 bedrooms", "5 or more bedrooms")
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -135,18 +137,6 @@ ui <- page_fillable(
                       selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -162,114 +152,66 @@ ui <- page_fillable(
         )
       ),
         
-      # Main Panel with tabs
+      # Main Panel
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
   # Read in the data
-  b25042 <- reactive({
-    read_rds(here("data", "rds", "b25042.rds"))
-  })
-  
+  b25042 <- read_rds(here("data", "rds", "b25042.rds"))
+
   # Pre-process the data
-  state_bed <- reactive({
-    b25042() %>% 
-      group_by(year, tenure, br) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>%
-      mutate(br = factor(br, levels = bedroom_order))
+  state_bed <- b25042 %>%
+    group_by(year, tenure, br) %>%
+    summarise(estimate = sum(estimate), .groups = "drop") %>%
+    mutate(br = factor(br, levels = bedroom_order))
+
+  cbsa_bed <- b25042 %>%
+    group_by(year, cbsa_title, tenure, br) %>%
+    summarise(estimate = sum(estimate), .groups = "drop") %>%
+    mutate(br = factor(br, levels = bedroom_order))
+
+  local_bed <- b25042 %>%
+    group_by(year, name_long, tenure, br) %>%
+    summarise(estimate = sum(estimate), .groups = "drop") %>%
+    mutate(br = factor(br, levels = bedroom_order))
+
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
   })
-  
-  cbsa_bed <- reactive({
-    b25042() %>% 
-      group_by(year, cbsa_title, tenure, br) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>%
-      mutate(br = factor(br, levels = bedroom_order))
-  })
-  
-  local_bed <- reactive({
-    b25042() %>% 
-      group_by(year, name_long, tenure, br) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>%
-      mutate(br = factor(br, levels = bedroom_order))
-  })
-  
+
   # Update year filter choices
   observe({
-    years <- unique(b25042()$year)
-    updateSelectInput(session, "year", 
+    years <- unique(b25042$year)
+    updateSelectInput(session, "year",
                       choices = years,
                       selected = max(years))
   })
   
-  # Update CBSA filter choices
-  observe({
-    req(input$year)
-    cbsas <- cbsa_bed() %>%
-      filter(year == input$year) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
-    
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsas,
-                      selected = if("Richmond, VA" %in% cbsas) "Richmond, VA" else cbsas[1])
-  })
-  
-  # Update locality filter choices
-  observe({
-    req(input$year)
-    localities <- local_bed() %>%
-      filter(year == input$year) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-    
-    updateSelectInput(session, "locality", 
-                      choices = localities,
-                      selected = if("Richmond City" %in% localities) "Richmond City" else localities[1])
-  })
-  
   # Create title text
   title_text <- reactive({
-    paste("Bedroom Distribution in", input$year)
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Bedroom Distribution in Virginia", input$year)
+    } else if (geo$type == "cbsa") {
+      paste("Bedroom Distribution in", geo$cbsa, input$year)
+    } else {
+      paste("Bedroom Distribution in", geo$locality, input$year)
+    }
   })
   
   # Create a plot function for bedroom distribution
@@ -332,22 +274,25 @@ server <- function(input, output, session) {
     return(p_with_logo)
   }
   
-  # Filter data based on inputs
-  filtered_state <- reactive({
-    state_bed() %>% 
-      filter(year == input$year)
-  })
-  
-  filtered_cbsa <- reactive({
-    cbsa_bed() %>% 
-      filter(year == input$year,
-             cbsa_title == input$cbsa)
-  })
-  
-  filtered_local <- reactive({
-    local_bed() %>% 
-      filter(year == input$year,
-             name_long == input$locality)
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
+    req(input$year)
+    geo <- current_geo()
+
+    if (geo$type == "state") {
+      state_bed %>%
+        filter(year == input$year)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_bed %>%
+        filter(year == input$year,
+               cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_bed %>%
+        filter(year == input$year,
+               name_long == geo$locality)
+    } else {
+      NULL
+    }
   })
   
   # Convert to interactive girafe for each plot
@@ -373,19 +318,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the state plot
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state())))
-  })
-  
-  # Render the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa())))
-  })
-  
-  # Render the local plot
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_plot(data)))
   })
 
   # Handle responsive window events
@@ -394,5 +331,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

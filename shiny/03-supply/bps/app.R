@@ -12,6 +12,7 @@ library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
 library(tidycensus)
+library(gfonts)
 
 # Load data - ONLY load from the specified path, no simulated data
 bps <- read_rds("./bps.rds")
@@ -131,7 +132,8 @@ locality <- bps %>%
   )
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -194,30 +196,6 @@ ui <- page_fillable(
           )
         ),
 
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput(
-              "cbsa",
-              "Metro Area:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput(
-              "locality",
-              "Locality:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          )
-        ),
 
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -233,89 +211,26 @@ ui <- page_fillable(
         )
       ),
 
-      # Main Panel with tabs
+      # Main Panel
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Define server logic
 server <- function(input, output, session) {
-  # Add this at the beginning of your server function:
-  logo_data <- NULL
-
-  # At the start of your server function, load and encode the logo:
-  observe({
-    # Try to read logo file from www directory
-    tryCatch(
-      {
-        # This path works in both local and deployed environments
-        logo_file <- "www/hfv_logo.png"
-
-        # Read the binary data and convert to base64
-        logo_binary <- readBin(logo_file, "raw", file.info(logo_file)$size)
-        logo_data <<- logo_binary
-      },
-      error = function(e) {
-        # Log error message
-        message("Could not load logo: ", e$message)
-      }
-    )
-  })
-
-  # Update metro area choices
-  observe({
-    cbsa_choices <- sort(unique(cbsa$cbsa_title))
-    updateSelectInput(
-      session,
-      "cbsa",
-      choices = cbsa_choices,
-      selected = "Richmond, VA"
-    )
-  })
-
-  # Update locality choices
-  observe({
-    locality_choices <- sort(unique(locality$name_long))
-    updateSelectInput(
-      session,
-      "locality",
-      choices = locality_choices,
-      selected = "Richmond City"
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
     )
   })
 
@@ -325,14 +240,15 @@ server <- function(input, output, session) {
     data %>% filter(type %in% input$types)
   }
 
-  # Generate title based on current tab and selections
+  # Generate title based on current geography
   get_title <- reactive({
-    if (input$tabs == "state") {
+    geo <- current_geo()
+    if (geo$type == "state") {
       "Virginia Building Permits"
-    } else if (input$tabs == "cbsa") {
-      paste(input$cbsa, "Building Permits")
+    } else if (geo$type == "cbsa") {
+      paste(geo$cbsa, "Building Permits")
     } else {
-      paste(input$locality, "Building Permits")
+      paste(geo$locality, "Building Permits")
     }
   })
 
@@ -464,50 +380,25 @@ server <- function(input, output, session) {
     )
   }
 
-  # Create the state plot
-  output$state_plot <- renderGirafe({
+  # Create the plot
+  output$plot <- renderGirafe({
     req(input$metric, input$types)
+    geo <- current_geo()
 
-    # Filter and prepare the data
-    plot_data <- filter_data(state)
-    metric_col <- input$metric
+    # Get data based on geography
+    if (geo$type == "state") {
+      plot_data <- filter_data(state)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      plot_data <- filter_data(cbsa) %>%
+        filter(cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      plot_data <- filter_data(locality) %>%
+        filter(name_long == geo$locality)
+    } else {
+      return(NULL)
+    }
 
-    # Create the plot
-    create_plot(
-      plot_data,
-      metric_col,
-      get_title(),
-      get_subtitle()
-    )
-  })
-
-  # Create the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    req(input$metric, input$cbsa, input$types)
-
-    # Filter and prepare data
-    plot_data <- filter_data(cbsa) %>%
-      filter(cbsa_title == input$cbsa)
-
-    metric_col <- input$metric
-
-    # Create the plot
-    create_plot(
-      plot_data,
-      metric_col,
-      get_title(),
-      get_subtitle()
-    )
-  })
-
-  # Create the locality plot
-  output$local_plot <- renderGirafe({
-    req(input$metric, input$locality, input$types)
-
-    # Filter and prepare data
-    plot_data <- filter_data(locality) %>%
-      filter(name_long == input$locality)
-
+    req(nrow(plot_data) > 0)
     metric_col <- input$metric
 
     # Create the plot
@@ -526,4 +417,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

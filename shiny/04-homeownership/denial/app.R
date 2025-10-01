@@ -12,6 +12,7 @@ library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
 library(arrow)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -103,247 +104,177 @@ hfv_theme <- bs_theme(
 )
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(), # Initialize shinyjs
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Mortgage Denial Rates by Race and Ethnicity", class = "hfv-title")
-    ),
+      class = "hfv-container",
 
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Dashboard Controls", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Year selector
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput("year", "Year:", 
-                     choices = c(2018:2024), 
-                     selected = 2024, 
-                     width = "100%", 
-                     selectize = FALSE)
-        ),
-        
-        # Loan purpose selector
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput("loan_purpose", "Loan Purpose:", 
-                     choices = c("Home purchase", "Home improvement", "Refinancing", "Cash-out refinancing", "Other purpose"),
-                     selected = "Home purchase", 
-                     width = "100%", 
-                     selectize = FALSE)
-        ),
-        
-        # Occupancy type selector
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput("occupancy_type", "Occupancy Type:", 
-                     choices = c("Principal residence", "Second residence", "Investment property"),
-                     selected = "Principal residence", 
-                     width = "100%", 
-                     selectize = FALSE)
-        ),
-        
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
-        div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data",
-            style = "margin-bottom: 0;"
-          )
-        )
+        class = "hfv-header",
+        h4("Mortgage Denial Rates by Race and Ethnicity", class = "hfv-title")
       ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
+
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        # Sidebar Panel with HFV styling
+        div(
+          class = "hfv-sidebar",
+
+          h5("Dashboard Controls",
+             class = "text-primary", style = "margin-bottom: 16px;"),
+
+          # Year selector
+          div(
+            style = "margin-bottom: 16px;",
+            selectInput("year", "Year:",
+                       choices = c(2018:2024),
+                       selected = 2024,
+                       width = "100%",
+                       selectize = FALSE)
           ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
+
+          # Loan purpose selector
+          div(
+            style = "margin-bottom: 16px;",
+            selectInput("loan_purpose", "Loan Purpose:",
+                       choices = c("Home purchase", "Home improvement", "Refinancing", "Cash-out refinancing", "Other purpose"),
+                       selected = "Home purchase",
+                       width = "100%",
+                       selectize = FALSE)
           ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
+
+          # Occupancy type selector
+          div(
+            style = "margin-bottom: 16px;",
+            selectInput("occupancy_type", "Occupancy Type:",
+                       choices = c("Principal residence", "Second residence", "Investment property"),
+                       selected = "Principal residence",
+                       width = "100%",
+                       selectize = FALSE)
+          ),
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "Consumer Financial Protection Bureau, Home Mortgage Disclosure Act (HMDA) data",
+              style = "margin-bottom: 0;"
             )
           )
+        ),
+
+        # Main Panel with single plot
+        div(
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
 # Server function
 server <- function(input, output, session) {
-  
-  # Load the data (using path relative to project root)
-  local_lookup <- reactive({
-    read_csv("../../data/local_lookup.csv") |> 
-      mutate(fips_full = as.character(fips_full))
+
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+
+  # Load the data
+  local_lookup <- read_csv("local_lookup.csv") |>
+    mutate(fips_full = as.character(fips_full))
+
+  loans_race <- read_parquet("hmda_va_clean.parquet") |>
+    select(activity_year, lei, fips_full = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
+           occupancy_type) |>
+    mutate(count = 1) |>
+    group_by(activity_year, fips_full, race_ethnicity, action_taken, loan_purpose, occupancy_type) |>
+    summarise(count = sum(count), .groups = "drop") %>%
+    left_join(local_lookup, by = "fips_full") |>
+    filter(state == "Virginia")
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
+    req(input$year, input$loan_purpose, input$occupancy_type)
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      loans_race |>
+        filter(activity_year == input$year) |>
+        group_by(cbsa_title, race_ethnicity, loan_purpose, occupancy_type) |>
+        mutate(total = sum(count)) |>
+        filter(loan_purpose == input$loan_purpose) |>
+        filter(occupancy_type == input$occupancy_type) |>
+        filter(cbsa_title == geo$cbsa) |>
+        group_by(cbsa_title, race_ethnicity, action_taken, total) |>
+        summarise(count = sum(count), .groups = "drop") |>
+        mutate(rate = count/total) |>
+        filter(action_taken == "Application denied") |>
+        arrange(desc(rate))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      loans_race |>
+        filter(activity_year == input$year) |>
+        group_by(name_long, race_ethnicity, loan_purpose, occupancy_type) |>
+        mutate(total = sum(count)) |>
+        filter(loan_purpose == input$loan_purpose) |>
+        filter(occupancy_type == input$occupancy_type) |>
+        filter(name_long == geo$locality) |>
+        group_by(name_long, race_ethnicity, action_taken, total) |>
+        summarise(count = sum(count), .groups = "drop") |>
+        mutate(rate = count/total) |>
+        filter(action_taken == "Application denied") |>
+        arrange(desc(rate))
+    } else {
+      loans_race |>
+        filter(activity_year == input$year) |>
+        group_by(state, race_ethnicity, loan_purpose, occupancy_type) |>
+        mutate(total = sum(count)) |>
+        filter(loan_purpose == input$loan_purpose) |>
+        filter(occupancy_type == input$occupancy_type) |>
+        group_by(race_ethnicity, action_taken, total) |>
+        summarise(count = sum(count), .groups = "drop") |>
+        mutate(rate = count/total) |>
+        filter(action_taken == "Application denied") |>
+        arrange(desc(rate))
+    }
   })
   
-  loans_race <- reactive({
-    read_parquet("../../data/parquet/hmda_va_clean.parquet") |> 
-      select(activity_year, lei, fips_full = county_code, race_ethnicity, action_taken, purchaser_type, loan_purpose,
-             occupancy_type) |> 
-      mutate(count = 1) |> 
-      group_by(activity_year, fips_full, race_ethnicity, action_taken, loan_purpose, occupancy_type) |> 
-      summarise(count = sum(count), .groups = "drop") %>% 
-      left_join(local_lookup(), by = "fips_full") |> 
-      filter(state == "Virginia")
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Loan Denial Rates by Race/Ethnicity -", geo$cbsa, "-", input$year)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Loan Denial Rates by Race/Ethnicity -", geo$locality, "-", input$year)
+    } else {
+      paste("Virginia Loan Denial Rates by Race/Ethnicity -", input$year)
+    }
   })
-  
-  # Get available CBSAs and localities
-  cbsa_list <- reactive({
-    loans_race() %>%
-      filter(!is.na(cbsa_title)) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
-  })
-  
-  locality_list <- reactive({
-    loans_race() %>%
-      filter(!is.na(name_long)) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-  })
-  
-  # Initialize dropdowns
-  observe({
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
-  })
-  
-  # Create state-level denial data
-  state_data <- reactive({
-    loans_race() |> 
-      filter(activity_year == input$year) |> 
-      group_by(state, race_ethnicity, loan_purpose, occupancy_type) |> 
-      mutate(total = sum(count)) |> 
-      filter(loan_purpose == input$loan_purpose) |> 
-      filter(occupancy_type == input$occupancy_type) |> 
-      group_by(race_ethnicity, action_taken, total) |> 
-      summarise(count = sum(count), .groups = "drop") |> 
-      mutate(rate = count/total) |> 
-      filter(action_taken == "Application denied") |> 
-      arrange(desc(rate))
-  })
-  
-  # Create CBSA-level denial data
-  cbsa_data <- reactive({
-    req(input$cbsa)
-    
-    loans_race() |> 
-      filter(activity_year == input$year) |> 
-      group_by(cbsa_title, race_ethnicity, loan_purpose, occupancy_type) |> 
-      mutate(total = sum(count)) |> 
-      filter(loan_purpose == input$loan_purpose) |> 
-      filter(occupancy_type == input$occupancy_type) |> 
-      filter(cbsa_title == input$cbsa) |> 
-      group_by(cbsa_title, race_ethnicity, action_taken, total) |> 
-      summarise(count = sum(count), .groups = "drop") |> 
-      mutate(rate = count/total) |> 
-      filter(action_taken == "Application denied") |> 
-      arrange(desc(rate))
-  })
-  
-  # Create locality-level denial data
-  locality_data <- reactive({
-    req(input$locality)
-    
-    loans_race() |> 
-      filter(activity_year == input$year) |> 
-      group_by(name_long, race_ethnicity, loan_purpose, occupancy_type) |> 
-      mutate(total = sum(count)) |> 
-      filter(loan_purpose == input$loan_purpose) |> 
-      filter(occupancy_type == input$occupancy_type) |> 
-      filter(name_long == input$locality) |> 
-      group_by(name_long, race_ethnicity, action_taken, total) |> 
-      summarise(count = sum(count), .groups = "drop") |> 
-      mutate(rate = count/total) |> 
-      filter(action_taken == "Application denied") |> 
-      arrange(desc(rate))
-  })
-  
-  # Plot titles
-  state_title <- reactive({
-    paste("Virginia Loan Denial Rates by Race/Ethnicity -", input$year)
-  })
-  
-  cbsa_title <- reactive({
-    paste("Loan Denial Rates by Race/Ethnicity -", input$cbsa, "-", input$year)
-  })
-  
-  locality_title <- reactive({
-    paste("Loan Denial Rates by Race/Ethnicity -", input$locality, "-", input$year)
-  })
-  
+
   # Function to create denial rate plots
   create_denial_plot <- function(data, title_text) {
     req(nrow(data) > 0)
@@ -434,17 +365,9 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_denial_plot(state_data(), state_title())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_denial_plot(cbsa_data(), cbsa_title())))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_denial_plot(locality_data(), locality_title())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_denial_plot(filtered_data(), plot_title())))
   })
   
   # Handle responsive window events
@@ -453,5 +376,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

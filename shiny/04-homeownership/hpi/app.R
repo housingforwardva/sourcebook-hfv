@@ -13,6 +13,7 @@ library(sass)        # For SCSS compilation
 library(gdtools)
 library(lubridate)
 library(zoo)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -93,7 +94,7 @@ hfv_theme <- bs_theme(
 )
 
 # Load data outside of server
-hpi <- read_rds(here("data", "rds", "hpi.rds")) |> 
+hpi <- read_rds("hpi.rds") |> 
   mutate(date = as.Date(as.yearqtr(date, format = "%Y Q%q"))) |> 
   select(geography, name, date, hpi) |> 
   filter(!is.na(hpi))
@@ -102,142 +103,108 @@ hpi <- read_rds(here("data", "rds", "hpi.rds")) |>
 cbsa_list <- sort(unique(hpi$name[hpi$geography == "CBSA"]))
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(), # Initialize shinyjs
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Housing Price Index Analysis", class = "hfv-title")
-    ),
+      class = "hfv-container",
 
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Dashboard Controls", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Geography selectors
+        class = "hfv-header",
+        h4("Housing Price Index Analysis", class = "hfv-title")
+      ),
+
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        # Sidebar Panel with HFV styling
         div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa_select", "Metro Area:", 
-                        choices = cbsa_list,
-                        selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1],
-                        width = "100%", 
-                        selectize = FALSE)
+          class = "hfv-sidebar",
+
+          h5("Dashboard Controls",
+             class = "text-primary", style = "margin-bottom: 16px;"),
+
+          # Tooltip info
+          div(
+            style = "margin-bottom: 16px; font-size: 0.8rem;",
+            p("Hover over points to see details", style = "margin-bottom: 8px;"),
+            verbatimTextOutput("hover_info", placeholder = TRUE)
+          ),
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "Federal Housing Finance Agency (FHFA) Housing Price Index",
+              style = "margin-bottom: 0;"
+            )
           )
         ),
-        
-        # Tooltip info
+
+        # Main Panel with single plot
         div(
-          style = "margin-bottom: 16px; font-size: 0.8rem;",
-          p("Hover over points to see details", style = "margin-bottom: 8px;"),
-          verbatimTextOutput("hover_info", placeholder = TRUE)
-        ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
-        div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "Federal Housing Finance Agency (FHFA) Housing Price Index",
-            style = "margin-bottom: 0;"
-          )
-        )
-      ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Nonmetro",
-            value = "nonmetro",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("nonmetro_plot", height = "100%")
-            )
-          )
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
 # Server function
 server <- function(input, output, session) {
-  
-  # Create filtered datasets
-  state_data <- reactive({
-    hpi |> 
-      filter(geography == "State")
+
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa
+    )
   })
-  
-  filtered_cbsa <- reactive({
-    req(input$cbsa_select)
-    hpi |> 
-      filter(geography == "CBSA",
-             name == input$cbsa_select)
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      hpi |>
+        filter(geography == "CBSA", name == geo$cbsa)
+    } else if (geo$type == "nonmetro") {
+      hpi |>
+        filter(geography == "Nonmetro")
+    } else {
+      hpi |>
+        filter(geography == "State")
+    }
   })
-  
-  nonmetro_data <- reactive({
-    hpi |> 
-      filter(geography == "Nonmetro")
-  })
-  
-  # Plot titles
-  state_title <- reactive({
-    "Housing Price Index in Virginia"
-  })
-  
-  cbsa_title <- reactive({
-    paste("Housing Price Index in", input$cbsa_select)
-  })
-  
-  nonmetro_title <- reactive({
-    "Housing Price Index in Nonmetropolitan Virginia"
+
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Housing Price Index in", geo$cbsa)
+    } else if (geo$type == "nonmetro") {
+      "Housing Price Index in Nonmetropolitan Virginia"
+    } else {
+      "Housing Price Index in Virginia"
+    }
   })
   
   # Function to create interactive line plots
@@ -334,17 +301,9 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(state_data(), state_title())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(filtered_cbsa(), cbsa_title())))
-  })
-  
-  output$nonmetro_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(nonmetro_data(), nonmetro_title())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_line_plot(filtered_data(), plot_title())))
   })
 
   # Handle responsive window events
@@ -352,42 +311,30 @@ server <- function(input, output, session) {
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
   
-  # Handle hover info for all plots
-  get_hover_data <- reactive({
-    if (input$tabs == "state") {
-      data <- state_data()
-      geo_name <- "Virginia"
-    } else if (input$tabs == "cbsa") {
-      data <- filtered_cbsa()
-      geo_name <- input$cbsa_select
-    } else { # nonmetro
-      data <- nonmetro_data()
-      geo_name <- "Nonmetropolitan Virginia"
-    }
-    
-    list(
-      data = data,
-      geo_name = geo_name
-    )
-  })
-  
   # Display hover information
   output$hover_info <- renderText({
-    hover_data <- get_hover_data()
-    data <- hover_data$data
-    
-    # If there's no hover data, show a placeholder message
+    data <- filtered_data()
+    geo <- current_geo()
+
+    # If there's no data, show a placeholder message
     if (is.null(data) || nrow(data) == 0) {
       return("Hover over a point for details")
     }
-    
-    geo_name <- hover_data$geo_name
-    
+
+    # Get geography name
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      geo_name <- geo$cbsa
+    } else if (geo$type == "nonmetro") {
+      geo_name <- "Nonmetropolitan Virginia"
+    } else {
+      geo_name <- "Virginia"
+    }
+
     # Format some example hover data for display
     if (nrow(data) > 0) {
       # Take the latest data point as an example
       example <- data |> filter(date == max(date, na.rm = TRUE))
-      
+
       paste0(
         geo_name, "\n",
         "Latest HPI: ", round(example$hpi[1], 1), "\n",
@@ -399,6 +346,6 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")
 

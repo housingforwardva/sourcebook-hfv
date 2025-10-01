@@ -11,6 +11,7 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -80,7 +81,8 @@ hfv_theme <- bs_theme(
 )
 
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
   useShinyjs(), # Initialize shinyjs
 
@@ -116,18 +118,6 @@ ui <- page_fillable(
           selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -143,127 +133,96 @@ ui <- page_fillable(
         )
       ),
         
-      # Main Panel with tabs
+      # Main Panel
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
-  
+
   # Read in data
-  b25032 <- reactive({
-    read_rds(here("data", "rds", "b25032.rds"))
+  b25032 <- read_rds(here("data", "rds", "b25032.rds"))
+
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
   })
-  
+
   # Initialize year dropdown
   observe({
-    updateSelectInput(session, "year", 
+    updateSelectInput(session, "year",
                       choices = 2010:2023,
                       selected = 2023)
   })
-  
+
   # Process data for state level
-  state_housing <- reactive({
-    b25032() %>% 
-      group_by(year, tenure, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
-  
+  state_housing <- b25032 %>%
+    group_by(year, tenure, type) %>%
+    summarise(estimate = sum(estimate), .groups = "drop") %>%
+    group_by(year, tenure) %>%
+    mutate(percent = estimate/sum(estimate)) %>%
+    group_by(year) %>%
+    mutate(percent_total = estimate/sum(estimate))
+
   # Process data for CBSA level
-  cbsa_housing <- reactive({
-    b25032() %>% 
-      group_by(year, cbsa_title, tenure, type) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, cbsa_title, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year, cbsa_title) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
-  
+  cbsa_housing <- b25032 %>%
+    group_by(year, cbsa_title, tenure, type) %>%
+    summarise(estimate = sum(estimate), .groups = "drop") %>%
+    group_by(year, cbsa_title, tenure) %>%
+    mutate(percent = estimate/sum(estimate)) %>%
+    group_by(year, cbsa_title) %>%
+    mutate(percent_total = estimate/sum(estimate))
+
   # Process data for local level
-  local_housing <- reactive({
-    b25032() %>% 
-      group_by(year, name_long, tenure, type) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      group_by(year, name_long) %>% 
-      mutate(percent_total = estimate/sum(estimate))
-  })
+  local_housing <- b25032 %>%
+    group_by(year, name_long, tenure, type) %>%
+    mutate(percent = estimate/sum(estimate)) %>%
+    group_by(year, name_long) %>%
+    mutate(percent_total = estimate/sum(estimate))
   
-  # Populate CBSA dropdown
-  observe({
-    cbsa_choices <- sort(unique(cbsa_housing()$cbsa_title))
-    updateSelectInput(session, "cbsa", choices = cbsa_choices, 
-                      selected = if("Richmond, VA" %in% cbsa_choices) "Richmond, VA" else cbsa_choices[1])
-  })
-  
-  # Populate locality dropdown
-  observe({
-    locality_choices <- sort(unique(local_housing()$name_long))
-    updateSelectInput(session, "locality", choices = locality_choices,
-                      selected = if("Richmond City" %in% locality_choices) "Richmond City" else locality_choices[1])
-  })
-  
-  # Filter data based on inputs
-  filtered_state <- reactive({
-    state_housing() %>% 
-      filter(year == input$year)
-  })
-  
-  filtered_cbsa <- reactive({
-    cbsa_housing() %>% 
-      filter(year == input$year,
-             cbsa_title == input$cbsa)
-  })
-  
-  filtered_local <- reactive({
-    local_housing() %>% 
-      filter(year == input$year,
-             name_long == input$locality)
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
+    req(input$year)
+    geo <- current_geo()
+
+    if (geo$type == "state") {
+      state_housing %>%
+        filter(year == input$year)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_housing %>%
+        filter(year == input$year,
+               cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_housing %>%
+        filter(year == input$year,
+               name_long == geo$locality)
+    } else {
+      NULL
+    }
   })
   
   # Create title text
   title_text <- reactive({
-    paste("In", input$year)
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Virginia Housing Type Distribution -", input$year)
+    } else if (geo$type == "cbsa") {
+      paste("Housing Type Distribution -", geo$cbsa, "-", input$year)
+    } else {
+      paste("Housing Type Distribution -", geo$locality, "-", input$year)
+    }
   })
   
   # Create a simplified plotting approach to completely avoid theme conflicts
@@ -357,19 +316,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the state plot
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state())))
-  })
-  
-  # Render the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa())))
-  })
-  
-  # Render the local plot
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_plot(data)))
   })
 
   # Handle responsive window events
@@ -378,5 +329,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

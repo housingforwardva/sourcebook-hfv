@@ -162,7 +162,7 @@ ui <- function(request) {
 server <- function(input, output, session) {
   # Load the data
   avg_size <- reactive({
-    read_rds(here("data", "rds", "avg_hh_size.rds")) %>% 
+    read_rds("avg_hh_size.rds") %>% 
       mutate(tenure = case_when(
         tenure == "Owner" ~ "Homeowner",
         TRUE ~ tenure
