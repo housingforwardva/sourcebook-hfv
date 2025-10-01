@@ -1,0 +1,93 @@
+# Load packages and set global chunk options
+
+library(tidyverse)
+library(readxl)
+library(httr)
+library(paws)
+
+# Data collection
+# https://www.fhfa.gov/data/hpi/datasets?tab=quarterly-data
+
+
+# Read in the csv files for statewide and CBSA data
+
+hpi_state_raw <- read_csv("https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_state.csv",
+                          col_names = FALSE)
+
+hpi_cbsa_raw <- read_csv("https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_metro.csv",
+                         col_names = FALSE)
+
+# Non-metro data is only available as an xls file; must read in via temp file
+
+
+# Set up temp file with correct extension
+temp <- tempfile(fileext = ".xlsx")
+
+# Write nonmetro xlsx file to temp file on disk
+httr::GET(url = "https://www.fhfa.gov/hpi/download/quarterly_datasets/hpi_at_nonmetro.xlsx",
+          httr::write_disk(temp, overwrite = TRUE))
+
+# Import xlsx and skip header rows
+hpi_nonmetro_raw <- readxl::read_excel(temp, sheet = 1, skip = 2)
+
+# Clean up temp file
+unlink(temp)
+
+# Data prep
+
+# Prep state data and filter only Virginia values
+
+hpi_state_data <- hpi_state_raw %>% 
+  setNames(c("name", "year", "quarter", "hpi")) %>% 
+  mutate(geography = "State",
+         .before = 1) |> 
+  add_column(stderror = NA)
+
+# Prep CBSA data and filter only Virginia values
+
+hpi_cbsa_data <- hpi_cbsa_raw %>% 
+  setNames(c("name", "fips", "year", "quarter", "hpi", "stderror")) %>% 
+  mutate(geography = "CBSA",
+         .before = 1) %>% 
+  mutate(name = str_remove_all(name, "  \\(MSAD\\)")) %>% 
+  mutate(stderror = str_replace_all(stderror, "[^0-9.]+", "")) %>% 
+  mutate(hpi = na_if(hpi, "-"),
+         stderror = na_if(stderror, "")) %>% 
+  mutate(across(hpi:stderror, ~as.numeric(.x)))
+
+# Prep non-metro data and filter only Virginia values
+
+hpi_nonmetro_data <- hpi_nonmetro_raw %>% 
+  setNames(c("name", "year", "quarter", "hpi", "stderror")) %>%
+  mutate(geography = "Nonmetro",
+         .before = 1) %>%
+  mutate(fips = NA,
+         .after = 2) %>% 
+  mutate(stderror = str_replace_all(stderror, "[^0-9.]+", ""),
+         stderror = as.numeric(stderror)) %>% 
+  mutate(name = paste(name, "Nonmetro Area", sep = " "))
+
+# Bind three geography levels together and create new date field with year and quarter
+
+hpi_all_data <- bind_rows(hpi_state_data, hpi_cbsa_data, hpi_nonmetro_data) %>% 
+  mutate(date = paste0(year, " Q", quarter),
+         .after = 5)
+
+
+# Data export
+
+# Save HPI data
+
+# write_rds(hpi_all_data, "data/rds/hpi.rds")
+
+# Upload to S3 bucket
+s3 <- paws::s3()
+
+temp_file <- tempfile(fileext = ".rds")
+write_rds(hpi_all_data, temp_file)
+s3$put_object(
+  Bucket = "hda-data-hub",
+  Key = "fhfa/hpi_data.rds",
+  Body = temp_file
+)
+file.remove(temp_file)

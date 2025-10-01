@@ -1,0 +1,220 @@
+// =============================================================================
+// HFV DESIGN SYSTEM - VARIABLES
+// Housing Forward Virginia Shiny Application Styles
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// COLOR PALETTE
+// -----------------------------------------------------------------------------
+
+// Primary HFV Brand Colors
+$hfv-sky: #40C0C0;           // Primary teal - main brand color
+$hfv-grass: #259591;         // Dark teal - success/positive states
+$hfv-lilac: #8B85CA;         // Purple - info/secondary actions
+$hfv-shadow: #011E41;        // Dark navy - text/high contrast
+$hfv-shadow-light: #102C54;  // Lighter navy - backgrounds/subtle contrast
+$hfv-berry: #B1005F;         // Magenta - errors/warnings/danger states
+$hfv-desert: #E0592A;        // Orange - alerts/warning states
+
+// Extended Palette (derived colors for better design flexibility)
+$hfv-sky-light: lighten($hfv-sky, 20%);     // #73CCCC
+$hfv-sky-dark: darken($hfv-sky, 15%);       // #2A9999
+$hfv-grass-light: lighten($hfv-grass, 15%); // #4AA29E
+$hfv-lilac-light: lighten($hfv-lilac, 20%); // #B5B0D6
+$hfv-shadow-lighter: lighten($hfv-shadow-light, 10%); // #2A3D67
+
+// Neutral Colors
+$white: #ffffff;
+$gray-50: #f8f9fa;
+$gray-100: #e9ecef;
+$gray-200: #dee2e6;
+$gray-300: #ced4da;
+$gray-400: #adb5bd;
+$gray-500: #6c757d;
+$gray-600: #495057;
+$gray-700: #343a40;
+$gray-800: #212529;
+$gray-900: #000000;
+
+// Semantic Color Mapping (Bootstrap-compatible)
+$primary: $hfv-sky;
+$secondary: $hfv-shadow;
+$success: $hfv-grass;
+$info: $hfv-lilac;
+$warning: $hfv-desert;
+$danger: $hfv-berry;
+$light: $gray-100;
+$dark: $hfv-shadow;
+
+// Background Colors
+$body-bg: $white;
+$sidebar-bg: #E8EDF2;        // Light blue-gray derived from shadow
+$card-bg: $white;
+$header-border: $hfv-sky;
+
+// -----------------------------------------------------------------------------
+// TYPOGRAPHY
+// -----------------------------------------------------------------------------
+
+// Font Families - Enhanced with stronger fallbacks for cloud deployment
+$font-family-base: "Open Sans", "Helvetica Neue", Helvetica, Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+$font-family-headings: "Poppins", "Helvetica Neue", Helvetica, Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+$font-family-monospace: "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Courier New", monospace;
+
+// Font Sizes
+$font-size-base: 0.8rem;     // Compact sizing for Shiny apps
+$font-size-sm: 0.7rem;
+$font-size-lg: 0.9rem;
+$font-size-xl: 1.1rem;
+
+$h1-font-size: 1.5rem;
+$h2-font-size: 1.35rem;
+$h3-font-size: 1.2rem;
+$h4-font-size: 1.05rem;
+$h5-font-size: 0.95rem;
+$h6-font-size: 0.85rem;
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-base: 1.4;
+$line-height-sm: 1.25;
+$line-height-lg: 1.6;
+
+// -----------------------------------------------------------------------------
+// SPACING & LAYOUT
+// -----------------------------------------------------------------------------
+
+// Base Spacing Units (using 8px grid system)
+$spacer: 8px;
+$spacer-xs: $spacer * 0.5;    // 4px
+$spacer-sm: $spacer * 1;      // 8px
+$spacer-md: $spacer * 2;      // 16px
+$spacer-lg: $spacer * 3;      // 24px
+$spacer-xl: $spacer * 4;      // 32px
+$spacer-xxl: $spacer * 6;     // 48px
+
+// Component Spacing
+$padding-base: $spacer-md;
+$padding-sm: $spacer-sm;
+$padding-lg: $spacer-lg;
+
+$margin-base: $spacer-md;
+$margin-sm: $spacer-sm;
+$margin-lg: $spacer-lg;
+
+// -----------------------------------------------------------------------------
+// BREAKPOINTS (Mobile-First Responsive Design)
+// -----------------------------------------------------------------------------
+
+$breakpoint-xs: 0;
+$breakpoint-sm: 480px;        // Small phones
+$breakpoint-md: 768px;        // Tablets
+$breakpoint-lg: 992px;        // Small desktops
+$breakpoint-xl: 1200px;       // Large desktops
+$breakpoint-xxl: 1400px;      // Extra large screens
+
+// Container Sizes
+$container-max-width: 1200px;
+$iframe-width: 800px;
+$iframe-height: 500px;
+
+// -----------------------------------------------------------------------------
+// COMPONENT DIMENSIONS
+// -----------------------------------------------------------------------------
+
+// Header
+$header-height: 50px;
+$header-height-sm: 40px;      // Mobile
+$logo-height: 30px;
+$logo-height-sm: 25px;        // Mobile
+
+// Sidebar
+$sidebar-width: 200px;
+$sidebar-width-collapsed: 50px;
+$sidebar-padding: $spacer-md;
+
+// Cards & Panels
+$card-border-radius: 6px;
+$card-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+$card-border-width: 1px;
+$card-border-color: $gray-200;
+
+// Form Elements
+$input-height: 38px;
+$input-padding: 8px 12px;
+$input-border-radius: 4px;
+$input-border-color: $gray-300;
+$input-focus-border-color: $hfv-sky;
+
+// -----------------------------------------------------------------------------
+// TRANSITIONS & ANIMATIONS
+// -----------------------------------------------------------------------------
+
+$transition-base: all 0.2s ease-in-out;
+$transition-fade: opacity 0.15s linear;
+$transition-collapse: height 0.35s ease;
+
+// Hover Effects
+$hover-opacity: 0.8;
+$hover-transform: scale(1.02);
+
+// -----------------------------------------------------------------------------
+// Z-INDEX SCALE
+// -----------------------------------------------------------------------------
+
+$zindex-dropdown: 1000;
+$zindex-sticky: 1020;
+$zindex-fixed: 1030;
+$zindex-modal-backdrop: 1040;
+$zindex-modal: 1050;
+$zindex-popover: 1060;
+$zindex-tooltip: 1070;
+
+// -----------------------------------------------------------------------------
+// CHART & VISUALIZATION COLORS
+// -----------------------------------------------------------------------------
+
+// Chart Color Sequences (colorblind-friendly)
+$chart-colors: (
+  $hfv-sky,
+  $hfv-grass, 
+  $hfv-lilac,
+  $hfv-desert,
+  $hfv-berry,
+  $hfv-shadow-light
+);
+
+// Gradient Color Stops (for continuous data)
+$viridis-colors: (#440154, #414487, #2A788E, #22A884, #7AD151, #FDE725);
+
+// Single-color gradients for different metrics
+$sky-gradient: (lighten($hfv-sky, 30%), $hfv-sky, darken($hfv-sky, 20%));
+$grass-gradient: (lighten($hfv-grass, 25%), $hfv-grass, darken($hfv-grass, 20%));
+$lilac-gradient: (lighten($hfv-lilac, 30%), $hfv-lilac, darken($hfv-lilac, 20%));
+
+// -----------------------------------------------------------------------------
+// ACCESSIBILITY
+// -----------------------------------------------------------------------------
+
+// Minimum contrast ratios (WCAG 2.1 AA compliance)
+$min-contrast-ratio: 4.5;
+$min-contrast-ratio-large: 3;
+
+// Focus indicators
+$focus-ring-width: 2px;
+$focus-ring-color: rgba($hfv-sky, 0.25);
+$focus-ring-blur: 0;
+
+// -----------------------------------------------------------------------------
+// PRINT STYLES
+// -----------------------------------------------------------------------------
+
+$print-bg: $white;
+$print-text: $gray-900;
+$print-border: $gray-400;
