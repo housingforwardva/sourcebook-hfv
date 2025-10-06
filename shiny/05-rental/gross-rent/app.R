@@ -10,6 +10,7 @@ library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # GROSS RENT DISTRIBUTION VISUALIZATION
@@ -81,110 +82,62 @@ year_list <- sort(unique(cbsa_data$year), decreasing = TRUE)
 # USER INTERFACE
 # =============================================================================
 
-ui <- page_fillable(
-  theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),
-  useShinyjs(),
-
-  div(
-    class = "hfv-container",
-
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    includeCSS("www/styles/hfv-theme.css"),
+    useShinyjs(),
 
     div(
-      class = "hfv-header",
-      h4("Gross Rent Distribution", class = "hfv-title")
-    ),
-
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8),
-        sm = 12
-      ),
-      gap = "16px",
-
-      div( 
-        class = "hfv-sidebar",
-        h5("Filters",
-          class = "text-primary", style = "margin-bottom: 16px;"),
+      class = "hfv-container",
 
       div(
-        style = "margin-bottom: 16px;",
-        selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
+        class = "hfv-header",
+        h4("Gross Rent Distribution", class = "hfv-title")
       ),
 
-      div(
-        style = "margin-bottom: 16px;",
-        conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa_select", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        div(
+          class = "hfv-sidebar",
+          h5("Filters",
+            class = "text-primary", style = "margin-bottom: 16px;"),
+
+          div(
+            style = "margin-bottom: 16px;",
+            selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
           ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality_select", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25063",
+              style = "margin-bottom: 0;"
+            )
           )
         ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
+
+        # Main Panel with single plot
         div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25119",
-            style = "margin-bottom: 0;"
-          ),
-          conditionalPanel(
-            condition = "input.dollar_type == 'adjusted'",
-            p(
-              strong("Note:"), "Income adjusted to 2023 dollars using CPI",
-              style = "margin-bottom: 0; margin-top: 8px;"
-            )
-          )
-        )
-      ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
 
 
@@ -193,60 +146,53 @@ ui <- page_fillable(
 # SERVER FUNCTION
 # =============================================================================
 server <- function(input, output, session) {
-    # Initialize dropdowns
+
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+
+  # Initialize year dropdown
   observe({
-    # Year
-    updateSelectInput(session, "year", 
+    updateSelectInput(session, "year",
                       choices = year_list,
                       selected = year_list[1])
-   
-    # CBSAs
-    updateSelectInput(session, "cbsa_select", 
-                      choices = cbsa_list,
-                      selected = if("Richmond, VA Metro Area" %in% cbsa_list) "Richmond, VA Metro Area" else cbsa_list[1])
-    
-    # Localities
-    updateSelectInput(session, "locality_select", 
-                      choices = locality_list,
-                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
   })
 
-    
-  # Create filtered datasets
-  filtered_state <- reactive({
-    state_data |> 
-      filter(year == input$year)
-  })
-  
+  # Filter data based on current geography
+  filtered_data <- reactive({
+    req(input$year)
+    geo <- current_geo()
 
-  filtered_cbsa <- reactive({
-    req(input$cbsa_select, input$year)
-    
-    cbsa_data %>%
-      filter(cbsa_title == input$cbsa_select, year == input$year)
-  })
-  
-  filtered_local <- reactive({
-    req(input$locality_select, input$year)
-    
-    local_data %>%
-      filter(name_long == input$locality_select, year == input$year)
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_data %>%
+        filter(cbsa_title == geo$cbsa, year == input$year)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_data %>%
+        filter(name_long == geo$locality, year == input$year)
+    } else {
+      state_data %>%
+        filter(year == input$year)
+    }
   })
 
-   # Plot titles
-  state_title <- reactive({
+  # Plot title based on geography
+  plot_title <- reactive({
     req(input$year)
-    paste("Gross Rent Distribution in Virginia (", input$year, ")", sep = "")
-  })
-  
-  cbsa_title <- reactive({
-    req(input$year)
-    paste("Gross Rent Distribution in", input$cbsa_select, "(", input$year, ")", sep = "")
-  })
-  
-  local_title <- reactive({
-    req(input$year)
-    paste("Gross Rent Distribution in", input$locality_select, "(", input$year, ")", sep = "")
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Gross Rent Distribution in", geo$cbsa, "(", input$year, ")")
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Gross Rent Distribution in", geo$locality, "(", input$year, ")")
+    } else {
+      paste("Virginia Gross Rent Distribution (", input$year, ")")
+    }
   })
   
 
@@ -330,26 +276,16 @@ server <- function(input, output, session) {
     )
   }
 
-  # Render the state plot
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state(), state_title())))
-  })
-  
-  # Render the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa(), cbsa_title())))
-  })
-  
-  # Render the local plot
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local(), local_title())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_plot(filtered_data(), plot_title())))
   })
 
   # Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
-
 }
-# Run the application 
-shinyApp(ui = ui, server = server)
+
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

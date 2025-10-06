@@ -11,6 +11,7 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
@@ -91,19 +92,20 @@ hfv_theme <- bs_theme(
 )
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(),
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("HUD AMI Limits", class = "hfv-title")
-    ),
+      class = "hfv-container",
+
+      # Header using HFV styling
+      div(
+        class = "hfv-header",
+        h4("HUD AMI Limits", class = "hfv-title")
+      ),
 
     # Layout using bslib layout_columns
     layout_columns(
@@ -171,10 +173,21 @@ ui <- page_fillable(
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
+
+  # Parse geography from URL - only locality level supported
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    # This app only supports locality-level data
+    # If state or CBSA is in URL, we'll ignore it and use default
+    list(
+      locality = query$locality  # Will be NULL if not provided
+    )
+  })
   # Load the data
   hud_il <- reactive({
     read_rds(here("data", "rds", "va_hud_ami.rds")) %>% 
@@ -188,12 +201,23 @@ server <- function(input, output, session) {
       ))
   })
   
-  # Get available counties
+  # Get available counties and initialize from URL if provided
   observe({
     counties <- unique(hud_il()$county_name) %>% sort()
-    updateSelectInput(session, "county", 
+    geo <- current_geo()
+
+    # If locality is provided in URL, use it; otherwise default to Richmond city
+    default_county <- if(!is.null(geo$locality) && geo$locality %in% counties) {
+      geo$locality
+    } else if("Richmond city" %in% counties) {
+      "Richmond city"
+    } else {
+      counties[1]
+    }
+
+    updateSelectInput(session, "county",
                       choices = counties,
-                      selected = if("Richmond city" %in% counties) "Richmond city" else counties[1])
+                      selected = default_county)
   })
   
   # Get available household sizes
@@ -315,4 +339,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

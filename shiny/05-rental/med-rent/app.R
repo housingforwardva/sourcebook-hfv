@@ -10,6 +10,7 @@ library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # MEDIAN GROSS RENT VISUALIZATION
@@ -57,117 +58,72 @@ locality_list <- sort(unique(local_med_rent_data$NAME))
 # =============================================================================
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    includeCSS("www/styles/hfv-theme.css"),
+    useShinyjs(),
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Median Gross Rent", class = "hfv-title")
-    ),
+      class = "hfv-container",
 
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Filters", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Dollar type selector
-        div(
-          style = "margin-bottom: 16px;",
-          radioButtons("dollar_type", "Dollar Type:",
-                       choices = list("Current Dollars" = "estimate", 
-                                      "Inflation-Adjusted Dollars" = "adjusted"),
-                       selected = "estimate",
-                       inline = FALSE)
-        ),
-        
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'state'",
-            selectInput("state_select", "Select State:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa_select", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("local_select", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
-        div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25064",
-            style = "margin-bottom: 0;"
-          )
-        )
+        class = "hfv-header",
+        h4("Median Gross Rent", class = "hfv-title")
       ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
+
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        # Sidebar Panel with HFV styling
+        div(
+          class = "hfv-sidebar",
+
+          h5("Filters",
+             class = "text-primary", style = "margin-bottom: 16px;"),
+
+          # Dollar type selector
+          div(
+            style = "margin-bottom: 16px;",
+            radioButtons("dollar_type", "Dollar Type:",
+                         choices = list("Current Dollars" = "estimate",
+                                        "Inflation-Adjusted Dollars" = "adjusted"),
+                         selected = "estimate",
+                         inline = FALSE)
           ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25064",
+              style = "margin-bottom: 0;"
             )
           )
+        ),
+
+        # Main Panel with single plot
+        div(
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
 # =============================================================================
 # SERVER FUNCTION
@@ -175,65 +131,54 @@ ui <- page_fillable(
 
 server <- function(input, output, session) {
 
-  # Initialize dropdowns
-  observe({
-    # States
-    updateSelectInput(session, "state_select", 
-                      choices = state_list,
-                      selected = if("Virginia" %in% state_list) "Virginia" else state_list[1])
-    
-    # CBSAs
-    updateSelectInput(session, "cbsa_select", 
-                      choices = cbsa_list,
-                      selected = if("Richmond, VA Metro Area" %in% cbsa_list) "Richmond, VA Metro Area" else cbsa_list[1])
-    
-    # Localities
-    updateSelectInput(session, "local_select", 
-                      choices = locality_list,
-                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
   })
-  
-  # Create filtered datasets
-  filtered_state <- reactive({
-    req(input$state_select)
-    state_med_rent_data %>%
-      filter(NAME == input$state_select)
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_med_rent_data %>%
+        filter(NAME == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_med_rent_data %>%
+        filter(NAME == geo$locality) %>%
+        mutate(
+          estimate = as.numeric(estimate),
+          adjusted = as.numeric(adjusted)
+        )
+    } else {
+      state_med_rent_data %>%
+        filter(NAME == "Virginia")
+    }
   })
-  
-  filtered_cbsa <- reactive({
-    req(input$cbsa_select)
-    cbsa_med_rent_data %>%
-      filter(NAME == input$cbsa_select)
-  })
-  
-  filtered_local <- reactive({
-    req(input$local_select)
-    local_med_rent_data %>%
-      filter(NAME == input$local_select) %>%
-      mutate(
-        estimate = as.numeric(estimate),
-        adjusted = as.numeric(adjusted)
-      )
-  })
-  
+
   # Y-axis label based on dollar type
   y_label <- reactive({
-    ifelse(input$dollar_type == "adjusted", 
-           "Inflation-Adjusted Dollars", 
+    ifelse(input$dollar_type == "adjusted",
+           "Inflation-Adjusted Dollars",
            "Current Dollars")
   })
-  
-  # Plot titles
-  state_title <- reactive({
-    paste("Median Gross Rent in", input$state_select)
-  })
-  
-  cbsa_title <- reactive({
-    paste("Median Gross Rent in", input$cbsa_select)
-  })
-  
-  local_title <- reactive({
-    paste("Median Gross Rent in", input$local_select)
+
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Median Gross Rent in", geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Median Gross Rent in", geo$locality)
+    } else {
+      "Median Gross Rent in Virginia"
+    }
   })
   
   # Function to create interactive line plots
@@ -338,17 +283,9 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(filtered_state(), state_title())))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(filtered_cbsa(), cbsa_title())))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(filtered_local(), local_title())))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_line_plot(filtered_data(), plot_title())))
   })
 
   # Handle responsive window events
@@ -357,5 +294,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

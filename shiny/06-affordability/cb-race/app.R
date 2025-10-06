@@ -93,127 +93,74 @@ hfv_theme <- bs_theme(
 )
 
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(),
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Cost Burden by Race and Ethnicity", class = "hfv-title")
-    ),
+      class = "hfv-container",
 
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Dashboard Controls", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Year select
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput(
-            "year",
-            "Select Year:",
-            choices = NULL,
-            selected = NULL,
-            width = "100%",
-            selectize = TRUE
-          )
-        ),
+        class = "hfv-header",
+        h4("Cost Burden by Race and Ethnicity", class = "hfv-title")
+      ),
 
-        # Geography selectors
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        # Sidebar Panel with HFV styling
         div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
+          class = "hfv-sidebar",
+
+          h5("Dashboard Controls",
+             class = "text-primary", style = "margin-bottom: 16px;"),
+
+          # Year select
+          div(
+            style = "margin-bottom: 16px;",
             selectInput(
-              "cbsa",
-              "Metro Area:",
+              "year",
+              "Select Year:",
               choices = NULL,
+              selected = NULL,
               width = "100%",
               selectize = TRUE
             )
           ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput(
-              "locality",
-              "Locality:",
-              choices = NULL,
-              width = "100%",
-              selectize = TRUE
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "U.S. Department of Housing and Urban Development (HUD), Comprehensive Housing Affordability Strategy (CHAS) data",
+              style = "margin-bottom: 0;"
             )
           )
         ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
+
+        # Main Panel with single plot
         div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "U.S. Department of Housing and Urban Development (HUD), Comprehensive Housing Affordability Strategy (CHAS) data",
-            style = "margin-bottom: 0;"
-          )
-        )
-      ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
 # Define the order of cost burden levels
 cost_burden_order <- c("Not cost-burdened", "No or negative income", "Cost-burdened", "Severely cost-burdened")
@@ -285,62 +232,67 @@ server <- function(input, output, session) {
       sort()
   })
   
-  # Initialize dropdowns
-  observe({
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
   })
-  
-  # Filter data for plots
-  filtered_state <- reactive({
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
     req(input$year)
-    
-    state_data() %>%
-      filter(year == input$year) %>%
-      group_by(race) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      group_by(race, year) %>%
-      mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_data() %>%
+        filter(cbsa_title == geo$cbsa,
+               year == input$year) %>%
+        group_by(race) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        group_by(race, year) %>%
+        mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_data() %>%
+        filter(name_long == geo$locality,
+               year == input$year) %>%
+        group_by(race) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        group_by(race, year) %>%
+        mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    } else {
+      state_data() %>%
+        filter(year == input$year) %>%
+        group_by(race) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        group_by(race, year) %>%
+        mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    }
   })
-  
-  filtered_cbsa <- reactive({
-    req(input$cbsa, input$year)
-    
-    cbsa_data() %>%
-      filter(cbsa_title == input$cbsa,
-             year == input$year) %>%
-      group_by(race) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      group_by(race, year) %>%
-      mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
-  })
-  
-  filtered_local <- reactive({
-    req(input$locality, input$year)
-    
-    local_data() %>%
-      filter(name_long == input$locality,
-             year == input$year) %>%
-      group_by(race) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      group_by(race, year) %>%
-      mutate(total_cb = sum(estimate[cb_group == "Cost-burdened"])/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Cost Burden by Race and Ethnicity in", geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Cost Burden by Race and Ethnicity in", geo$locality)
+    } else {
+      "Virginia Cost Burden by Race and Ethnicity"
+    }
   })
   
 # Function to create plots
@@ -431,19 +383,9 @@ create_plot <- function(data, title_text) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state(), "Virginia Cost Burden by Race and Ethnicity")))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    title_text <- paste("Cost Burden by Race and Ethnicity in", input$cbsa)
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa(), title_text)))
-  })
-  
-  output$local_plot <- renderGirafe({
-    title_text <- paste("Cost Burden by Race and Ethnicity in", input$locality)
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local(), title_text)))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_plot(filtered_data(), plot_title())))
   })
 
   # Handle responsive window events
@@ -452,5 +394,5 @@ create_plot <- function(data, title_text) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")
