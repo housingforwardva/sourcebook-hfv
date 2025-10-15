@@ -17,7 +17,3 @@ lookup <- read_csv("data/local_lookup.csv") %>%
 total_pop <- readRDS(rawConnection(s3_response$Body)) %>% 
   right_join(lookup, by = "GEOID") %>% 
   mutate(year = as.numeric(year))
-
-
-
-write_data(total_pop, "shiny/01-dem/total_pop/total_pop.rds")

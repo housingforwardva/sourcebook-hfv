@@ -40,7 +40,7 @@ hfv_theme <- bs_theme(
 # =============================================================================
 
 # Load data (assuming same data structure as the shinydashboard version)
-var_data <- read_rds("data.rds")
+var_data <- read_rds("home-sales.rds")
 
 # Get available options
 state_list <- unique(sort(var_data$name[var_data$geography == "State"]))

@@ -11,12 +11,17 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
+library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
 # =============================================================================
-# Overcrowded Households Visualization
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -34,65 +39,10 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# Define HFV color palette (matching SCSS variables)
-hfv_colors <- list(
-  sky = "#40C0C0",           # Primary teal
-  grass = "#259591",         # Dark teal 
-  lilac = "#8B85CA",         # Purple
-  shadow = "#011E41",        # Dark navy
-  shadow_light = "#102C54",  # Lighter navy
-  berry = "#B1005F",         # Magenta
-  desert = "#E0592A"         # Orange
-)
-
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# ============================================================================= 
-
-  # Load the data
-  b25014 <- read_rds("b25014_data.rds") 
-  
-  # Pre-compute datasets
-  state_data <- b25014 %>% 
-      group_by(year, tenure, overcrowded) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      filter(overcrowded != "Not overcrowded")
-
-  
-  cbsa_data <- b25014 %>% 
-      group_by(year, cbsa_title, tenure, overcrowded) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, cbsa_title, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      ungroup() %>%
-      filter(overcrowded != "Not overcrowded")
-  
-  
-  locality_data <- b25014 %>% 
-      group_by(year, name_long, tenure, overcrowded) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      group_by(year, name_long, tenure) %>% 
-      mutate(percent = estimate/sum(estimate)) %>% 
-      ungroup() %>%
-      filter(overcrowded != "Not overcrowded")
-
-  
-  # Get available CBSAs and localities
-  cbsa_list <- sort(unique(cbsa_data$cbsa_title))
-  
-  locality_list <- sort(unique(locality_data$name_long))
-
-# =============================================================================
-# USER INTERFACE
-# ============================================================================= 
-  
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -118,7 +68,7 @@ ui <- page_fillable(
       div(
         class = "hfv-sidebar",
         
-        h5("Filters", 
+        h5("Dashboard Controls", 
            class = "text-primary", style = "margin-bottom: 16px;"),
         
         # Year selector
@@ -132,26 +82,14 @@ ui <- page_fillable(
         ),
         
         # Display options
-div(
-  style = "margin-bottom: 16px;",
-  radioButtons("displayType", "Display:", 
-               choices = c("Percent" = "percent", "Count" = "count"),
-               selected = "percent",
-               inline = FALSE)  # Change to FALSE
-),
-        
-        # Geography selectors
         div(
           style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
+          radioButtons("displayType", "Display:", 
+                       choices = c("Percent" = "percent", "Count" = "count"),
+                       selected = "percent",
+                       inline = TRUE)
         ),
+        
         
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -173,85 +111,91 @@ div(
         
       # Main Panel with tabs
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
+# Main Panel with single plot
+        div(
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+  )
+}
 
 # Server function
 server <- function(input, output, session) {
-
-  
-  # Initialize dropdowns
-  observe({
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list,
-                      selected = if("Richmond, VA" %in% cbsa_list) "Richmond, VA" else cbsa_list[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list,
-                      selected = if("Richmond City" %in% locality_list) "Richmond City" else locality_list[1])
+  # Load the data
+  b25014 <- reactive({
+    # Load data and convert "Owner" tenure to "Homeowner"
+    readRDS("b25014_data.rds") %>%
+      mutate(tenure = case_when(
+        tenure == "Owner" ~ "Homeowner",
+        TRUE ~ tenure
+      ))
   })
   
-  # Filter data for state
-  filtered_state <- reactive({
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+  
+  # Pre-compute datasets
+  state_data <- reactive({
+    b25014() %>% 
+      group_by(year, tenure, overcrowded) %>% 
+      summarise(estimate = sum(estimate), .groups = "drop") %>% 
+      group_by(year, tenure) %>% 
+      mutate(percent = estimate/sum(estimate)) %>%
+      ungroup() %>%
+      filter(overcrowded != "Not overcrowded")
+  })
+  
+  cbsa_data <- reactive({
+    b25014() %>% 
+      group_by(year, cbsa_title, tenure, overcrowded) %>% 
+      summarise(estimate = sum(estimate), .groups = "drop") %>% 
+      group_by(year, cbsa_title, tenure) %>% 
+      mutate(percent = estimate/sum(estimate)) %>% 
+      ungroup() %>%
+      filter(overcrowded != "Not overcrowded")
+  })
+  
+  locality_data <- reactive({
+    b25014() %>% 
+      group_by(year, name_long, tenure, overcrowded) %>% 
+      summarise(estimate = sum(estimate), .groups = "drop") %>% 
+      group_by(year, name_long, tenure) %>% 
+      mutate(percent = estimate/sum(estimate)) %>% 
+      ungroup() %>%
+      filter(overcrowded != "Not overcrowded")
+  })
+  
+  
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(input$year)
+    geo <- current_geo()
     
-    state_data %>%
-      filter(year == input$year)
-  })
-  
-  # Filter data for selected CBSA
-  filtered_cbsa <- reactive({
-    req(input$cbsa, input$year)
-    
-    cbsa_data %>%
-      filter(cbsa_title == input$cbsa,
-             year == input$year)
-  })
-  
-  # Filter data for selected locality
-  filtered_locality <- reactive({
-    req(input$locality, input$year)
-    
-    locality_data %>%
-      filter(name_long == input$locality,
-             year == input$year)
+    if (geo$type == "state") {
+      state_data() %>%
+        filter(year == input$year)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_data() %>%
+        filter(cbsa_title == geo$cbsa,
+               year == input$year)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      locality_data() %>%
+        filter(name_long == geo$locality,
+               year == input$year)
+    } else {
+      NULL
+    }
   })
   
   # Function to create interactive faceted bar chart
@@ -318,6 +262,7 @@ server <- function(input, output, session) {
         strip.background = element_rect(fill = "#102C54"),
         strip.text = element_text(color = "white", face = "bold"),
         plot.title.position = "plot",
+        plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
         axis.text = element_text(size = 10),
         axis.ticks.x = element_blank(),
@@ -365,30 +310,21 @@ server <- function(input, output, session) {
     )
   }
   
-  # Set plot titles
-  state_title <- reactive({
-    "Virginia Household Overcrowding by Tenure"
-  })
-  
-  cbsa_title <- reactive({
-    paste("Household Overcrowding by Tenure in", input$cbsa)
-  })
-  
-  locality_title <- reactive({
-    paste("Household Overcrowding by Tenure in", input$locality)
-  })
-  
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    create_interactive_plot(create_overcrowding_plot(filtered_state(), state_title()))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    create_interactive_plot(create_overcrowding_plot(filtered_cbsa(), cbsa_title()))
-  })
-  
-  output$local_plot <- renderGirafe({
-    create_interactive_plot(create_overcrowding_plot(filtered_locality(), locality_title()))
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    geo <- current_geo()
+    
+    title <- if (geo$type == "state") {
+      "Virginia Household Overcrowding by Tenure"
+    } else if (geo$type == "cbsa") {
+      paste("Household Overcrowding by Tenure in", geo$cbsa)
+    } else {
+      paste("Household Overcrowding by Tenure in", geo$locality)
+    }
+    
+    create_interactive_plot(create_overcrowding_plot(data, title))
   })
 
   # Handle responsive window events
@@ -398,4 +334,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

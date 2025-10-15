@@ -5,8 +5,7 @@ rsconnect::writeManifest(
   appDir = "shiny/01-dem/hh-size",                      # Current directory
   appFiles = c(                      # Files to include
     "app.R",       # Main app file
-    "b25009_data.rds",     # Data files
-    "www/styles/hfv-theme.css"
+    "b25009_data.rds"     # Data files
   ),
   appPrimaryDoc = "app.R"  # Main file
 )

@@ -9,17 +9,64 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
+library(sass)        # For SCSS compilation
 library(gdtools)
-library(gfonts)
 library(mapgl)
 library(tigris)
 library(sf)
 library(tidycensus)
+library(plotly)
 
 # =============================================================================
-# Virginia Homeownership Explorer Visualization
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
-gdtools::register_gfont(family = "Open Sans")
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -37,40 +84,180 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# Define HFV color palette (matching SCSS variables)
-hfv_colors <- list(
-  sky = "#40C0C0",           # Primary teal
-  grass = "#259591",         # Dark teal 
-  lilac = "#8B85CA",         # Purple
-  shadow = "#011E41",        # Dark navy
-  shadow_light = "#102C54",  # Lighter navy
-  berry = "#B1005F",         # Magenta
-  desert = "#E0592A"         # Orange
-)
-
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# ============================================================================= 
-# Load the data (only once)
-va_counties <- readRDS("va_co_shape.rds")
-tract_map_data <- readRDS("tract_data_simplified.rds")
-trend_data <- readRDS("trend_data.rds")
-
-# =============================================================================
-# USER INTERFACE
-# ============================================================================= 
-
+# UI for the Shiny app
 ui <- page_fillable(
   theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
-  # Add the viewport meta tag for mobile devices
+  # MOBILE OPTIMIZATION #1: Add the viewport meta tag for mobile devices
   tags$head(
     tags$meta(
       name = "viewport",
       content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     )
+  ),
+
+  # MOBILE OPTIMIZATION #2: Add CSS with media queries for responsive design
+  tags$head(
+    tags$style(HTML(
+      "
+      /* Base styles for all screen sizes */
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: auto;
+        overflow-x: hidden;
+      }
+      
+      /* Iframe optimization for 800x500 dimensions */
+      @media (max-height: 600px) {
+        .hfv-container {
+          padding: 10px !important;
+          margin: 0 auto !important;
+          max-height: 500px !important;
+          overflow: hidden !important;
+        }
+        
+        .hfv-header {
+          margin-bottom: 8px !important;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px !important;
+        }
+        
+        .girafe-container {
+          height: 280px !important;
+          min-height: 280px !important;
+        }
+        
+        body, html {
+          overflow: hidden !important;
+        }
+      }
+      
+      /* Container styles */
+      .hfv-container {
+        max-width: 1200px; 
+        margin: 0 auto; 
+        padding: 45px;
+      }
+      
+      /* Header styles */
+      .hfv-header {
+        display: flex; 
+        align-items: center; 
+        margin-bottom: 15px; 
+        border-bottom: 2px solid #40C0C0; 
+        padding-bottom: 8px;
+      }
+      
+      .hfv-header img {
+        height: 30px;
+        margin-right: 10px;
+      }
+      
+      .title-text {
+        margin: 0; 
+        color: #011E41;
+        font-size: 20px;
+      }
+      
+      /* Sidebar panel styles */
+      .hfv-sidebar {
+        background-color: #E8EDF2;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      
+      /* Map container styles */
+      .map-container {
+        width: 100%;
+        height: 450px;
+      }
+      
+      /* Plot container styles */
+      .plot-container {
+        width: 100%;
+        height: 350px;
+      }
+      
+      /* MOBILE OPTIMIZATION #3: Medium-sized screens (tablets, smaller laptops) */
+      @media (max-width: 992px) {
+        .hfv-container {
+          padding: 10px;
+        }
+        
+        .title-text {
+          font-size: 18px;
+        }
+        
+        .map-container {
+          height: 400px;
+        }
+        
+        .plot-container {
+          height: 300px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #4: Small screens (large phones, small tablets) */
+      @media (max-width: 768px) {
+        .hfv-container {
+          padding: 8px;
+          border-width: 1px;
+        }
+        
+        .title-text {
+          font-size: 16px;
+        }
+        
+        .hfv-header {
+          margin-bottom: 10px;
+        }
+        
+        .hfv-sidebar {
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        
+        .map-container {
+          height: 350px;
+        }
+        
+        .plot-container {
+          height: 250px;
+        }
+      }
+      
+      /* MOBILE OPTIMIZATION #5: Extra-small screens (phones) */
+      @media (max-width: 480px) {
+        .hfv-container {
+          padding: 5px;
+        }
+        
+        .hfv-header img {
+          height: 25px;
+        }
+        
+        .title-text {
+          font-size: 14px;
+        }
+        
+        .hfv-sidebar {
+          padding: 8px;
+        }
+        
+        .map-container {
+          height: 300px;
+        }
+        
+        .plot-container {
+          height: 200px;
+        }
+      }
+    "
+    ))
   ),
 
   # Main container with responsive padding
@@ -80,34 +267,40 @@ ui <- page_fillable(
     # Header with logo and title
     div(
       class = "hfv-header",
-      h4("Virginia Homeownership Explorer", class = "hfv-title")
+      img(
+        src = "https://housingforwardva.org/wp-content/uploads/2025/05/HousingForward-VA-Logo-Files-Icon-One-Color-RGB.png",
+        alt = "HousingForward VA Logo"
+      ),
+      h4("Virginia Homeownership Explorer", class = "title-text")
     ),
 
-    # Responsive grid layout
+    # MOBILE OPTIMIZATION #6: Responsive grid layout with different column widths for different screen sizes
     layout_columns(
       fillable = TRUE,
       col_widths = c(
+        # For larger screens (lg and up): sidebar takes 25% width, main content takes 75%
         lg = c(3, 9),
+        # For medium screens (md): sidebar takes 33% width, main content takes 67%
         md = c(4, 8),
+        # For small screens (sm and xs): full width stacked layout
         sm = c(12, 12)
       ),
 
       # Sidebar Panel
       div(
         class = "hfv-sidebar",
-        h5("Selected Location", class = "hfv-sidebar__title"),
+        h5("Selected Location", style = "margin-bottom: 10px; font-weight: bold;"),
         textOutput("selected_tract"),
         textOutput("selected_county"),
-        hr(class = "hfv-sidebar__divider"),
-        h5("About", class = "hfv-sidebar__title"),
+        hr(style = "margin: 15px 0;"),
+        h5("About", style = "margin-bottom: 10px; font-weight: bold;"),
         p("Click on any census tract to see historical homeownership rates."),
-        hr(class = "hfv-sidebar__divider"),
+        hr(style = "margin: 15px 0;"),
         div(
-          class = "hfv-sidebar__source",
+          style = "font-size: 10px; color: #666; margin-top: 8px;",
           p("Data source: US Census ACS 5-year estimates, 2010-2023")
         )
       ),
-      
       # Main Panel
       div(
         style = "width: 100%;",
@@ -115,17 +308,17 @@ ui <- page_fillable(
         # Map Section
         div(
           style = "margin-bottom: 20px;",
-          h5("Homeownership Rate by Census Tract", class = "hfv-sidebar__title"),
+          h5("Homeownership Rate by Census Tract", style = "margin-bottom: 10px; font-weight: bold;"),
           div(
-            class = "hfv-chart-container hfv-chart-container--map",
+            class = "map-container",
             # Show loading message during render
             div(
               id = "loading-content",
-              class = "hfv-chart-loading",
+              style = "position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1000;",
               div(
                 style = "background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 5px; text-align: center;",
                 h4("Loading map data..."),
-                div(class = "hfv-spinner")
+                span(class = "spinner-border", role = "status")
               )
             ),
             maplibreOutput("map_id", height = "100%")
@@ -134,10 +327,10 @@ ui <- page_fillable(
         
         # Plot Section
         div(
-          h5("Homeownership Rate Over Time", class = "hfv-sidebar__title"),
+          h5("Homeownership Rate Over Time", style = "margin-bottom: 10px; font-weight: bold;"),
           div(
-            class = "hfv-chart-container hfv-chart-container--plot",
-            girafeOutput("ho_trend_plot", height = "100%")
+            class = "plot-container",
+            plotlyOutput("ho_trend_plot", height = "100%")
           )
         )
       )
@@ -151,83 +344,99 @@ ui <- page_fillable(
   "))
 )
 
-# =============================================================================
-# SERVER FUNCTION 
-# =============================================================================
-
+# Server function
 server <- function(input, output, session) {
   
-  # Hide loading indicator when data is ready
+  # Implement lazy loading with reactiveVal
+  tract_map_data <- reactiveVal(NULL)
+  va_counties <- reactiveVal(NULL)
+  
+  # Load data in a separate reactive process to avoid blocking UI
   observe({
+    # Load counties first (smaller file)
+    va_counties(readRDS("va_co_shape.rds"))
+    
+    # Then load tract data
+    withProgress(message = 'Loading map data...', value = 0, {
+      tract_map_data(readRDS("tract_data_simplified.rds"))
+      incProgress(1)
+    })
+    
+    # Hide loading indicator when data is ready
     session$sendCustomMessage(type = 'hideLoading', message = list())
   })
 
-  # Handle responsive window events
+  # MOBILE OPTIMIZATION #8: Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
   
   # Store the selected tract 
   selected_data <- reactiveVal(NULL)
+
+  # Lazy load trend data only when needed
+  trend_data <- reactive({
+    readRDS("trend_data.rds")
+  })
   
   # Debug helper - print unique jurisdiction values in trend_data
   observe({
     message("Unique jurisdiction values in trend_data: ")
-    td <- trend_data
+    td <- trend_data()
     jurisdictions <- unique(td$jurisdiction[td$geography == "Jurisdiction"])
     message(paste(jurisdictions, collapse = ", "))
   })
   
-  # Render the map
-  output$map_id <- renderMaplibre({
-    # Use pre-loaded data
-    
-    # Create map object
-    m <- maplibre(
-      style = mapgl::carto_style("positron"),
-      bounds = tract_map_data
-    ) 
-    
-    # First add tract layer
-    m <- m %>% add_fill_layer(
-      id = "tract_data",  
-      source = tract_map_data,
-      # Viridis palette (colorblind-friendly)
-      fill_color = interpolate(
-        column = "ho_rate",
-        values = c(0, 20, 40, 60, 80, 100),
-        # Cool blues/greens to warm oranges/reds
-        stops = c("#011E41", "#259591", "#40C0C0", "#FFC658", "#E0592A", "#FF7276"),
-        na_color = "grey"
-      ),
-      fill_opacity = 0.8,
-      tooltip = "custom_tooltip" # Use custom tooltip for better info display
-    )
-    
-    # Then add county boundaries, but specify that they should appear above the tract layer
-    m <- m %>% add_line_layer(
-      id = "county_lines",
-      source = va_counties,
-      line_color = "lightgrey",
-      line_width = 1.5  # Made this slightly thicker for better visibility
-    )
-    
-    # Add legend and other elements
-    m <- m %>% add_legend(
-      "Homeownership Rate in Virginia (%)",
+ # Render the map
+output$map_id <- renderMaplibre({
+  # Wait for data to be loaded
+  req(tract_map_data(), va_counties())
+  
+  # Create map object
+  m <- maplibre(
+    style = mapgl::carto_style("positron"),
+    bounds = tract_map_data()
+  ) 
+  
+  # First add tract layer
+  m <- m %>% add_fill_layer(
+    id = "tract_data",  
+    source = tract_map_data(),
+    # Viridis palette (colorblind-friendly)
+    fill_color = interpolate(
+      column = "ho_rate",
       values = c(0, 20, 40, 60, 80, 100),
-      colors = c("#011E41", "#259591", "#40C0C0", "#FFC658", "#E0592A", "#FF7276")
-    )
-    
-    # Add geocoder
-    m <- m %>% add_geocoder_control(
-      position = "top-right", 
-      placeholder = "Enter an address"
-    )
-    
-    # Return map
-    return(m)
-  })
+      stops = c("#440154", "#414487", "#2A788E", "#22A884", "#7AD151", "#FDE725"),
+      na_color = "grey"
+    ),
+    fill_opacity = 0.8,
+    tooltip = "custom_tooltip" # Use custom tooltip for better info display
+  )
+  
+  # Then add county boundaries, but specify that they should appear above the tract layer
+  m <- m %>% add_line_layer(
+    id = "county_lines",
+    source = va_counties(),
+    line_color = "lightgrey",
+    line_width = 1.5  # Made this slightly thicker for better visibility
+  )
+  
+  # Add legend and other elements
+  m <- m %>% add_legend(
+    "Homeownership Rate in Virginia (%)",
+    values = c(0, 20, 40, 60, 80, 100),
+    colors = c("#440154", "#414487", "#2A788E", "#22A884", "#7AD151", "#FDE725")
+  )
+  
+  # Add geocoder
+  m <- m %>% add_geocoder_control(
+    position = "top-right", 
+    placeholder = "Enter an address"
+  )
+  
+  # Return map
+  return(m)
+})
   
   # Handle tract clicks using the feature_click event 
   observeEvent(input$map_id_feature_click, {
@@ -252,8 +461,8 @@ server <- function(input, output, session) {
       message("Selected GEOID: ", geoid)
       message("Selected county name: ", county_name)
       
-      # Use pre-loaded data
-      td <- trend_data
+      # Load required data
+      td <- trend_data()
       
       # Check if county name exists in trend_data
       county_exists <- county_name %in% td$jurisdiction[td$geography == "Jurisdiction"]
@@ -340,58 +549,40 @@ server <- function(input, output, session) {
     }
   })
   
-  # Create plot with ggiraph instead of plotly
-  output$ho_trend_plot <- renderGirafe({
+  # Create plot with better structure
+  output$ho_trend_plot <- renderPlotly({
     data <- selected_data()
     
     if (is.null(data)) {
-      # Return an empty plot with a message
+      # Return an empty plot with a message using ggplot
       empty_plot <- ggplot() + 
-        annotate("text", x = 0.5, y = 0.5, 
-                 label = "Click on a tract to see historical data", 
-                 size = 4) +
+        annotate("text", x = 0.5, y = 0.5, label = "Click on a tract to see historical data", size = 4) +
         theme_void()
       
-      girafe(ggobj = empty_plot,
-             width_svg = 8,
-             height_svg = 4)
+      ggplotly(empty_plot) %>%
+        layout(
+          xaxis = list(showticklabels = FALSE, showgrid = FALSE, zeroline = FALSE),
+          yaxis = list(showticklabels = FALSE, showgrid = FALSE, zeroline = FALSE)
+        )
     } else {
       plot_data <- data$trend_data
       
       # Check if we have valid data
       if (!is.null(plot_data) && nrow(plot_data) > 0) {
-        # Create interactive ggplot with ggiraph
+        # Create plot with the combined data
         p <- ggplot(plot_data, 
-                    aes(x = year, 
-                        y = ho_rate, 
-                        color = level,
-                        group = level)) +
-          geom_line_interactive(
-            aes(tooltip = paste0(level, "\n",
-                                 "Year: ", year, "\n",
-                                 "Rate: ", round(ho_rate, 1), "%"),
-                data_id = level),
-            size = 1, 
-            na.rm = TRUE
-          ) +
-          geom_point_interactive(
-            aes(tooltip = paste0(level, "\n",
-                                 "Year: ", year, "\n", 
-                                 "Rate: ", round(ho_rate, 1), "%"),
-                data_id = level),
-            size = 3, 
-            na.rm = TRUE
-          ) +
+          aes(
+            x = year, 
+            y = ho_rate, 
+            color = level)) +
+          geom_line(size = 1, na.rm = TRUE) +
+          geom_point(size = 3, na.rm = TRUE) +
           scale_color_manual(
-            values = c("Census Tract" = "#011E41", 
-                       "Jurisdiction" = "#8B85CA", 
-                       "Virginia" = "#40C0C0"),
+            values = c("Census Tract" = "#0066CC", "Jurisdiction" = "#FF6600", "Virginia" = "#009933"),
             name = ""
           ) +
           labs(
-            title = paste("Homeownership Rate for", data$county_name, "-", data$tract_name),
-            x = NULL,
-            y = NULL
+            title = paste("Homeownership Rate for", data$county_name, "-", data$tract_name)
           ) +
           theme_minimal(base_family = "Open Sans") +
           theme(
@@ -403,41 +594,28 @@ server <- function(input, output, session) {
             plot.title = element_text(size = 14, face = "bold"),
             plot.title.position = "plot"
           ) +
-          scale_y_continuous(labels = scales::percent_format(scale = 1), 
-                             limits = c(20, 100))
+          scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(20,100))
         
-        # Convert to interactive plot with ggiraph
-        girafe(
-          ggobj = p,
-          width_svg = 8,
-          height_svg = 4,
-          options = list(
-            opts_hover(css = "stroke-width:2; opacity:1;"),
-            opts_hover_inv(css = "opacity:0.4;"),
-            opts_tooltip(
-              css = "background-color:white; padding:5px; border-radius:3px; border:1px solid #ccc; font-size:12px;",
-              use_fill = FALSE
-            ),
-        opts_sizing(rescale = TRUE),
-        opts_toolbar(hidden = c("lasso_select", "lasso_deselect"))
-      ),
-      fonts = list(
-        addGFontHtmlDependency(family = "Open Sans"),
-        addGFontHtmlDependency(family = "Poppins")
+        # Convert ggplot to plotly - the simple solution
+        ggplotly(p, tooltip = c("x", "y", "color")) %>%
+          layout(
+            autosize = TRUE,
+            margin = list(l = 50, r = 50, b = 80, t = 75, pad = 4),
+            legend = list(orientation = "h", y = -0.5, x = 0.5, xanchor = "center")
           )
-        )
       } else {
         # No valid data available for the plot
         no_data_plot <- ggplot() + 
           annotate("text", x = 0.5, y = 0.5, 
-                   label = paste("No historical data available for", 
-                                 data$county_name, "-", data$tract_name), 
+                   label = paste("No historical data available for", data$county_name, "-", data$tract_name), 
                    size = 4) +
           theme_void()
         
-        girafe(ggobj = no_data_plot,
-               width_svg = 8,
-               height_svg = 4)
+        ggplotly(no_data_plot) %>%
+          layout(
+            xaxis = list(showticklabels = FALSE, showgrid = FALSE, zeroline = FALSE),
+            yaxis = list(showticklabels = FALSE, showgrid = FALSE, zeroline = FALSE)
+          )
       }
     }
   })

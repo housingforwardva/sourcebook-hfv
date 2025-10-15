@@ -3712,13 +3712,10 @@
   },
   "files": {
     "app.R": {
-      "checksum": "85af3911e13a3ba50e19f1e12bb251a2"
+      "checksum": "2baf8a7c316004965a8aa7edca65d320"
     },
     "total_pop.rds": {
       "checksum": "5ea9e37aa99f2aee08915d3936302248"
-    },
-    "www/styles/hfv-theme.css": {
-      "checksum": "09489c5365701b67ca00f33557e15d28"
     }
   },
   "users": null

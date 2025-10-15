@@ -104,6 +104,29 @@
         "Built": "R 4.5.1; aarch64-apple-darwin20; 2025-06-14 01:29:52 UTC; unix"
       }
     },
+    "PKI": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "PKI",
+        "Version": "0.1-14",
+        "Title": "Public Key Infrastucture for R Based on the X.509 Standard",
+        "Author": "Simon Urbanek <Simon.Urbanek@r-project.org>",
+        "Maintainer": "Simon Urbanek <Simon.Urbanek@r-project.org>",
+        "Depends": "R (>= 2.9.0), base64enc",
+        "Enhances": "gmp",
+        "Description": "Public Key Infrastucture functions such as verifying certificates, RSA encription and signing which can be used to build PKI infrastructure and perform cryptographic tasks.",
+        "License": "GPL-2 | GPL-3 | file LICENSE",
+        "URL": "http://www.rforge.net/PKI",
+        "SystemRequirements": "OpenSSL library and headers (openssl-dev or\nsimilar)",
+        "NeedsCompilation": "yes",
+        "Packaged": "2024-06-15 19:22:05 UTC; rforge",
+        "Repository": "CRAN",
+        "Date/Publication": "2024-06-15 19:40:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 01:51:35 UTC; unix",
+        "Archs": "PKI.so.dSYM"
+      }
+    },
     "R6": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -178,6 +201,35 @@
         "Date/Publication": "2025-07-02 16:40:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-07-04 07:28:39 UTC; unix",
         "Archs": "Rcpp.so.dSYM"
+      }
+    },
+    "RcppTOML": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "RcppTOML",
+        "Type": "Package",
+        "Title": "'Rcpp' Bindings to Parser for \"Tom's Obvious Markup Language\"",
+        "Version": "0.2.3",
+        "Date": "2025-03-08",
+        "Authors@R": "c(person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\", \"cre\"), email = \"edd@debian.org\",\n                    comment = c(ORCID = \"0000-0001-6419-907X\")),\n             person(\"Mark\", \"Gillard\", role = \"aut\",\n                    comment = \"Author of 'toml++' header library\"))",
+        "Description": "The configuration format defined by 'TOML' (which expands to\n \"Tom's Obvious Markup Language\") specifies an excellent format\n (described at <https://toml.io/en/>) suitable for both human editing\n as well as the common uses of a machine-readable format. This package\n uses 'Rcpp' to connect to the 'toml++' parser written by Mark Gillard\n to R.",
+        "SystemRequirements": "A C++17 compiler",
+        "BugReports": "https://github.com/eddelbuettel/rcpptoml/issues",
+        "URL": "http://dirk.eddelbuettel.com/code/rcpp.toml.html",
+        "Imports": "Rcpp (>= 1.0.8)",
+        "Depends": "R (>= 3.3.0)",
+        "LinkingTo": "Rcpp",
+        "Suggests": "tinytest",
+        "License": "GPL (>= 2)",
+        "NeedsCompilation": "yes",
+        "Packaged": "2025-03-08 13:54:57 UTC; edd",
+        "Author": "Dirk Eddelbuettel [aut, cre] (<https://orcid.org/0000-0001-6419-907X>),\n  Mark Gillard [aut] (Author of 'toml++' header library)",
+        "Maintainer": "Dirk Eddelbuettel <edd@debian.org>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-08 14:30:06 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 22:01:30 UTC; unix",
+        "Archs": "RcppTOML.so.dSYM"
       }
     },
     "askpass": {
@@ -341,7 +393,13 @@
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
         "Repository": "CRAN",
         "Date/Publication": "2023-03-17 12:00:06 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 11:57:29 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 11:57:29 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "blob",
+        "RemoteRef": "blob",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.2.4"
       }
     },
     "broom": {
@@ -351,30 +409,35 @@
         "Type": "Package",
         "Package": "broom",
         "Title": "Convert Statistical Objects into Tidy Tibbles",
-        "Version": "1.0.9",
-        "Authors@R": "c(\n    person(\"David\", \"Robinson\", , \"admiral.david@gmail.com\", role = \"aut\"),\n    person(\"Alex\", \"Hayes\", , \"alexpghayes@gmail.com\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-4985-5160\")),\n    person(\"Simon\", \"Couch\", , \"simon.couch@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0001-5676-5107\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\")),\n    person(\"Indrajeet\", \"Patil\", , \"patilindrajeet.science@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-1995-6531\")),\n    person(\"Derek\", \"Chiu\", , \"dchiu@bccrc.ca\", role = \"ctb\"),\n    person(\"Matthieu\", \"Gomez\", , \"mattg@princeton.edu\", role = \"ctb\"),\n    person(\"Boris\", \"Demeshev\", , \"boris.demeshev@gmail.com\", role = \"ctb\"),\n    person(\"Dieter\", \"Menne\", , \"dieter.menne@menne-biomed.de\", role = \"ctb\"),\n    person(\"Benjamin\", \"Nutter\", , \"nutter@battelle.org\", role = \"ctb\"),\n    person(\"Luke\", \"Johnston\", , \"luke.johnston@mail.utoronto.ca\", role = \"ctb\"),\n    person(\"Ben\", \"Bolker\", , \"bolker@mcmaster.ca\", role = \"ctb\"),\n    person(\"Francois\", \"Briatte\", , \"f.briatte@gmail.com\", role = \"ctb\"),\n    person(\"Jeffrey\", \"Arnold\", , \"jeffrey.arnold@gmail.com\", role = \"ctb\"),\n    person(\"Jonah\", \"Gabry\", , \"jsg2201@columbia.edu\", role = \"ctb\"),\n    person(\"Luciano\", \"Selzer\", , \"luciano.selzer@gmail.com\", role = \"ctb\"),\n    person(\"Gavin\", \"Simpson\", , \"ucfagls@gmail.com\", role = \"ctb\"),\n    person(\"Jens\", \"Preussner\", , \"jens.preussner@mpi-bn.mpg.de\", role = \"ctb\"),\n    person(\"Jay\", \"Hesselberth\", , \"jay.hesselberth@gmail.com\", role = \"ctb\"),\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = \"ctb\"),\n    person(\"Matthew\", \"Lincoln\", , \"matthew.d.lincoln@gmail.com\", role = \"ctb\"),\n    person(\"Alessandro\", \"Gasparini\", , \"ag475@leicester.ac.uk\", role = \"ctb\"),\n    person(\"Lukasz\", \"Komsta\", , \"lukasz.komsta@umlub.pl\", role = \"ctb\"),\n    person(\"Frederick\", \"Novometsky\", role = \"ctb\"),\n    person(\"Wilson\", \"Freitas\", role = \"ctb\"),\n    person(\"Michelle\", \"Evans\", role = \"ctb\"),\n    person(\"Jason Cory\", \"Brunson\", , \"cornelioid@gmail.com\", role = \"ctb\"),\n    person(\"Simon\", \"Jackson\", , \"drsimonjackson@gmail.com\", role = \"ctb\"),\n    person(\"Ben\", \"Whalley\", , \"ben.whalley@plymouth.ac.uk\", role = \"ctb\"),\n    person(\"Karissa\", \"Whiting\", , \"karissa.whiting@gmail.com\", role = \"ctb\"),\n    person(\"Yves\", \"Rosseel\", , \"yrosseel@gmail.com\", role = \"ctb\"),\n    person(\"Michael\", \"Kuehn\", , \"mkuehn10@gmail.com\", role = \"ctb\"),\n    person(\"Jorge\", \"Cimentada\", , \"cimentadaj@gmail.com\", role = \"ctb\"),\n    person(\"Erle\", \"Holgersen\", , \"erle.holgersen@gmail.com\", role = \"ctb\"),\n    person(\"Karl\", \"Dunkle Werner\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-0523-7309\")),\n    person(\"Ethan\", \"Christensen\", , \"christensen.ej@gmail.com\", role = \"ctb\"),\n    person(\"Steven\", \"Pav\", , \"shabbychef@gmail.com\", role = \"ctb\"),\n    person(\"Paul\", \"PJ\", , \"pjpaul.stephens@gmail.com\", role = \"ctb\"),\n    person(\"Ben\", \"Schneider\", , \"benjamin.julius.schneider@gmail.com\", role = \"ctb\"),\n    person(\"Patrick\", \"Kennedy\", , \"pkqstr@protonmail.com\", role = \"ctb\"),\n    person(\"Lily\", \"Medina\", , \"lilymiru@gmail.com\", role = \"ctb\"),\n    person(\"Brian\", \"Fannin\", , \"captain@pirategrunt.com\", role = \"ctb\"),\n    person(\"Jason\", \"Muhlenkamp\", , \"jason.muhlenkamp@gmail.com\", role = \"ctb\"),\n    person(\"Matt\", \"Lehman\", role = \"ctb\"),\n    person(\"Bill\", \"Denney\", , \"wdenney@humanpredictions.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-5759-428X\")),\n    person(\"Nic\", \"Crane\", role = \"ctb\"),\n    person(\"Andrew\", \"Bates\", role = \"ctb\"),\n    person(\"Vincent\", \"Arel-Bundock\", , \"vincent.arel-bundock@umontreal.ca\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-2042-7063\")),\n    person(\"Hideaki\", \"Hayashi\", role = \"ctb\"),\n    person(\"Luis\", \"Tobalina\", role = \"ctb\"),\n    person(\"Annie\", \"Wang\", , \"anniewang.uc@gmail.com\", role = \"ctb\"),\n    person(\"Wei Yang\", \"Tham\", , \"weiyang.tham@gmail.com\", role = \"ctb\"),\n    person(\"Clara\", \"Wang\", , \"clara.wang.94@gmail.com\", role = \"ctb\"),\n    person(\"Abby\", \"Smith\", , \"als1@u.northwestern.edu\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-3207-0375\")),\n    person(\"Jasper\", \"Cooper\", , \"jaspercooper@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-8639-3188\")),\n    person(\"E Auden\", \"Krauska\", , \"krauskae@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-1466-5850\")),\n    person(\"Alex\", \"Wang\", , \"x249wang@uwaterloo.ca\", role = \"ctb\"),\n    person(\"Malcolm\", \"Barrett\", , \"malcolmbarrett@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-0299-5825\")),\n    person(\"Charles\", \"Gray\", , \"charlestigray@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-9978-011X\")),\n    person(\"Jared\", \"Wilber\", role = \"ctb\"),\n    person(\"Vilmantas\", \"Gegzna\", , \"GegznaV@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-9500-5167\")),\n    person(\"Eduard\", \"Szoecs\", , \"eduardszoecs@gmail.com\", role = \"ctb\"),\n    person(\"Frederik\", \"Aust\", , \"frederik.aust@uni-koeln.de\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-4900-788X\")),\n    person(\"Angus\", \"Moore\", , \"angusmoore9@gmail.com\", role = \"ctb\"),\n    person(\"Nick\", \"Williams\", , \"ntwilliams.personal@gmail.com\", role = \"ctb\"),\n    person(\"Marius\", \"Barth\", , \"marius.barth.uni.koeln@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-3421-6665\")),\n    person(\"Bruna\", \"Wundervald\", , \"brunadaviesw@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-8163-220X\")),\n    person(\"Joyce\", \"Cahoon\", , \"joyceyu48@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-7217-4702\")),\n    person(\"Grant\", \"McDermott\", , \"grantmcd@uoregon.edu\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-7883-8573\")),\n    person(\"Kevin\", \"Zarca\", , \"kevin.zarca@gmail.com\", role = \"ctb\"),\n    person(\"Shiro\", \"Kuriwaki\", , \"shirokuriwaki@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-5687-2647\")),\n    person(\"Lukas\", \"Wallrich\", , \"lukas.wallrich@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-2121-5177\")),\n    person(\"James\", \"Martherus\", , \"james@martherus.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-8285-3300\")),\n    person(\"Chuliang\", \"Xiao\", , \"cxiao@umich.edu\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-8466-9398\")),\n    person(\"Joseph\", \"Larmarange\", , \"joseph@larmarange.net\", role = \"ctb\"),\n    person(\"Max\", \"Kuhn\", , \"max@posit.co\", role = \"ctb\"),\n    person(\"Michal\", \"Bojanowski\", , \"michal2992@gmail.com\", role = \"ctb\"),\n    person(\"Hakon\", \"Malmedal\", , \"hmalmedal@gmail.com\", role = \"ctb\"),\n    person(\"Clara\", \"Wang\", role = \"ctb\"),\n    person(\"Sergio\", \"Oller\", , \"sergioller@gmail.com\", role = \"ctb\"),\n    person(\"Luke\", \"Sonnet\", , \"luke.sonnet@gmail.com\", role = \"ctb\"),\n    person(\"Jim\", \"Hester\", , \"jim.hester@posit.co\", role = \"ctb\"),\n    person(\"Ben\", \"Schneider\", , \"benjamin.julius.schneider@gmail.com\", role = \"ctb\"),\n    person(\"Bernie\", \"Gray\", , \"bfgray3@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-9190-6032\")),\n    person(\"Mara\", \"Averick\", , \"mara@posit.co\", role = \"ctb\"),\n    person(\"Aaron\", \"Jacobs\", , \"atheriel@gmail.com\", role = \"ctb\"),\n    person(\"Andreas\", \"Bender\", , \"bender.at.R@gmail.com\", role = \"ctb\"),\n    person(\"Sven\", \"Templer\", , \"sven.templer@gmail.com\", role = \"ctb\"),\n    person(\"Paul-Christian\", \"Buerkner\", , \"paul.buerkner@gmail.com\", role = \"ctb\"),\n    person(\"Matthew\", \"Kay\", , \"mjskay@umich.edu\", role = \"ctb\"),\n    person(\"Erwan\", \"Le Pennec\", , \"lepennec@gmail.com\", role = \"ctb\"),\n    person(\"Johan\", \"Junkka\", , \"johan.junkka@umu.se\", role = \"ctb\"),\n    person(\"Hao\", \"Zhu\", , \"haozhu233@gmail.com\", role = \"ctb\"),\n    person(\"Benjamin\", \"Soltoff\", , \"soltoffbc@uchicago.edu\", role = \"ctb\"),\n    person(\"Zoe\", \"Wilkinson Saldana\", , \"zoewsaldana@gmail.com\", role = \"ctb\"),\n    person(\"Tyler\", \"Littlefield\", , \"tylurp1@gmail.com\", role = \"ctb\"),\n    person(\"Charles T.\", \"Gray\", , \"charlestigray@gmail.com\", role = \"ctb\"),\n    person(\"Shabbh E.\", \"Banks\", role = \"ctb\"),\n    person(\"Serina\", \"Robinson\", , \"robi0916@umn.edu\", role = \"ctb\"),\n    person(\"Roger\", \"Bivand\", , \"Roger.Bivand@nhh.no\", role = \"ctb\"),\n    person(\"Riinu\", \"Ots\", , \"riinuots@gmail.com\", role = \"ctb\"),\n    person(\"Nicholas\", \"Williams\", , \"ntwilliams.personal@gmail.com\", role = \"ctb\"),\n    person(\"Nina\", \"Jakobsen\", role = \"ctb\"),\n    person(\"Michael\", \"Weylandt\", , \"michael.weylandt@gmail.com\", role = \"ctb\"),\n    person(\"Lisa\", \"Lendway\", , \"llendway@macalester.edu\", role = \"ctb\"),\n    person(\"Karl\", \"Hailperin\", , \"khailper@gmail.com\", role = \"ctb\"),\n    person(\"Josue\", \"Rodriguez\", , \"jerrodriguez@ucdavis.edu\", role = \"ctb\"),\n    person(\"Jenny\", \"Bryan\", , \"jenny@posit.co\", role = \"ctb\"),\n    person(\"Chris\", \"Jarvis\", , \"Christopher1.jarvis@gmail.com\", role = \"ctb\"),\n    person(\"Greg\", \"Macfarlane\", , \"gregmacfarlane@gmail.com\", role = \"ctb\"),\n    person(\"Brian\", \"Mannakee\", , \"bmannakee@gmail.com\", role = \"ctb\"),\n    person(\"Drew\", \"Tyre\", , \"atyre2@unl.edu\", role = \"ctb\"),\n    person(\"Shreyas\", \"Singh\", , \"shreyas.singh.298@gmail.com\", role = \"ctb\"),\n    person(\"Laurens\", \"Geffert\", , \"laurensgeffert@gmail.com\", role = \"ctb\"),\n    person(\"Hong\", \"Ooi\", , \"hongooi@microsoft.com\", role = \"ctb\"),\n    person(\"Henrik\", \"Bengtsson\", , \"henrikb@braju.com\", role = \"ctb\"),\n    person(\"Eduard\", \"Szocs\", , \"eduardszoecs@gmail.com\", role = \"ctb\"),\n    person(\"David\", \"Hugh-Jones\", , \"davidhughjones@gmail.com\", role = \"ctb\"),\n    person(\"Matthieu\", \"Stigler\", , \"Matthieu.Stigler@gmail.com\", role = \"ctb\"),\n    person(\"Hugo\", \"Tavares\", , \"hm533@cam.ac.uk\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-9373-2726\")),\n    person(\"R. Willem\", \"Vervoort\", , \"Willemvervoort@gmail.com\", role = \"ctb\"),\n    person(\"Brenton M.\", \"Wiernik\", , \"brenton@wiernik.org\", role = \"ctb\"),\n    person(\"Josh\", \"Yamamoto\", , \"joshuayamamoto5@gmail.com\", role = \"ctb\"),\n    person(\"Jasme\", \"Lee\", role = \"ctb\"),\n    person(\"Taren\", \"Sanders\", , \"taren.sanders@acu.edu.au\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-4504-6008\")),\n    person(\"Ilaria\", \"Prosdocimi\", , \"prosdocimi.ilaria@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0001-8565-094X\")),\n    person(\"Daniel D.\", \"Sjoberg\", , \"danield.sjoberg@gmail.com\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0003-0862-2018\")),\n    person(\"Alex\", \"Reinhart\", , \"areinhar@stat.cmu.edu\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-6658-514X\"))\n  )",
-        "Description": "Summarizes key information about statistical objects in tidy\n    tibbles. This makes it easy to report results, create plots and\n    consistently work with large numbers of models at once.  Broom\n    provides three verbs that each provide different types of information\n    about a model. tidy() summarizes information about model components\n    such as coefficients of a regression. glance() reports information\n    about an entire model, such as goodness of fit measures like AIC and\n    BIC. augment() adds information about individual observations to a\n    dataset, such as fitted values or influence measures.",
+        "Version": "1.0.8",
+        "Authors@R": "\n    c(person(given = \"David\",\n             family = \"Robinson\",\n             role = \"aut\",\n             email = \"admiral.david@gmail.com\"),\n      person(given = \"Alex\",\n             family = \"Hayes\",\n             role = \"aut\",\n             email = \"alexpghayes@gmail.com\",\n             comment = c(ORCID = \"0000-0002-4985-5160\")),\n      person(given = \"Simon\",\n             family = \"Couch\",\n             role = c(\"aut\", \"cre\"),\n             email = \"simon.couch@posit.co\",\n             comment = c(ORCID = \"0000-0001-5676-5107\")),\n      person(given = \"Posit Software, PBC\", role = c(\"cph\", \"fnd\")),\n      person(given = \"Indrajeet\",\n             family = \"Patil\",\n             role = \"ctb\",\n             email = \"patilindrajeet.science@gmail.com\",\n             comment = c(ORCID = \"0000-0003-1995-6531\")),\n      person(given = \"Derek\",\n             family = \"Chiu\",\n             role = \"ctb\",\n             email = \"dchiu@bccrc.ca\"),\n      person(given = \"Matthieu\",\n             family = \"Gomez\",\n             role = \"ctb\",\n             email = \"mattg@princeton.edu\"),\n      person(given = \"Boris\",\n             family = \"Demeshev\",\n             role = \"ctb\",\n             email = \"boris.demeshev@gmail.com\"),\n      person(given = \"Dieter\",\n             family = \"Menne\",\n             role = \"ctb\",\n             email = \"dieter.menne@menne-biomed.de\"),\n      person(given = \"Benjamin\",\n             family = \"Nutter\",\n             role = \"ctb\",\n             email = \"nutter@battelle.org\"),\n      person(given = \"Luke\",\n             family = \"Johnston\",\n             role = \"ctb\",\n             email = \"luke.johnston@mail.utoronto.ca\"),\n      person(given = \"Ben\",\n             family = \"Bolker\",\n             role = \"ctb\",\n             email = \"bolker@mcmaster.ca\"),\n      person(given = \"Francois\",\n             family = \"Briatte\",\n             role = \"ctb\",\n             email = \"f.briatte@gmail.com\"),\n      person(given = \"Jeffrey\",\n             family = \"Arnold\",\n             role = \"ctb\",\n             email = \"jeffrey.arnold@gmail.com\"),\n      person(given = \"Jonah\",\n             family = \"Gabry\",\n             role = \"ctb\",\n             email = \"jsg2201@columbia.edu\"),\n      person(given = \"Luciano\",\n             family = \"Selzer\",\n             role = \"ctb\",\n             email = \"luciano.selzer@gmail.com\"),\n      person(given = \"Gavin\",\n             family = \"Simpson\",\n             role = \"ctb\",\n             email = \"ucfagls@gmail.com\"),\n      person(given = \"Jens\",\n             family = \"Preussner\",\n             role = \"ctb\",\n             email = \" jens.preussner@mpi-bn.mpg.de\"),\n      person(given = \"Jay\",\n             family = \"Hesselberth\",\n             role = \"ctb\",\n             email = \"jay.hesselberth@gmail.com\"),\n      person(given = \"Hadley\",\n             family = \"Wickham\",\n             role = \"ctb\",\n             email = \"hadley@posit.co\"),\n      person(given = \"Matthew\",\n             family = \"Lincoln\",\n             role = \"ctb\",\n             email = \"matthew.d.lincoln@gmail.com\"),\n      person(given = \"Alessandro\",\n             family = \"Gasparini\",\n             role = \"ctb\",\n             email = \"ag475@leicester.ac.uk\"),\n      person(given = \"Lukasz\",\n             family = \"Komsta\",\n             role = \"ctb\",\n             email = \"lukasz.komsta@umlub.pl\"),\n      person(given = \"Frederick\",\n             family = \"Novometsky\",\n             role = \"ctb\"),\n      person(given = \"Wilson\",\n             family = \"Freitas\",\n             role = \"ctb\"),\n      person(given = \"Michelle\",\n             family = \"Evans\",\n             role = \"ctb\"),\n      person(given = \"Jason Cory\",\n             family = \"Brunson\",\n             role = \"ctb\",\n             email = \"cornelioid@gmail.com\"),\n      person(given = \"Simon\",\n             family = \"Jackson\",\n             role = \"ctb\",\n             email = \"drsimonjackson@gmail.com\"),\n      person(given = \"Ben\",\n             family = \"Whalley\",\n             role = \"ctb\",\n             email = \"ben.whalley@plymouth.ac.uk\"),\n      person(given = \"Karissa\",\n             family = \"Whiting\",\n             role = \"ctb\",\n             email = \"karissa.whiting@gmail.com\"),\n      person(given = \"Yves\",\n             family = \"Rosseel\",\n             role = \"ctb\",\n             email = \"yrosseel@gmail.com\"),\n      person(given = \"Michael\",\n             family = \"Kuehn\",\n             role = \"ctb\",\n             email = \"mkuehn10@gmail.com\"),\n      person(given = \"Jorge\",\n             family = \"Cimentada\",\n             role = \"ctb\",\n             email = \"cimentadaj@gmail.com\"),\n      person(given = \"Erle\",\n             family = \"Holgersen\",\n             role = \"ctb\",\n             email = \"erle.holgersen@gmail.com\"),\n      person(given = \"Karl\",\n             family = \"Dunkle Werner\",\n             role = \"ctb\",\n             comment = c(ORCID = \"0000-0003-0523-7309\")),\n      person(given = \"Ethan\",\n             family = \"Christensen\",\n             role = \"ctb\",\n             email = \"christensen.ej@gmail.com\"),\n      person(given = \"Steven\",\n             family = \"Pav\",\n             role = \"ctb\",\n             email = \"shabbychef@gmail.com\"),\n      person(given = \"Paul\",\n             family = \"PJ\",\n             role = \"ctb\",\n             email = \"pjpaul.stephens@gmail.com\"),\n      person(given = \"Ben\",\n             family = \"Schneider\",\n             role = \"ctb\",\n             email = \"benjamin.julius.schneider@gmail.com\"),\n      person(given = \"Patrick\",\n             family = \"Kennedy\",\n             role = \"ctb\",\n             email = \"pkqstr@protonmail.com\"),\n      person(given = \"Lily\",\n             family = \"Medina\",\n             role = \"ctb\",\n             email = \"lilymiru@gmail.com\"),\n      person(given = \"Brian\",\n             family = \"Fannin\",\n             role = \"ctb\",\n             email = \"captain@pirategrunt.com\"),\n      person(given = \"Jason\",\n             family = \"Muhlenkamp\",\n             role = \"ctb\",\n             email = \"jason.muhlenkamp@gmail.com\"),\n      person(given = \"Matt\",\n             family = \"Lehman\",\n             role = \"ctb\"),\n      person(given = \"Bill\",\n             family = \"Denney\",\n             role = \"ctb\",\n             email = \"wdenney@humanpredictions.com\",\n             comment = c(ORCID = \"0000-0002-5759-428X\")),\n      person(given = \"Nic\",\n             family = \"Crane\",\n             role = \"ctb\"),\n      person(given = \"Andrew\",\n             family = \"Bates\",\n             role = \"ctb\"),\n      person(given = \"Vincent\",\n             family = \"Arel-Bundock\",\n             role = \"ctb\",\n             email = \"vincent.arel-bundock@umontreal.ca\",\n             comment = c(ORCID = \"0000-0003-2042-7063\")),\n      person(given = \"Hideaki\",\n             family = \"Hayashi\",\n             role = \"ctb\"),\n      person(given = \"Luis\",\n             family = \"Tobalina\",\n             role = \"ctb\"),\n      person(given = \"Annie\",\n             family = \"Wang\",\n             role = \"ctb\",\n             email = \"anniewang.uc@gmail.com\"),\n      person(given = \"Wei Yang\",\n             family = \"Tham\",\n             role = \"ctb\",\n             email = \"weiyang.tham@gmail.com\"),\n      person(given = \"Clara\",\n             family = \"Wang\",\n             role = \"ctb\",\n             email = \"clara.wang.94@gmail.com\"),\n      person(given = \"Abby\",\n             family = \"Smith\",\n             role = \"ctb\",\n             email = \"als1@u.northwestern.edu\",\n             comment = c(ORCID = \"0000-0002-3207-0375\")),\n      person(given = \"Jasper\",\n             family = \"Cooper\",\n             role = \"ctb\",\n             email = \"jaspercooper@gmail.com\",\n             comment = c(ORCID = \"0000-0002-8639-3188\")),\n      person(given = \"E Auden\",\n             family = \"Krauska\",\n             role = \"ctb\",\n             email = \"krauskae@gmail.com\",\n             comment = c(ORCID = \"0000-0002-1466-5850\")),\n      person(given = \"Alex\",\n             family = \"Wang\",\n             role = \"ctb\",\n             email = \"x249wang@uwaterloo.ca\"),\n      person(given = \"Malcolm\",\n             family = \"Barrett\",\n             role = \"ctb\",\n             email = \"malcolmbarrett@gmail.com\",\n             comment = c(ORCID = \"0000-0003-0299-5825\")),\n      person(given = \"Charles\",\n             family = \"Gray\",\n             role = \"ctb\",\n             email = \"charlestigray@gmail.com\",\n             comment = c(ORCID = \"0000-0002-9978-011X\")),\n      person(given = \"Jared\",\n             family = \"Wilber\",\n             role = \"ctb\"),\n      person(given = \"Vilmantas\",\n             family = \"Gegzna\",\n             role = \"ctb\",\n             email = \"GegznaV@gmail.com\",\n             comment = c(ORCID = \"0000-0002-9500-5167\")),\n      person(given = \"Eduard\",\n             family = \"Szoecs\",\n             role = \"ctb\",\n             email = \"eduardszoecs@gmail.com\"),\n      person(given = \"Frederik\",\n             family = \"Aust\",\n             role = \"ctb\",\n             email = \"frederik.aust@uni-koeln.de\",\n             comment = c(ORCID = \"0000-0003-4900-788X\")),\n      person(given = \"Angus\",\n             family = \"Moore\",\n             role = \"ctb\",\n             email = \"angusmoore9@gmail.com\"),\n      person(given = \"Nick\",\n             family = \"Williams\",\n             role = \"ctb\",\n             email = \"ntwilliams.personal@gmail.com\"),\n      person(given = \"Marius\",\n             family = \"Barth\",\n             role = \"ctb\",\n             email = \"marius.barth.uni.koeln@gmail.com\",\n             comment = c(ORCID = \"0000-0002-3421-6665\")),\n      person(given = \"Bruna\",\n             family = \"Wundervald\",\n             role = \"ctb\",\n             email = \"brunadaviesw@gmail.com\",\n             comment = c(ORCID = \"0000-0001-8163-220X\")),\n      person(given = \"Joyce\",\n             family = \"Cahoon\",\n             role = \"ctb\",\n             email = \"joyceyu48@gmail.com\",\n             comment = c(ORCID = \"0000-0001-7217-4702\")),\n      person(given = \"Grant\",\n             family = \"McDermott\",\n             role = \"ctb\",\n             email = \"grantmcd@uoregon.edu\",\n             comment = c(ORCID = \"0000-0001-7883-8573\")),\n      person(given = \"Kevin\",\n             family = \"Zarca\",\n             role = \"ctb\",\n             email = \"kevin.zarca@gmail.com\"),\n      person(given = \"Shiro\",\n             family = \"Kuriwaki\",\n             role = \"ctb\",\n             email = \"shirokuriwaki@gmail.com\",\n             comment = c(ORCID = \"0000-0002-5687-2647\")),\n      person(given = \"Lukas\",\n             family = \"Wallrich\",\n             role = \"ctb\",\n             email = \"lukas.wallrich@gmail.com\",\n             comment = c(ORCID = \"0000-0003-2121-5177\")),\n      person(given = \"James\",\n             family = \"Martherus\",\n             role = \"ctb\",\n             email = \"james@martherus.com\",\n             comment = c(ORCID = \"0000-0002-8285-3300\")),\n      person(given = \"Chuliang\",\n             family = \"Xiao\",\n             role = \"ctb\",\n             email = \"cxiao@umich.edu\",\n             comment = c(ORCID = \"0000-0002-8466-9398\")),\n      person(given = \"Joseph\",\n             family = \"Larmarange\",\n             role = \"ctb\",\n             email = \"joseph@larmarange.net\"),\n      person(given = \"Max\",\n             family = \"Kuhn\",\n             role = \"ctb\",\n             email = \"max@posit.co\"),\n      person(given = \"Michal\",\n             family = \"Bojanowski\",\n             role = \"ctb\",\n             email = \"michal2992@gmail.com\"),\n      person(given = \"Hakon\",\n             family = \"Malmedal\",\n             role = \"ctb\",\n             email = \"hmalmedal@gmail.com\"),\n      person(given = \"Clara\",\n             family = \"Wang\",\n             role = \"ctb\"),\n      person(given = \"Sergio\",\n             family = \"Oller\",\n             role = \"ctb\",\n             email = \"sergioller@gmail.com\"),\n      person(given = \"Luke\",\n             family = \"Sonnet\",\n             role = \"ctb\",\n             email = \"luke.sonnet@gmail.com\"),\n      person(given = \"Jim\",\n             family = \"Hester\",\n             role = \"ctb\",\n             email = \"jim.hester@posit.co\"),\n      person(given = \"Ben\",\n             family = \"Schneider\",\n             role = \"ctb\",\n             email = \"benjamin.julius.schneider@gmail.com\"),\n      person(given = \"Bernie\",\n             family = \"Gray\",\n             role = \"ctb\",\n             email = \"bfgray3@gmail.com\",\n             comment = c(ORCID = \"0000-0001-9190-6032\")),\n      person(given = \"Mara\",\n             family = \"Averick\",\n             role = \"ctb\",\n             email = \"mara@posit.co\"),\n      person(given = \"Aaron\",\n             family = \"Jacobs\",\n             role = \"ctb\",\n             email = \"atheriel@gmail.com\"),\n      person(given = \"Andreas\",\n             family = \"Bender\",\n             role = \"ctb\",\n             email = \"bender.at.R@gmail.com\"),\n      person(given = \"Sven\",\n             family = \"Templer\",\n             role = \"ctb\",\n             email = \"sven.templer@gmail.com\"),\n      person(given = \"Paul-Christian\",\n             family = \"Buerkner\",\n             role = \"ctb\",\n             email = \"paul.buerkner@gmail.com\"),\n      person(given = \"Matthew\",\n             family = \"Kay\",\n             role = \"ctb\",\n             email = \"mjskay@umich.edu\"),\n      person(given = \"Erwan\",\n             family = \"Le Pennec\",\n             role = \"ctb\",\n             email = \"lepennec@gmail.com\"),\n      person(given = \"Johan\",\n             family = \"Junkka\",\n             role = \"ctb\",\n             email = \"johan.junkka@umu.se\"),\n      person(given = \"Hao\",\n             family = \"Zhu\",\n             role = \"ctb\",\n             email = \"haozhu233@gmail.com\"),\n      person(given = \"Benjamin\",\n             family = \"Soltoff\",\n             role = \"ctb\",\n             email = \"soltoffbc@uchicago.edu\"),\n      person(given = \"Zoe\",\n             family = \"Wilkinson Saldana\",\n             role = \"ctb\",\n             email = \"zoewsaldana@gmail.com\"),\n      person(given = \"Tyler\",\n             family = \"Littlefield\",\n             role = \"ctb\",\n             email = \"tylurp1@gmail.com\"),\n      person(given = \"Charles T.\",\n             family = \"Gray\",\n             role = \"ctb\",\n             email = \"charlestigray@gmail.com\"),\n      person(given = \"Shabbh E.\",\n             family = \"Banks\",\n             role = \"ctb\"),\n      person(given = \"Serina\",\n             family = \"Robinson\",\n             role = \"ctb\",\n             email = \"robi0916@umn.edu\"),\n      person(given = \"Roger\",\n             family = \"Bivand\",\n             role = \"ctb\",\n             email = \"Roger.Bivand@nhh.no\"),\n      person(given = \"Riinu\",\n             family = \"Ots\",\n             role = \"ctb\",\n             email = \"riinuots@gmail.com\"),\n      person(given = \"Nicholas\",\n             family = \"Williams\",\n             role = \"ctb\",\n             email = \"ntwilliams.personal@gmail.com\"),\n      person(given = \"Nina\",\n             family = \"Jakobsen\",\n             role = \"ctb\"),\n      person(given = \"Michael\",\n             family = \"Weylandt\",\n             role = \"ctb\",\n             email = \"michael.weylandt@gmail.com\"),\n      person(given = \"Lisa\",\n             family = \"Lendway\",\n             role = \"ctb\",\n             email = \"llendway@macalester.edu\"),\n      person(given = \"Karl\",\n             family = \"Hailperin\",\n             role = \"ctb\",\n             email = \"khailper@gmail.com\"),\n      person(given = \"Josue\",\n             family = \"Rodriguez\",\n             role = \"ctb\",\n             email = \"jerrodriguez@ucdavis.edu\"),\n      person(given = \"Jenny\",\n             family = \"Bryan\",\n             role = \"ctb\",\n             email = \"jenny@posit.co\"),\n      person(given = \"Chris\",\n             family = \"Jarvis\",\n             role = \"ctb\",\n             email = \"Christopher1.jarvis@gmail.com\"),\n      person(given = \"Greg\",\n             family = \"Macfarlane\",\n             role = \"ctb\",\n             email = \"gregmacfarlane@gmail.com\"),\n      person(given = \"Brian\",\n             family = \"Mannakee\",\n             role = \"ctb\",\n             email = \"bmannakee@gmail.com\"),\n      person(given = \"Drew\",\n             family = \"Tyre\",\n             role = \"ctb\",\n             email = \"atyre2@unl.edu\"),\n      person(given = \"Shreyas\",\n             family = \"Singh\",\n             role = \"ctb\",\n             email = \"shreyas.singh.298@gmail.com\"),\n      person(given = \"Laurens\",\n             family = \"Geffert\",\n             role = \"ctb\",\n             email = \"laurensgeffert@gmail.com\"),\n      person(given = \"Hong\",\n             family = \"Ooi\",\n             role = \"ctb\",\n             email = \"hongooi@microsoft.com\"),\n      person(given = \"Henrik\",\n             family = \"Bengtsson\",\n             role = \"ctb\",\n             email = \"henrikb@braju.com\"),\n      person(given = \"Eduard\",\n             family = \"Szocs\",\n             role = \"ctb\",\n             email = \"eduardszoecs@gmail.com\"),\n      person(given = \"David\",\n             family = \"Hugh-Jones\",\n             role = \"ctb\",\n             email = \"davidhughjones@gmail.com\"),\n      person(given = \"Matthieu\",\n             family = \"Stigler\",\n             role = \"ctb\",\n             email = \"Matthieu.Stigler@gmail.com\"),\n      person(given = \"Hugo\",\n             family = \"Tavares\",\n             role = \"ctb\",\n             email = \"hm533@cam.ac.uk\",\n             comment = c(ORCID = \"0000-0001-9373-2726\")),\n\t    person(given = \"R. Willem\",\n             family = \"Vervoort\",\n             role = \"ctb\",\n             email = \"Willemvervoort@gmail.com\"),\n      person(given = \"Brenton M.\",\n             family = \"Wiernik\",\n             role = \"ctb\",\n             email = \"brenton@wiernik.org\"),\n      person(given = \"Josh\",\n             family = \"Yamamoto\",\n             role = \"ctb\",\n             email = \"joshuayamamoto5@gmail.com\"),\n      person(given = \"Jasme\",\n             family = \"Lee\",\n             role = \"ctb\"),\n      person(given = \"Taren\",\n             family = \"Sanders\",\n             role = \"ctb\",\n             email = \"taren.sanders@acu.edu.au\",\n             comment = c(ORCID = \"0000-0002-4504-6008\")),\n      person(given = \"Ilaria\",\n             family = \"Prosdocimi\",\n             role = \"ctb\",\n             email = \"prosdocimi.ilaria@gmail.com\",\n            comment = c(ORCID = \"0000-0001-8565-094X\")),\n      person(given = \"Daniel D.\",\n             family = \"Sjoberg\",\n             role = \"ctb\",\n             email = \"danield.sjoberg@gmail.com\",\n             comment = c(ORCID = \"0000-0003-0862-2018\")),\n      person(given = \"Alex\",\n             family = \"Reinhart\",\n             role = \"ctb\",\n             email = \"areinhar@stat.cmu.edu\",\n             comment = c(ORCID = \"0000-0002-6658-514X\")))",
+        "Description": "Summarizes key information about statistical\n    objects in tidy tibbles. This makes it easy to report results, create\n    plots and consistently work with large numbers of models at once.\n    Broom provides three verbs that each provide different types of\n    information about a model. tidy() summarizes information about model\n    components such as coefficients of a regression. glance() reports\n    information about an entire model, such as goodness of fit measures\n    like AIC and BIC. augment() adds information about individual\n    observations to a dataset, such as fitted values or influence\n    measures.",
         "License": "MIT + file LICENSE",
         "URL": "https://broom.tidymodels.org/, https://github.com/tidymodels/broom",
         "BugReports": "https://github.com/tidymodels/broom/issues",
-        "Depends": "R (>= 4.1)",
+        "Depends": "R (>= 3.5)",
         "Imports": "backports, cli, dplyr (>= 1.0.0), generics (>= 0.0.2), glue,\nlifecycle, purrr, rlang (>= 1.1.0), stringr, tibble (>= 3.0.0),\ntidyr (>= 1.0.0)",
-        "Suggests": "AER, AUC, bbmle, betareg (>= 3.2-1), biglm, binGroup, boot,\nbtergm (>= 1.10.6), car (>= 3.1-2), carData, caret, cluster,\ncmprsk, coda, covr, drc, e1071, emmeans, epiR (>= 2.0.85), ergm\n(>= 3.10.4), fixest (>= 0.9.0), gam (>= 1.15), gee, geepack,\nggplot2, glmnet, glmnetUtils, gmm, Hmisc, interp, irlba,\njoineRML, Kendall, knitr, ks, Lahman, lavaan (>= 0.6.18),\nleaps, lfe, lm.beta, lme4, lmodel2, lmtest (>= 0.9.38),\nlsmeans, maps, margins, MASS, mclust, mediation, metafor, mfx,\nmgcv, mlogit, modeldata, modeltests (>= 0.1.6), muhaz,\nmultcomp, network, nnet, ordinal, plm, poLCA, psych, quantreg,\nrmarkdown, robust, robustbase, rsample, sandwich, spatialreg,\nspdep (>= 1.1), speedglm, spelling, survey, survival (>=\n3.6-4), systemfit, testthat (>= 3.0.0), tseries, vars, zoo",
+        "Suggests": "AER, AUC, bbmle, betareg (>= 3.2-1), biglm, binGroup, boot,\nbtergm (>= 1.10.6), car (>= 3.1-2), carData, caret, cluster,\ncmprsk, coda, covr, drc, e1071, emmeans, epiR, ergm (>=\n3.10.4), fixest (>= 0.9.0), gam (>= 1.15), gee, geepack,\nggplot2, glmnet, glmnetUtils, gmm, Hmisc, irlba, interp,\njoineRML, Kendall, knitr, ks, Lahman, lavaan (>= 0.6.18),\nleaps, lfe, lm.beta, lme4, lmodel2, lmtest (>= 0.9.38),\nlsmeans, maps, margins, MASS, mclust, mediation, metafor, mfx,\nmgcv, mlogit, modeldata, modeltests (>= 0.1.6), muhaz,\nmultcomp, network, nnet, ordinal, plm, poLCA, psych, quantreg,\nrmarkdown, robust, robustbase, rsample, sandwich, spdep (>=\n1.1), spatialreg, speedglm, spelling, survey, survival (>=\n3.6-4), systemfit, testthat (>= 3.0.0), tseries, vars, zoo",
         "VignetteBuilder": "knitr",
         "Config/Needs/website": "tidyverse/tidytemplate",
-        "Config/testthat/edition": "3",
-        "Config/usethis/last-upkeep": "2025-04-25",
         "Encoding": "UTF-8",
-        "Language": "en-US",
         "RoxygenNote": "7.3.2",
+        "Language": "en-US",
         "Collate": "'aaa-documentation-helper.R' 'null-and-default.R' 'aer.R'\n'auc.R' 'base.R' 'bbmle.R' 'betareg.R' 'biglm.R' 'bingroup.R'\n'boot.R' 'broom-package.R' 'broom.R' 'btergm.R' 'car.R'\n'caret.R' 'cluster.R' 'cmprsk.R' 'data-frame.R'\n'deprecated-0-7-0.R' 'drc.R' 'emmeans.R' 'epiR.R' 'ergm.R'\n'fixest.R' 'gam.R' 'geepack.R' 'glmnet-cv-glmnet.R'\n'glmnet-glmnet.R' 'gmm.R' 'hmisc.R'\n'import-standalone-obj-type.R'\n'import-standalone-types-check.R' 'joinerml.R' 'kendall.R'\n'ks.R' 'lavaan.R' 'leaps.R' 'lfe.R' 'list-irlba.R'\n'list-optim.R' 'list-svd.R' 'list-xyz.R' 'list.R' 'lm-beta.R'\n'lmodel2.R' 'lmtest.R' 'maps.R' 'margins.R' 'mass-fitdistr.R'\n'mass-negbin.R' 'mass-polr.R' 'mass-ridgelm.R' 'stats-lm.R'\n'mass-rlm.R' 'mclust.R' 'mediation.R' 'metafor.R' 'mfx.R'\n'mgcv.R' 'mlogit.R' 'muhaz.R' 'multcomp.R' 'nnet.R' 'nobs.R'\n'ordinal-clm.R' 'ordinal-clmm.R' 'plm.R' 'polca.R' 'psych.R'\n'stats-nls.R' 'quantreg-nlrq.R' 'quantreg-rq.R'\n'quantreg-rqs.R' 'robust-glmrob.R' 'robust-lmrob.R'\n'robustbase-glmrob.R' 'robustbase-lmrob.R' 'sp.R' 'spdep.R'\n'speedglm-speedglm.R' 'speedglm-speedlm.R' 'stats-anova.R'\n'stats-arima.R' 'stats-decompose.R' 'stats-factanal.R'\n'stats-glm.R' 'stats-htest.R' 'stats-kmeans.R' 'stats-loess.R'\n'stats-mlm.R' 'stats-prcomp.R' 'stats-smooth.spline.R'\n'stats-summary-lm.R' 'stats-time-series.R' 'survey.R'\n'survival-aareg.R' 'survival-cch.R' 'survival-coxph.R'\n'survival-pyears.R' 'survival-survdiff.R' 'survival-survexp.R'\n'survival-survfit.R' 'survival-survreg.R' 'systemfit.R'\n'tseries.R' 'utilities.R' 'vars.R' 'zoo.R' 'zzz.R'",
+        "Config/testthat/edition": "3",
         "NeedsCompilation": "no",
-        "Packaged": "2025-07-28 13:51:56 UTC; simoncouch",
-        "Author": "David Robinson [aut],\n  Alex Hayes [aut] (ORCID: <https://orcid.org/0000-0002-4985-5160>),\n  Simon Couch [aut, cre] (ORCID: <https://orcid.org/0000-0001-5676-5107>),\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>),\n  Indrajeet Patil [ctb] (ORCID: <https://orcid.org/0000-0003-1995-6531>),\n  Derek Chiu [ctb],\n  Matthieu Gomez [ctb],\n  Boris Demeshev [ctb],\n  Dieter Menne [ctb],\n  Benjamin Nutter [ctb],\n  Luke Johnston [ctb],\n  Ben Bolker [ctb],\n  Francois Briatte [ctb],\n  Jeffrey Arnold [ctb],\n  Jonah Gabry [ctb],\n  Luciano Selzer [ctb],\n  Gavin Simpson [ctb],\n  Jens Preussner [ctb],\n  Jay Hesselberth [ctb],\n  Hadley Wickham [ctb],\n  Matthew Lincoln [ctb],\n  Alessandro Gasparini [ctb],\n  Lukasz Komsta [ctb],\n  Frederick Novometsky [ctb],\n  Wilson Freitas [ctb],\n  Michelle Evans [ctb],\n  Jason Cory Brunson [ctb],\n  Simon Jackson [ctb],\n  Ben Whalley [ctb],\n  Karissa Whiting [ctb],\n  Yves Rosseel [ctb],\n  Michael Kuehn [ctb],\n  Jorge Cimentada [ctb],\n  Erle Holgersen [ctb],\n  Karl Dunkle Werner [ctb] (ORCID:\n    <https://orcid.org/0000-0003-0523-7309>),\n  Ethan Christensen [ctb],\n  Steven Pav [ctb],\n  Paul PJ [ctb],\n  Ben Schneider [ctb],\n  Patrick Kennedy [ctb],\n  Lily Medina [ctb],\n  Brian Fannin [ctb],\n  Jason Muhlenkamp [ctb],\n  Matt Lehman [ctb],\n  Bill Denney [ctb] (ORCID: <https://orcid.org/0000-0002-5759-428X>),\n  Nic Crane [ctb],\n  Andrew Bates [ctb],\n  Vincent Arel-Bundock [ctb] (ORCID:\n    <https://orcid.org/0000-0003-2042-7063>),\n  Hideaki Hayashi [ctb],\n  Luis Tobalina [ctb],\n  Annie Wang [ctb],\n  Wei Yang Tham [ctb],\n  Clara Wang [ctb],\n  Abby Smith [ctb] (ORCID: <https://orcid.org/0000-0002-3207-0375>),\n  Jasper Cooper [ctb] (ORCID: <https://orcid.org/0000-0002-8639-3188>),\n  E Auden Krauska [ctb] (ORCID: <https://orcid.org/0000-0002-1466-5850>),\n  Alex Wang [ctb],\n  Malcolm Barrett [ctb] (ORCID: <https://orcid.org/0000-0003-0299-5825>),\n  Charles Gray [ctb] (ORCID: <https://orcid.org/0000-0002-9978-011X>),\n  Jared Wilber [ctb],\n  Vilmantas Gegzna [ctb] (ORCID: <https://orcid.org/0000-0002-9500-5167>),\n  Eduard Szoecs [ctb],\n  Frederik Aust [ctb] (ORCID: <https://orcid.org/0000-0003-4900-788X>),\n  Angus Moore [ctb],\n  Nick Williams [ctb],\n  Marius Barth [ctb] (ORCID: <https://orcid.org/0000-0002-3421-6665>),\n  Bruna Wundervald [ctb] (ORCID: <https://orcid.org/0000-0001-8163-220X>),\n  Joyce Cahoon [ctb] (ORCID: <https://orcid.org/0000-0001-7217-4702>),\n  Grant McDermott [ctb] (ORCID: <https://orcid.org/0000-0001-7883-8573>),\n  Kevin Zarca [ctb],\n  Shiro Kuriwaki [ctb] (ORCID: <https://orcid.org/0000-0002-5687-2647>),\n  Lukas Wallrich [ctb] (ORCID: <https://orcid.org/0000-0003-2121-5177>),\n  James Martherus [ctb] (ORCID: <https://orcid.org/0000-0002-8285-3300>),\n  Chuliang Xiao [ctb] (ORCID: <https://orcid.org/0000-0002-8466-9398>),\n  Joseph Larmarange [ctb],\n  Max Kuhn [ctb],\n  Michal Bojanowski [ctb],\n  Hakon Malmedal [ctb],\n  Clara Wang [ctb],\n  Sergio Oller [ctb],\n  Luke Sonnet [ctb],\n  Jim Hester [ctb],\n  Ben Schneider [ctb],\n  Bernie Gray [ctb] (ORCID: <https://orcid.org/0000-0001-9190-6032>),\n  Mara Averick [ctb],\n  Aaron Jacobs [ctb],\n  Andreas Bender [ctb],\n  Sven Templer [ctb],\n  Paul-Christian Buerkner [ctb],\n  Matthew Kay [ctb],\n  Erwan Le Pennec [ctb],\n  Johan Junkka [ctb],\n  Hao Zhu [ctb],\n  Benjamin Soltoff [ctb],\n  Zoe Wilkinson Saldana [ctb],\n  Tyler Littlefield [ctb],\n  Charles T. Gray [ctb],\n  Shabbh E. Banks [ctb],\n  Serina Robinson [ctb],\n  Roger Bivand [ctb],\n  Riinu Ots [ctb],\n  Nicholas Williams [ctb],\n  Nina Jakobsen [ctb],\n  Michael Weylandt [ctb],\n  Lisa Lendway [ctb],\n  Karl Hailperin [ctb],\n  Josue Rodriguez [ctb],\n  Jenny Bryan [ctb],\n  Chris Jarvis [ctb],\n  Greg Macfarlane [ctb],\n  Brian Mannakee [ctb],\n  Drew Tyre [ctb],\n  Shreyas Singh [ctb],\n  Laurens Geffert [ctb],\n  Hong Ooi [ctb],\n  Henrik Bengtsson [ctb],\n  Eduard Szocs [ctb],\n  David Hugh-Jones [ctb],\n  Matthieu Stigler [ctb],\n  Hugo Tavares [ctb] (ORCID: <https://orcid.org/0000-0001-9373-2726>),\n  R. Willem Vervoort [ctb],\n  Brenton M. Wiernik [ctb],\n  Josh Yamamoto [ctb],\n  Jasme Lee [ctb],\n  Taren Sanders [ctb] (ORCID: <https://orcid.org/0000-0002-4504-6008>),\n  Ilaria Prosdocimi [ctb] (ORCID:\n    <https://orcid.org/0000-0001-8565-094X>),\n  Daniel D. Sjoberg [ctb] (ORCID:\n    <https://orcid.org/0000-0003-0862-2018>),\n  Alex Reinhart [ctb] (ORCID: <https://orcid.org/0000-0002-6658-514X>)",
+        "Packaged": "2025-03-27 19:21:46 UTC; simoncouch",
+        "Author": "David Robinson [aut],\n  Alex Hayes [aut] (<https://orcid.org/0000-0002-4985-5160>),\n  Simon Couch [aut, cre] (<https://orcid.org/0000-0001-5676-5107>),\n  Posit Software, PBC [cph, fnd],\n  Indrajeet Patil [ctb] (<https://orcid.org/0000-0003-1995-6531>),\n  Derek Chiu [ctb],\n  Matthieu Gomez [ctb],\n  Boris Demeshev [ctb],\n  Dieter Menne [ctb],\n  Benjamin Nutter [ctb],\n  Luke Johnston [ctb],\n  Ben Bolker [ctb],\n  Francois Briatte [ctb],\n  Jeffrey Arnold [ctb],\n  Jonah Gabry [ctb],\n  Luciano Selzer [ctb],\n  Gavin Simpson [ctb],\n  Jens Preussner [ctb],\n  Jay Hesselberth [ctb],\n  Hadley Wickham [ctb],\n  Matthew Lincoln [ctb],\n  Alessandro Gasparini [ctb],\n  Lukasz Komsta [ctb],\n  Frederick Novometsky [ctb],\n  Wilson Freitas [ctb],\n  Michelle Evans [ctb],\n  Jason Cory Brunson [ctb],\n  Simon Jackson [ctb],\n  Ben Whalley [ctb],\n  Karissa Whiting [ctb],\n  Yves Rosseel [ctb],\n  Michael Kuehn [ctb],\n  Jorge Cimentada [ctb],\n  Erle Holgersen [ctb],\n  Karl Dunkle Werner [ctb] (<https://orcid.org/0000-0003-0523-7309>),\n  Ethan Christensen [ctb],\n  Steven Pav [ctb],\n  Paul PJ [ctb],\n  Ben Schneider [ctb],\n  Patrick Kennedy [ctb],\n  Lily Medina [ctb],\n  Brian Fannin [ctb],\n  Jason Muhlenkamp [ctb],\n  Matt Lehman [ctb],\n  Bill Denney [ctb] (<https://orcid.org/0000-0002-5759-428X>),\n  Nic Crane [ctb],\n  Andrew Bates [ctb],\n  Vincent Arel-Bundock [ctb] (<https://orcid.org/0000-0003-2042-7063>),\n  Hideaki Hayashi [ctb],\n  Luis Tobalina [ctb],\n  Annie Wang [ctb],\n  Wei Yang Tham [ctb],\n  Clara Wang [ctb],\n  Abby Smith [ctb] (<https://orcid.org/0000-0002-3207-0375>),\n  Jasper Cooper [ctb] (<https://orcid.org/0000-0002-8639-3188>),\n  E Auden Krauska [ctb] (<https://orcid.org/0000-0002-1466-5850>),\n  Alex Wang [ctb],\n  Malcolm Barrett [ctb] (<https://orcid.org/0000-0003-0299-5825>),\n  Charles Gray [ctb] (<https://orcid.org/0000-0002-9978-011X>),\n  Jared Wilber [ctb],\n  Vilmantas Gegzna [ctb] (<https://orcid.org/0000-0002-9500-5167>),\n  Eduard Szoecs [ctb],\n  Frederik Aust [ctb] (<https://orcid.org/0000-0003-4900-788X>),\n  Angus Moore [ctb],\n  Nick Williams [ctb],\n  Marius Barth [ctb] (<https://orcid.org/0000-0002-3421-6665>),\n  Bruna Wundervald [ctb] (<https://orcid.org/0000-0001-8163-220X>),\n  Joyce Cahoon [ctb] (<https://orcid.org/0000-0001-7217-4702>),\n  Grant McDermott [ctb] (<https://orcid.org/0000-0001-7883-8573>),\n  Kevin Zarca [ctb],\n  Shiro Kuriwaki [ctb] (<https://orcid.org/0000-0002-5687-2647>),\n  Lukas Wallrich [ctb] (<https://orcid.org/0000-0003-2121-5177>),\n  James Martherus [ctb] (<https://orcid.org/0000-0002-8285-3300>),\n  Chuliang Xiao [ctb] (<https://orcid.org/0000-0002-8466-9398>),\n  Joseph Larmarange [ctb],\n  Max Kuhn [ctb],\n  Michal Bojanowski [ctb],\n  Hakon Malmedal [ctb],\n  Clara Wang [ctb],\n  Sergio Oller [ctb],\n  Luke Sonnet [ctb],\n  Jim Hester [ctb],\n  Ben Schneider [ctb],\n  Bernie Gray [ctb] (<https://orcid.org/0000-0001-9190-6032>),\n  Mara Averick [ctb],\n  Aaron Jacobs [ctb],\n  Andreas Bender [ctb],\n  Sven Templer [ctb],\n  Paul-Christian Buerkner [ctb],\n  Matthew Kay [ctb],\n  Erwan Le Pennec [ctb],\n  Johan Junkka [ctb],\n  Hao Zhu [ctb],\n  Benjamin Soltoff [ctb],\n  Zoe Wilkinson Saldana [ctb],\n  Tyler Littlefield [ctb],\n  Charles T. Gray [ctb],\n  Shabbh E. Banks [ctb],\n  Serina Robinson [ctb],\n  Roger Bivand [ctb],\n  Riinu Ots [ctb],\n  Nicholas Williams [ctb],\n  Nina Jakobsen [ctb],\n  Michael Weylandt [ctb],\n  Lisa Lendway [ctb],\n  Karl Hailperin [ctb],\n  Josue Rodriguez [ctb],\n  Jenny Bryan [ctb],\n  Chris Jarvis [ctb],\n  Greg Macfarlane [ctb],\n  Brian Mannakee [ctb],\n  Drew Tyre [ctb],\n  Shreyas Singh [ctb],\n  Laurens Geffert [ctb],\n  Hong Ooi [ctb],\n  Henrik Bengtsson [ctb],\n  Eduard Szocs [ctb],\n  David Hugh-Jones [ctb],\n  Matthieu Stigler [ctb],\n  Hugo Tavares [ctb] (<https://orcid.org/0000-0001-9373-2726>),\n  R. Willem Vervoort [ctb],\n  Brenton M. Wiernik [ctb],\n  Josh Yamamoto [ctb],\n  Jasme Lee [ctb],\n  Taren Sanders [ctb] (<https://orcid.org/0000-0002-4504-6008>),\n  Ilaria Prosdocimi [ctb] (<https://orcid.org/0000-0001-8565-094X>),\n  Daniel D. Sjoberg [ctb] (<https://orcid.org/0000-0003-0862-2018>),\n  Alex Reinhart [ctb] (<https://orcid.org/0000-0002-6658-514X>)",
         "Maintainer": "Simon Couch <simon.couch@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-28 15:20:07 UTC",
-        "Built": "R 4.5.0; ; 2025-07-28 16:46:55 UTC; unix"
+        "Date/Publication": "2025-03-28 05:50:07 UTC",
+        "Built": "R 4.5.0; ; 2025-04-02 08:26:13 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "broom",
+        "RemoteRef": "broom",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.0.8"
       }
     },
     "bslib": {
@@ -491,7 +554,13 @@
         "Maintainer": "Jennifer Bryan <jenny@stat.ubc.ca>",
         "Repository": "CRAN",
         "Date/Publication": "2016-07-27 03:17:48",
-        "Built": "R 4.5.0; ; 2025-04-01 20:32:15 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 20:32:15 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "cellranger",
+        "RemoteRef": "cellranger",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.1.0"
       }
     },
     "cli": {
@@ -552,6 +621,36 @@
         "Built": "R 4.5.0; ; 2025-03-31 21:44:12 UTC; unix"
       }
     },
+    "colorspace": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "colorspace",
+        "Version": "2.1-1",
+        "Date": "2024-07-26",
+        "Title": "A Toolbox for Manipulating and Assessing Colors and Palettes",
+        "Authors@R": "c(person(given = \"Ross\", family = \"Ihaka\", role = \"aut\", email = \"ihaka@stat.auckland.ac.nz\"),\n             person(given = \"Paul\", family = \"Murrell\", role = \"aut\", email = \"paul@stat.auckland.ac.nz\",\n                    comment = c(ORCID = \"0000-0002-3224-8858\")),\n             person(given = \"Kurt\", family = \"Hornik\", role = \"aut\", email = \"Kurt.Hornik@R-project.org\",\n\t\t    comment = c(ORCID = \"0000-0003-4198-9911\")),\n             person(given = c(\"Jason\", \"C.\"), family = \"Fisher\", role = \"aut\", email = \"jfisher@usgs.gov\",\n                    comment = c(ORCID = \"0000-0001-9032-8912\")),\n             person(given = \"Reto\", family = \"Stauffer\", role = \"aut\", email = \"Reto.Stauffer@uibk.ac.at\",\n                    comment = c(ORCID = \"0000-0002-3798-5507\")),\n             person(given = c(\"Claus\", \"O.\"), family = \"Wilke\", role = \"aut\", email = \"wilke@austin.utexas.edu\",\n                    comment = c(ORCID = \"0000-0002-7470-9261\")),\n             person(given = c(\"Claire\", \"D.\"), family = \"McWhite\", role = \"aut\", email = \"claire.mcwhite@utmail.utexas.edu\",\n                    comment = c(ORCID = \"0000-0001-7346-3047\")),\n             person(given = \"Achim\", family = \"Zeileis\", role = c(\"aut\", \"cre\"), email = \"Achim.Zeileis@R-project.org\",\n                    comment = c(ORCID = \"0000-0003-0918-3766\")))",
+        "Description": "Carries out mapping between assorted color spaces including RGB, HSV, HLS,\n             CIEXYZ, CIELUV, HCL (polar CIELUV), CIELAB, and polar CIELAB.\n\t     Qualitative, sequential, and diverging color palettes based on HCL colors\n\t     are provided along with corresponding ggplot2 color scales.\n\t     Color palette choice is aided by an interactive app (with either a Tcl/Tk\n\t     or a shiny graphical user interface) and shiny apps with an HCL color picker and a\n\t     color vision deficiency emulator. Plotting functions for displaying\n\t     and assessing palettes include color swatches, visualizations of the\n\t     HCL space, and trajectories in HCL and/or RGB spectrum. Color manipulation\n\t     functions include: desaturation, lightening/darkening, mixing, and\n\t     simulation of color vision deficiencies (deutanomaly, protanomaly, tritanomaly).\n\t     Details can be found on the project web page at <https://colorspace.R-Forge.R-project.org/>\n\t     and in the accompanying scientific paper: Zeileis et al. (2020, Journal of Statistical\n\t     Software, <doi:10.18637/jss.v096.i01>).",
+        "Depends": "R (>= 3.0.0), methods",
+        "Imports": "graphics, grDevices, stats",
+        "Suggests": "datasets, utils, KernSmooth, MASS, kernlab, mvtnorm, vcd,\ntcltk, shiny, shinyjs, ggplot2, dplyr, scales, grid, png, jpeg,\nknitr, rmarkdown, RColorBrewer, rcartocolor, scico, viridis,\nwesanderson",
+        "VignetteBuilder": "knitr",
+        "License": "BSD_3_clause + file LICENSE",
+        "URL": "https://colorspace.R-Forge.R-project.org/, https://hclwizard.org/",
+        "BugReports": "https://colorspace.R-Forge.R-project.org/contact.html",
+        "LazyData": "yes",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.1",
+        "NeedsCompilation": "yes",
+        "Packaged": "2024-07-26 15:40:41 UTC; zeileis",
+        "Author": "Ross Ihaka [aut],\n  Paul Murrell [aut] (<https://orcid.org/0000-0002-3224-8858>),\n  Kurt Hornik [aut] (<https://orcid.org/0000-0003-4198-9911>),\n  Jason C. Fisher [aut] (<https://orcid.org/0000-0001-9032-8912>),\n  Reto Stauffer [aut] (<https://orcid.org/0000-0002-3798-5507>),\n  Claus O. Wilke [aut] (<https://orcid.org/0000-0002-7470-9261>),\n  Claire D. McWhite [aut] (<https://orcid.org/0000-0001-7346-3047>),\n  Achim Zeileis [aut, cre] (<https://orcid.org/0000-0003-0918-3766>)",
+        "Maintainer": "Achim Zeileis <Achim.Zeileis@R-project.org>",
+        "Repository": "CRAN",
+        "Date/Publication": "2024-07-26 17:10:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 21:43:16 UTC; unix",
+        "Archs": "colorspace.so.dSYM"
+      }
+    },
     "commonmark": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -604,7 +703,13 @@
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
         "Repository": "CRAN",
         "Date/Publication": "2023-02-01 08:20:06 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 06:50:44 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 06:50:44 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "conflicted",
+        "RemoteRef": "conflicted",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.2.0"
       }
     },
     "cowplot": {
@@ -613,26 +718,26 @@
       "description": {
         "Package": "cowplot",
         "Title": "Streamlined Plot Theme and Plot Annotations for 'ggplot2'",
-        "Version": "1.2.0",
+        "Version": "1.1.3",
         "Authors@R": "\n    person(\n      given = \"Claus O.\",\n      family = \"Wilke\",\n      role = c(\"aut\", \"cre\"),\n      email = \"wilke@austin.utexas.edu\",\n      comment = c(ORCID = \"0000-0002-7470-9261\")\n    )",
         "Description": "\n    Provides various features that help with creating publication-quality figures\n    with 'ggplot2', such as a set of themes, functions to align plots and arrange\n    them into complex compound figures, and functions that make it easy to annotate\n    plots and or mix plots with images. The package was originally written for\n    internal use in the Wilke lab, hence the name (Claus O. Wilke's plot package).\n    It has also been used extensively in the book Fundamentals of Data\n    Visualization.",
         "URL": "https://wilkelab.org/cowplot/",
         "BugReports": "https://github.com/wilkelab/cowplot/issues",
         "Depends": "R (>= 3.5.0)",
-        "Imports": "ggplot2 (>= 3.5.2), grid, gtable, grDevices, methods, rlang,\nscales",
+        "Imports": "ggplot2 (>= 3.4.0), grid, gtable, grDevices, methods, rlang,\nscales",
         "License": "GPL-2",
         "Suggests": "Cairo, covr, dplyr, forcats, gridGraphics (>= 0.4-0), knitr,\nlattice, magick, maps, PASWR, patchwork, rmarkdown, ragg,\ntestthat (>= 1.0.0), tidyr, vdiffr (>= 0.3.0), VennDiagram",
         "VignetteBuilder": "knitr",
         "Collate": "'add_sub.R' 'align_plots.R' 'as_grob.R' 'as_gtable.R'\n'axis_canvas.R' 'cowplot.R' 'draw.R' 'get_plot_component.R'\n'get_axes.R' 'get_titles.R' 'get_legend.R' 'get_panel.R'\n'gtable.R' 'key_glyph.R' 'plot_grid.R' 'save.R'\n'set_null_device.R' 'setup.R' 'stamp.R' 'themes.R'\n'utils_ggplot2.R'",
-        "RoxygenNote": "7.3.2",
+        "RoxygenNote": "7.2.3",
         "Encoding": "UTF-8",
         "NeedsCompilation": "no",
-        "Packaged": "2025-07-06 18:45:15 UTC; clauswilke",
-        "Author": "Claus O. Wilke [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-7470-9261>)",
+        "Packaged": "2024-01-22 21:32:03 UTC; clauswilke",
+        "Author": "Claus O. Wilke [aut, cre] (<https://orcid.org/0000-0002-7470-9261>)",
         "Maintainer": "Claus O. Wilke <wilke@austin.utexas.edu>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-07 19:00:02 UTC",
-        "Built": "R 4.5.0; ; 2025-07-07 20:27:25 UTC; unix"
+        "Date/Publication": "2024-01-22 23:22:51 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 23:31:58 UTC; unix"
       }
     },
     "cpp11": {
@@ -698,29 +803,33 @@
         "Package": "crul",
         "Title": "HTTP Client",
         "Description": "A simple HTTP client, with tools for making HTTP requests,\n    and mocking HTTP requests. The package is built on R6, and takes\n    inspiration from Ruby's 'faraday' gem (<https://rubygems.org/gems/faraday>).\n    The package name is a play on curl, the widely used command line tool\n    for HTTP, and this package is built on top of the R package 'curl', an\n    interface to 'libcurl' (<https://curl.se/libcurl/>).",
-        "Version": "1.6.0",
+        "Version": "1.5.0",
         "License": "MIT + file LICENSE",
         "Authors@R": "c(\n    person(\"Scott\", \"Chamberlain\", role = c(\"aut\", \"cre\"),\n    email = \"myrmecocystus@gmail.com\",\n    comment = c(ORCID = \"0000-0003-1444-9135\"))\n    )",
         "URL": "https://docs.ropensci.org/crul/, https://github.com/ropensci/crul,\nhttps://books.ropensci.org/http-testing/",
         "BugReports": "https://github.com/ropensci/crul/issues",
         "Encoding": "UTF-8",
         "Language": "en-US",
-        "Imports": "curl (>= 3.3), R6 (>= 2.2.0), urltools (>= 1.6.0), httpcode\n(>= 0.2.0), jsonlite, mime, rlang, lifecycle",
-        "Suggests": "testthat (>= 3.0.0), roxygen2 (>= 7.1.1), fauxpas (>= 0.1.0),\nwebmockr (>= 2.2.0), withr, knitr, rmarkdown",
+        "Imports": "curl (>= 3.3), R6 (>= 2.2.0), urltools (>= 1.6.0), httpcode\n(>= 0.2.0), jsonlite, mime",
+        "Suggests": "testthat, roxygen2 (>= 7.1.1), fauxpas (>= 0.1.0), webmockr\n(>= 0.1.0), knitr, rmarkdown",
         "VignetteBuilder": "knitr",
         "RoxygenNote": "7.3.2",
-        "Config/testthat/edition": "3",
-        "Config/testthat/parallel": "true",
         "X-schema.org-applicationCategory": "Web",
         "X-schema.org-keywords": "http, https, API, web-services, curl, download,\nlibcurl, async, mocking, caching",
         "X-schema.org-isPartOf": "https://ropensci.org",
         "NeedsCompilation": "no",
-        "Packaged": "2025-07-21 16:40:35 UTC; sckott",
-        "Author": "Scott Chamberlain [aut, cre] (ORCID:\n    <https://orcid.org/0000-0003-1444-9135>)",
+        "Packaged": "2024-07-19 17:29:47 UTC; sckott",
+        "Author": "Scott Chamberlain [aut, cre] (<https://orcid.org/0000-0003-1444-9135>)",
         "Maintainer": "Scott Chamberlain <myrmecocystus@gmail.com>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-23 12:30:02 UTC",
-        "Built": "R 4.5.0; ; 2025-07-23 13:59:43 UTC; unix"
+        "Date/Publication": "2024-07-19 17:50:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 07:05:14 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "crul",
+        "RemoteRef": "crul",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.5.0"
       }
     },
     "curl": {
@@ -750,7 +859,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2025-06-22 10:40:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-06-23 23:21:48 UTC; unix",
-        "Archs": "curl.so.dSYM"
+        "Archs": "curl.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "curl",
+        "RemoteRef": "curl",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "6.4.0"
       }
     },
     "data.table": {
@@ -758,7 +873,7 @@
       "Repository": "https://cran.rstudio.com",
       "description": {
         "Package": "data.table",
-        "Version": "1.17.8",
+        "Version": "1.17.2",
         "Title": "Extension of `data.frame`",
         "Depends": "R (>= 3.3.0)",
         "Imports": "methods",
@@ -772,13 +887,19 @@
         "ByteCompile": "TRUE",
         "Authors@R": "c(\n  person(\"Tyson\",\"Barrett\",        role=c(\"aut\",\"cre\"), email=\"t.barrett88@gmail.com\", comment = c(ORCID=\"0000-0002-2137-1391\")),\n  person(\"Matt\",\"Dowle\",           role=\"aut\",          email=\"mattjdowle@gmail.com\"),\n  person(\"Arun\",\"Srinivasan\",      role=\"aut\",          email=\"asrini@pm.me\"),\n  person(\"Jan\",\"Gorecki\",          role=\"aut\"),\n  person(\"Michael\",\"Chirico\",      role=\"aut\", comment = c(ORCID=\"0000-0003-0787-087X\")),\n  person(\"Toby\",\"Hocking\",         role=\"aut\", comment = c(ORCID=\"0000-0002-3146-0865\")),\n  person(\"Benjamin\",\"Schwendinger\",role=\"aut\", comment = c(ORCID=\"0000-0003-3315-8114\")),\n  person(\"Ivan\", \"Krylov\",         role=\"aut\",          email=\"ikrylov@disroot.org\",   comment = c(ORCID=\"0000-0002-0172-3812\")),\n  person(\"Pasha\",\"Stetsenko\",      role=\"ctb\"),\n  person(\"Tom\",\"Short\",            role=\"ctb\"),\n  person(\"Steve\",\"Lianoglou\",      role=\"ctb\"),\n  person(\"Eduard\",\"Antonyan\",      role=\"ctb\"),\n  person(\"Markus\",\"Bonsch\",        role=\"ctb\"),\n  person(\"Hugh\",\"Parsonage\",       role=\"ctb\"),\n  person(\"Scott\",\"Ritchie\",        role=\"ctb\"),\n  person(\"Kun\",\"Ren\",              role=\"ctb\"),\n  person(\"Xianying\",\"Tan\",         role=\"ctb\"),\n  person(\"Rick\",\"Saporta\",         role=\"ctb\"),\n  person(\"Otto\",\"Seiskari\",        role=\"ctb\"),\n  person(\"Xianghui\",\"Dong\",        role=\"ctb\"),\n  person(\"Michel\",\"Lang\",          role=\"ctb\"),\n  person(\"Watal\",\"Iwasaki\",        role=\"ctb\"),\n  person(\"Seth\",\"Wenchel\",         role=\"ctb\"),\n  person(\"Karl\",\"Broman\",          role=\"ctb\"),\n  person(\"Tobias\",\"Schmidt\",       role=\"ctb\"),\n  person(\"David\",\"Arenburg\",       role=\"ctb\"),\n  person(\"Ethan\",\"Smith\",          role=\"ctb\"),\n  person(\"Francois\",\"Cocquemas\",   role=\"ctb\"),\n  person(\"Matthieu\",\"Gomez\",       role=\"ctb\"),\n  person(\"Philippe\",\"Chataignon\",  role=\"ctb\"),\n  person(\"Nello\",\"Blaser\",         role=\"ctb\"),\n  person(\"Dmitry\",\"Selivanov\",     role=\"ctb\"),\n  person(\"Andrey\",\"Riabushenko\",   role=\"ctb\"),\n  person(\"Cheng\",\"Lee\",            role=\"ctb\"),\n  person(\"Declan\",\"Groves\",        role=\"ctb\"),\n  person(\"Daniel\",\"Possenriede\",   role=\"ctb\"),\n  person(\"Felipe\",\"Parages\",       role=\"ctb\"),\n  person(\"Denes\",\"Toth\",           role=\"ctb\"),\n  person(\"Mus\",\"Yaramaz-David\",    role=\"ctb\"),\n  person(\"Ayappan\",\"Perumal\",      role=\"ctb\"),\n  person(\"James\",\"Sams\",           role=\"ctb\"),\n  person(\"Martin\",\"Morgan\",        role=\"ctb\"),\n  person(\"Michael\",\"Quinn\",        role=\"ctb\"),\n  person(\"@javrucebo\",\"\",          role=\"ctb\"),\n  person(\"@marc-outins\",\"\",        role=\"ctb\"),\n  person(\"Roy\",\"Storey\",           role=\"ctb\"),\n  person(\"Manish\",\"Saraswat\",      role=\"ctb\"),\n  person(\"Morgan\",\"Jacob\",         role=\"ctb\"),\n  person(\"Michael\",\"Schubmehl\",    role=\"ctb\"),\n  person(\"Davis\",\"Vaughan\",        role=\"ctb\"),\n  person(\"Leonardo\",\"Silvestri\",   role=\"ctb\"),\n  person(\"Jim\",\"Hester\",           role=\"ctb\"),\n  person(\"Anthony\",\"Damico\",       role=\"ctb\"),\n  person(\"Sebastian\",\"Freundt\",    role=\"ctb\"),\n  person(\"David\",\"Simons\",         role=\"ctb\"),\n  person(\"Elliott\",\"Sales de Andrade\", role=\"ctb\"),\n  person(\"Cole\",\"Miller\",          role=\"ctb\"),\n  person(\"Jens Peder\",\"Meldgaard\", role=\"ctb\"),\n  person(\"Vaclav\",\"Tlapak\",        role=\"ctb\"),\n  person(\"Kevin\",\"Ushey\",          role=\"ctb\"),\n  person(\"Dirk\",\"Eddelbuettel\",    role=\"ctb\"),\n  person(\"Tony\",\"Fischetti\",       role=\"ctb\"),\n  person(\"Ofek\",\"Shilon\",          role=\"ctb\"),\n  person(\"Vadim\",\"Khotilovich\",    role=\"ctb\"),\n  person(\"Hadley\",\"Wickham\",       role=\"ctb\"),\n  person(\"Bennet\",\"Becker\",        role=\"ctb\"),\n  person(\"Kyle\",\"Haynes\",          role=\"ctb\"),\n  person(\"Boniface Christian\",\"Kamgang\", role=\"ctb\"),\n  person(\"Olivier\",\"Delmarcell\",   role=\"ctb\"),\n  person(\"Josh\",\"O'Brien\",         role=\"ctb\"),\n  person(\"Dereck\",\"de Mezquita\",   role=\"ctb\"),\n  person(\"Michael\",\"Czekanski\",    role=\"ctb\"),\n  person(\"Dmitry\", \"Shemetov\",     role=\"ctb\"),\n  person(\"Nitish\", \"Jha\",          role=\"ctb\"),\n  person(\"Joshua\", \"Wu\",           role=\"ctb\"),\n  person(\"Iago\", \"Giné-Vázquez\",   role=\"ctb\"),\n  person(\"Anirban\", \"Chetia\",      role=\"ctb\"),\n  person(\"Doris\", \"Amoakohene\",    role=\"ctb\"),\n  person(\"Angel\", \"Feliz\",         role=\"ctb\"),\n  person(\"Michael\",\"Young\",        role=\"ctb\"),\n  person(\"Mark\", \"Seeto\",          role=\"ctb\"),\n  person(\"Philippe\", \"Grosjean\",   role=\"ctb\"),\n  person(\"Vincent\", \"Runge\",       role=\"ctb\"),\n  person(\"Christian\", \"Wia\",       role=\"ctb\"),\n  person(\"Elise\", \"Maigné\",        role=\"ctb\"),\n  person(\"Vincent\", \"Rocher\",      role=\"ctb\"),\n  person(\"Vijay\", \"Lulla\",         role=\"ctb\"),\n  person(\"Aljaž\", \"Sluga\",         role=\"ctb\"),\n  person(\"Bill\", \"Evans\",          role=\"ctb\")\n  )",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-07-07 16:02:15 UTC; root",
+        "Packaged": "2025-05-07 14:57:47 UTC; tysonbarrett",
         "Author": "Tyson Barrett [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-2137-1391>),\n  Matt Dowle [aut],\n  Arun Srinivasan [aut],\n  Jan Gorecki [aut],\n  Michael Chirico [aut] (ORCID: <https://orcid.org/0000-0003-0787-087X>),\n  Toby Hocking [aut] (ORCID: <https://orcid.org/0000-0002-3146-0865>),\n  Benjamin Schwendinger [aut] (ORCID:\n    <https://orcid.org/0000-0003-3315-8114>),\n  Ivan Krylov [aut] (ORCID: <https://orcid.org/0000-0002-0172-3812>),\n  Pasha Stetsenko [ctb],\n  Tom Short [ctb],\n  Steve Lianoglou [ctb],\n  Eduard Antonyan [ctb],\n  Markus Bonsch [ctb],\n  Hugh Parsonage [ctb],\n  Scott Ritchie [ctb],\n  Kun Ren [ctb],\n  Xianying Tan [ctb],\n  Rick Saporta [ctb],\n  Otto Seiskari [ctb],\n  Xianghui Dong [ctb],\n  Michel Lang [ctb],\n  Watal Iwasaki [ctb],\n  Seth Wenchel [ctb],\n  Karl Broman [ctb],\n  Tobias Schmidt [ctb],\n  David Arenburg [ctb],\n  Ethan Smith [ctb],\n  Francois Cocquemas [ctb],\n  Matthieu Gomez [ctb],\n  Philippe Chataignon [ctb],\n  Nello Blaser [ctb],\n  Dmitry Selivanov [ctb],\n  Andrey Riabushenko [ctb],\n  Cheng Lee [ctb],\n  Declan Groves [ctb],\n  Daniel Possenriede [ctb],\n  Felipe Parages [ctb],\n  Denes Toth [ctb],\n  Mus Yaramaz-David [ctb],\n  Ayappan Perumal [ctb],\n  James Sams [ctb],\n  Martin Morgan [ctb],\n  Michael Quinn [ctb],\n  @javrucebo [ctb],\n  @marc-outins [ctb],\n  Roy Storey [ctb],\n  Manish Saraswat [ctb],\n  Morgan Jacob [ctb],\n  Michael Schubmehl [ctb],\n  Davis Vaughan [ctb],\n  Leonardo Silvestri [ctb],\n  Jim Hester [ctb],\n  Anthony Damico [ctb],\n  Sebastian Freundt [ctb],\n  David Simons [ctb],\n  Elliott Sales de Andrade [ctb],\n  Cole Miller [ctb],\n  Jens Peder Meldgaard [ctb],\n  Vaclav Tlapak [ctb],\n  Kevin Ushey [ctb],\n  Dirk Eddelbuettel [ctb],\n  Tony Fischetti [ctb],\n  Ofek Shilon [ctb],\n  Vadim Khotilovich [ctb],\n  Hadley Wickham [ctb],\n  Bennet Becker [ctb],\n  Kyle Haynes [ctb],\n  Boniface Christian Kamgang [ctb],\n  Olivier Delmarcell [ctb],\n  Josh O'Brien [ctb],\n  Dereck de Mezquita [ctb],\n  Michael Czekanski [ctb],\n  Dmitry Shemetov [ctb],\n  Nitish Jha [ctb],\n  Joshua Wu [ctb],\n  Iago Giné-Vázquez [ctb],\n  Anirban Chetia [ctb],\n  Doris Amoakohene [ctb],\n  Angel Feliz [ctb],\n  Michael Young [ctb],\n  Mark Seeto [ctb],\n  Philippe Grosjean [ctb],\n  Vincent Runge [ctb],\n  Christian Wia [ctb],\n  Elise Maigné [ctb],\n  Vincent Rocher [ctb],\n  Vijay Lulla [ctb],\n  Aljaž Sluga [ctb],\n  Bill Evans [ctb]",
         "Maintainer": "Tyson Barrett <t.barrett88@gmail.com>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-10 10:30:05 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-07-10 10:52:42 UTC; unix",
-        "Archs": "data_table.so.dSYM"
+        "Date/Publication": "2025-05-12 11:10:15 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-05-12 12:26:55 UTC; unix",
+        "Archs": "data_table.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "data.table",
+        "RemoteRef": "data.table",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.17.2"
       }
     },
     "dbplyr": {
@@ -811,7 +932,13 @@
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2024-03-19 17:00:05 UTC",
-        "Built": "R 4.5.0; ; 2025-04-02 08:26:58 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-02 08:26:58 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "dbplyr",
+        "RemoteRef": "dbplyr",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.5.0"
       }
     },
     "digest": {
@@ -900,7 +1027,13 @@
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2023-03-22 13:10:05 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 23:38:51 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 23:38:51 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "dtplyr",
+        "RemoteRef": "dtplyr",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.3.1"
       }
     },
     "evaluate": {
@@ -1004,7 +1137,13 @@
         "License_is_FOSS": "yes",
         "Repository": "CRAN",
         "Date/Publication": "2017-02-01 00:53:34",
-        "Built": "R 4.5.0; ; 2025-03-31 22:03:16 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-03-31 22:03:16 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "fontBitstreamVera",
+        "RemoteRef": "fontBitstreamVera",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.1.1"
       }
     },
     "fontLiberation": {
@@ -1028,7 +1167,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2016-10-15 11:24:18",
         "License_is_FOSS": "yes",
-        "Built": "R 4.5.0; ; 2025-03-31 22:03:31 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-03-31 22:03:31 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "fontLiberation",
+        "RemoteRef": "fontLiberation",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.1.0"
       }
     },
     "fontawesome": {
@@ -1083,7 +1228,13 @@
         "Maintainer": "Lionel Henry <lionel@rstudio.com>",
         "Repository": "CRAN",
         "Date/Publication": "2017-02-01 00:52:56",
-        "Built": "R 4.5.0; ; 2025-04-01 06:40:35 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 06:40:35 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "fontquiver",
+        "RemoteRef": "fontquiver",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.2.1"
       }
     },
     "forcats": {
@@ -1113,7 +1264,13 @@
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
         "Repository": "CRAN",
         "Date/Publication": "2023-01-29 22:20:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 23:27:17 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 23:27:17 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "forcats",
+        "RemoteRef": "forcats",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.0.0"
       }
     },
     "fs": {
@@ -1177,7 +1334,13 @@
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2023-07-20 18:50:08 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 20:31:25 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 20:31:25 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "gargle",
+        "RemoteRef": "gargle",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.5.2"
       }
     },
     "gdtools": {
@@ -1206,7 +1369,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2025-03-27 06:30:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 12:00:30 UTC; unix",
-        "Archs": "gdtools.so.dSYM"
+        "Archs": "gdtools.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "gdtools",
+        "RemoteRef": "gdtools",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.4.2"
       }
     },
     "generics": {
@@ -1262,7 +1431,13 @@
         "Maintainer": "Victor Perrier <victor.perrier@dreamrs.fr>",
         "Repository": "CRAN",
         "Date/Publication": "2023-01-08 18:50:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 21:49:03 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 21:49:03 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "gfonts",
+        "RemoteRef": "gfonts",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.2.0"
       }
     },
     "ggiraph": {
@@ -1326,7 +1501,13 @@
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2025-04-09 09:40:10 UTC",
-        "Built": "R 4.5.0; ; 2025-04-09 11:23:25 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-09 11:23:25 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "ggplot2",
+        "RemoteRef": "ggplot2",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "3.5.2"
       }
     },
     "glue": {
@@ -1387,7 +1568,13 @@
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2023-06-11 19:30:08 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 23:27:40 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 23:27:40 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "googledrive",
+        "RemoteRef": "googledrive",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.1.1"
       }
     },
     "googlesheets4": {
@@ -1417,7 +1604,13 @@
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2023-06-11 04:00:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 23:38:35 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 23:38:35 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "googlesheets4",
+        "RemoteRef": "googlesheets4",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.1.1"
       }
     },
     "gtable": {
@@ -1447,7 +1640,13 @@
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2024-10-25 13:20:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 11:49:51 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 11:49:51 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "gtable",
+        "RemoteRef": "gtable",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.3.6"
       }
     },
     "haven": {
@@ -1456,7 +1655,7 @@
       "description": {
         "Package": "haven",
         "Title": "Import and Export 'SPSS', 'Stata' and 'SAS' Files",
-        "Version": "2.5.5",
+        "Version": "2.5.4",
         "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Evan\", \"Miller\", role = c(\"aut\", \"cph\"),\n           comment = \"Author of included ReadStat code\"),\n    person(\"Danny\", \"Smith\", role = \"aut\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
         "Description": "Import foreign statistical formats into R via the embedded\n    'ReadStat' C library, <https://github.com/WizardMac/ReadStat>.",
         "License": "MIT + file LICENSE",
@@ -1470,16 +1669,22 @@
         "Config/Needs/website": "tidyverse/tidytemplate",
         "Config/testthat/edition": "3",
         "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2",
+        "RoxygenNote": "7.2.3",
         "SystemRequirements": "GNU make, zlib: zlib1g-dev (deb), zlib-devel (rpm)",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-05-30 13:09:12 UTC; hadleywickham",
+        "Packaged": "2023-11-30 13:28:43 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre],\n  Evan Miller [aut, cph] (Author of included ReadStat code),\n  Danny Smith [aut],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-05-30 14:10:02 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-05-30 15:14:34 UTC; unix",
-        "Archs": "haven.so.dSYM"
+        "Date/Publication": "2023-11-30 15:10:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-02 18:16:17 UTC; unix",
+        "Archs": "haven.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "haven",
+        "RemoteRef": "haven",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.5.4"
       }
     },
     "here": {
@@ -1651,7 +1856,13 @@
         "Maintainer": "Scott Chamberlain <myrmecocystus@gmail.com>",
         "Repository": "CRAN",
         "Date/Publication": "2020-04-10 06:20:02 UTC",
-        "Built": "R 4.5.0; ; 2025-03-31 22:39:27 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-03-31 22:39:27 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "httpcode",
+        "RemoteRef": "httpcode",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.3.0"
       }
     },
     "httpuv": {
@@ -1713,6 +1924,43 @@
         "Built": "R 4.5.0; ; 2025-04-01 15:55:58 UTC; unix"
       }
     },
+    "httr2": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "httr2",
+        "Title": "Perform HTTP Requests and Process the Responses",
+        "Version": "1.2.1",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")),\n    person(\"Maximilian\", \"Girlich\", role = \"ctb\")\n  )",
+        "Description": "Tools for creating and modifying HTTP requests, then\n    performing them and processing the results. 'httr2' is a modern\n    re-imagining of 'httr' that uses a pipe-based interface and solves\n    more of the problems that API wrapping packages face.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://httr2.r-lib.org, https://github.com/r-lib/httr2",
+        "BugReports": "https://github.com/r-lib/httr2/issues",
+        "Depends": "R (>= 4.1)",
+        "Imports": "cli (>= 3.0.0), curl (>= 6.4.0), glue, lifecycle, magrittr,\nopenssl, R6, rappdirs, rlang (>= 1.1.0), vctrs (>= 0.6.3),\nwithr",
+        "Suggests": "askpass, bench, clipr, covr, docopt, httpuv, jose, jsonlite,\nknitr, later (>= 1.4.0), nanonext, paws.common, promises,\nrmarkdown, testthat (>= 3.1.8), tibble, webfakes (>= 1.4.0),\nxml2",
+        "VignetteBuilder": "knitr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Config/testthat/parallel": "true",
+        "Config/testthat/start-first": "resp-stream, req-perform",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-07-21 17:36:04 UTC; hadleywickham",
+        "Author": "Hadley Wickham [aut, cre],\n  Posit Software, PBC [cph, fnd],\n  Maximilian Girlich [ctb]",
+        "Maintainer": "Hadley Wickham <hadley@posit.co>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-07-22 04:40:55 UTC",
+        "Built": "R 4.5.0; ; 2025-07-22 05:30:41 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "httr2",
+        "RemoteRef": "httr2",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.2.1"
+      }
+    },
     "ids": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -1735,7 +1983,13 @@
         "Maintainer": "Rich FitzJohn <rich.fitzjohn@gmail.com>",
         "Repository": "CRAN",
         "Date/Publication": "2017-05-31 08:49:59 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 12:09:44 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 12:09:44 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "ids",
+        "RemoteRef": "ids",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.0.1"
       }
     },
     "isoband": {
@@ -1765,7 +2019,42 @@
         "Repository": "CRAN",
         "Date/Publication": "2022-12-20 10:00:13 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 21:42:28 UTC; unix",
-        "Archs": "isoband.so.dSYM"
+        "Archs": "isoband.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "isoband",
+        "RemoteRef": "isoband",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.2.7"
+      }
+    },
+    "jose": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "jose",
+        "Type": "Package",
+        "Title": "JavaScript Object Signing and Encryption",
+        "Version": "1.2.1",
+        "Authors@R": "person(\"Jeroen\", \"Ooms\", role = c(\"aut\", \"cre\"), \n    email = \"jeroenooms@gmail.com\", comment = c(ORCID = \"0000-0002-4035-0289\"))",
+        "Description": "Read and write JSON Web Keys (JWK, rfc7517), generate and verify JSON\n    Web Signatures (JWS, rfc7515) and encode/decode JSON Web Tokens (JWT, rfc7519)\n    <https://datatracker.ietf.org/wg/jose/documents/>. These standards provide \n    modern signing and encryption formats that are natively supported by browsers\n    via the JavaScript WebCryptoAPI <https://www.w3.org/TR/WebCryptoAPI/#jose>, \n    and used by services like OAuth 2.0, LetsEncrypt, and Github Apps.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://r-lib.r-universe.dev/jose",
+        "BugReports": "https://github.com/r-lib/jose/issues",
+        "Depends": "openssl (>= 1.2.1)",
+        "Imports": "jsonlite",
+        "RoxygenNote": "7.1.2",
+        "VignetteBuilder": "knitr",
+        "Suggests": "spelling, testthat, knitr, rmarkdown",
+        "Encoding": "UTF-8",
+        "Language": "en-US",
+        "NeedsCompilation": "no",
+        "Packaged": "2024-10-03 14:12:53 UTC; jeroen",
+        "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>)",
+        "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2024-10-04 12:20:01 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 12:08:57 UTC; unix"
       }
     },
     "jquerylib": {
@@ -1990,7 +2279,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2024-12-08 12:10:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 06:37:23 UTC; unix",
-        "Archs": "lubridate.so.dSYM"
+        "Archs": "lubridate.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "lubridate",
+        "RemoteRef": "lubridate",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.9.4"
       }
     },
     "magick": {
@@ -2000,7 +2295,7 @@
         "Package": "magick",
         "Type": "Package",
         "Title": "Advanced Graphics and Image-Processing in R",
-        "Version": "2.8.7",
+        "Version": "2.8.6",
         "Authors@R": "person(\"Jeroen\", \"Ooms\", role = c(\"aut\", \"cre\"), email = \"jeroenooms@gmail.com\",\n    comment = c(ORCID = \"0000-0002-4035-0289\"))",
         "Description": "Bindings to 'ImageMagick': the most comprehensive open-source image\n    processing library available. Supports many common formats (png, jpeg, tiff,\n    pdf, etc) and manipulations (rotate, scale, crop, trim, flip, blur, etc).\n    All operations are vectorized via the Magick++ STL meaning they operate either\n    on a single frame or a series of frames for working with layers, collages,\n    or animation. In RStudio images are automatically previewed when printed to\n    the console, resulting in an interactive editing environment. The latest \n    version of the package includes a native graphics device for creating \n    in-memory graphics or drawing onto images using pixel coordinates.",
         "License": "MIT + file LICENSE",
@@ -2016,12 +2311,12 @@
         "RoxygenNote": "7.3.2",
         "Language": "en-US",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-06-06 13:39:48 UTC; jeroen",
-        "Author": "Jeroen Ooms [aut, cre] (ORCID: <https://orcid.org/0000-0002-4035-0289>)",
+        "Packaged": "2025-03-23 14:30:11 UTC; jeroen",
+        "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>)",
         "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-06-06 15:10:01 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-06-06 15:46:09 UTC; unix",
+        "Date/Publication": "2025-03-23 18:20:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 22:11:14 UTC; unix",
         "Archs": "magick.so.dSYM"
       }
     },
@@ -2157,7 +2452,38 @@
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2023-03-22 13:00:07 UTC",
-        "Built": "R 4.5.0; ; 2025-04-02 08:27:13 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-02 08:27:13 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "modelr",
+        "RemoteRef": "modelr",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.1.11"
+      }
+    },
+    "munsell": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "munsell",
+        "Type": "Package",
+        "Title": "Utilities for Using Munsell Colours",
+        "Version": "0.5.1",
+        "Author": "Charlotte Wickham <cwickham@gmail.com>",
+        "Maintainer": "Charlotte Wickham <cwickham@gmail.com>",
+        "Description": "Provides easy access to, and manipulation of, the Munsell \n    colours. Provides a mapping between Munsell's \n    original notation (e.g. \"5R 5/10\") and hexadecimal strings suitable \n    for use directly in R graphics. Also provides utilities \n    to explore slices through the Munsell colour tree, to transform \n    Munsell colours and display colour palettes.",
+        "Suggests": "ggplot2, testthat",
+        "Imports": "colorspace, methods",
+        "License": "MIT + file LICENSE",
+        "URL": "https://cran.r-project.org/package=munsell,\nhttps://github.com/cwickham/munsell/",
+        "RoxygenNote": "7.3.1",
+        "Encoding": "UTF-8",
+        "BugReports": "https://github.com/cwickham/munsell/issues",
+        "NeedsCompilation": "no",
+        "Packaged": "2024-04-01 20:42:09 UTC; charlottewickham",
+        "Repository": "CRAN",
+        "Date/Publication": "2024-04-01 23:40:10 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 06:31:30 UTC; unix"
       }
     },
     "nlme": {
@@ -2219,13 +2545,435 @@
         "Archs": "openssl.so.dSYM"
       }
     },
+    "packrat": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Type": "Package",
+        "Package": "packrat",
+        "Title": "A Dependency Management System for Projects and their R Package\nDependencies",
+        "Version": "0.9.2",
+        "Authors@R": "c(\n    person(\"Aron\", \"Atkins\", , \"aron@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Toph\", \"Allen\", role = \"aut\"),\n    person(\"Kevin\", \"Ushey\", role = \"aut\"),\n    person(\"Jonathan\", \"McPherson\", role = \"aut\"),\n    person(\"Joe\", \"Cheng\", role = \"aut\"),\n    person(\"JJ\", \"Allaire\", role = \"aut\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Description": "Manage the R packages your project depends on in an isolated,\n    portable, and reproducible way.",
+        "License": "GPL-2",
+        "URL": "https://github.com/rstudio/packrat",
+        "BugReports": "https://github.com/rstudio/packrat/issues",
+        "Depends": "R (>= 3.0.0)",
+        "Imports": "tools, utils",
+        "Suggests": "devtools, httr, knitr, mockery, rmarkdown, testthat (>=\n3.0.0)",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.2.3",
+        "NeedsCompilation": "no",
+        "Packaged": "2023-09-05 11:45:33 UTC; aron",
+        "Author": "Aron Atkins [aut, cre],\n  Toph Allen [aut],\n  Kevin Ushey [aut],\n  Jonathan McPherson [aut],\n  Joe Cheng [aut],\n  JJ Allaire [aut],\n  Posit Software, PBC [cph, fnd]",
+        "Maintainer": "Aron Atkins <aron@posit.co>",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-09-05 13:00:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 00:10:22 UTC; unix"
+      }
+    },
+    "paws": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws",
+        "Title": "Amazon Web Services Software Development Kit",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to Amazon Web Services <https://aws.amazon.com>,\n    including storage, database, and compute services, such as 'Simple\n    Storage Service' ('S3'), 'DynamoDB' 'NoSQL' database, and 'Lambda'\n    functions-as-a-service.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws, https://paws-r.r-universe.dev/paws",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.analytics (>= 0.9.0), paws.application.integration (>=\n0.9.0), paws.common (>= 0.8.0), paws.compute (>= 0.9.0),\npaws.cost.management (>= 0.9.0), paws.customer.engagement (>=\n0.9.0), paws.database (>= 0.9.0), paws.developer.tools (>=\n0.9.0), paws.end.user.computing (>= 0.9.0),\npaws.machine.learning (>= 0.9.0), paws.management (>= 0.9.0),\npaws.networking (>= 0.9.0), paws.security.identity (>= 0.9.0),\npaws.storage (>= 0.9.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-17 14:41:05 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-17 15:50:03 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 21:15:11 UTC; unix"
+      }
+    },
+    "paws.analytics": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.analytics",
+        "Title": "'Amazon Web Services' Analytics Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' 'analytics' services,\n    including 'Elastic MapReduce' 'Hadoop' and 'Spark' big data service,\n    'Elasticsearch' search engine, and more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.analytics",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'athena_service.R' 'athena_interfaces.R' 'athena_operations.R'\n'cloudsearch_service.R' 'cloudsearch_interfaces.R'\n'cloudsearch_operations.R' 'cloudsearchdomain_service.R'\n'cloudsearchdomain_interfaces.R'\n'cloudsearchdomain_operations.R' 'datapipeline_service.R'\n'datapipeline_interfaces.R' 'datapipeline_operations.R'\n'datazone_service.R' 'datazone_interfaces.R'\n'datazone_operations.R' 'elasticsearchservice_service.R'\n'elasticsearchservice_interfaces.R'\n'elasticsearchservice_operations.R' 'emr_service.R'\n'emr_interfaces.R' 'emr_operations.R'\n'entityresolution_service.R' 'entityresolution_interfaces.R'\n'entityresolution_operations.R' 'firehose_service.R'\n'firehose_interfaces.R' 'firehose_operations.R'\n'glue_service.R' 'glue_interfaces.R' 'glue_operations.R'\n'gluedatabrew_service.R' 'gluedatabrew_interfaces.R'\n'gluedatabrew_operations.R' 'healthlake_service.R'\n'healthlake_interfaces.R' 'healthlake_operations.R'\n'ivs_service.R' 'ivs_interfaces.R' 'ivs_operations.R'\n'ivsrealtime_service.R' 'ivsrealtime_interfaces.R'\n'ivsrealtime_operations.R' 'kafka_service.R'\n'kafka_interfaces.R' 'kafka_operations.R'\n'kafkaconnect_service.R' 'kafkaconnect_interfaces.R'\n'kafkaconnect_operations.R' 'kendra_service.R'\n'kendra_interfaces.R' 'kendra_operations.R'\n'kendraranking_service.R' 'kendraranking_interfaces.R'\n'kendraranking_operations.R' 'kinesis_service.R'\n'kinesis_interfaces.R' 'kinesis_operations.R'\n'kinesisanalytics_service.R' 'kinesisanalytics_interfaces.R'\n'kinesisanalytics_operations.R' 'kinesisanalyticsv2_service.R'\n'kinesisanalyticsv2_interfaces.R'\n'kinesisanalyticsv2_operations.R' 'mturk_service.R'\n'mturk_interfaces.R' 'mturk_operations.R'\n'opensearchingestion_service.R'\n'opensearchingestion_interfaces.R'\n'opensearchingestion_operations.R'\n'opensearchservice_service.R' 'opensearchservice_interfaces.R'\n'opensearchservice_operations.R'\n'opensearchserviceserverless_service.R'\n'opensearchserviceserverless_interfaces.R'\n'opensearchserviceserverless_operations.R'\n'quicksight_service.R' 'quicksight_interfaces.R'\n'quicksight_operations.R' 'reexports_paws.common.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:19:09 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 12:00:02 UTC",
+        "Built": "R 4.5.0; ; 2025-03-18 03:33:49 UTC; unix"
+      }
+    },
+    "paws.application.integration": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.application.integration",
+        "Title": "'Amazon Web Services' Application Integration Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' application integration\n    services, including 'Simple Queue Service' ('SQS') message queue,\n    'Simple Notification Service' ('SNS') publish/subscribe messaging, and\n    more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.application.integration",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'eventbridge_service.R' 'eventbridge_interfaces.R'\n'eventbridge_operations.R' 'eventbridgepipes_service.R'\n'eventbridgepipes_interfaces.R' 'eventbridgepipes_operations.R'\n'eventbridgescheduler_service.R'\n'eventbridgescheduler_interfaces.R'\n'eventbridgescheduler_operations.R' 'locationservice_service.R'\n'locationservice_interfaces.R' 'locationservice_operations.R'\n'mq_service.R' 'mq_interfaces.R' 'mq_operations.R'\n'mwaa_service.R' 'mwaa_interfaces.R' 'mwaa_operations.R'\n'reexports_paws.common.R' 'resourceexplorer_service.R'\n'resourceexplorer_interfaces.R' 'resourceexplorer_operations.R'\n'schemas_service.R' 'schemas_interfaces.R'\n'schemas_operations.R' 'sfn_service.R' 'sfn_interfaces.R'\n'sfn_operations.R' 'sns_service.R' 'sns_interfaces.R'\n'sns_operations.R' 'sqs_service.R' 'sqs_interfaces.R'\n'sqs_operations.R' 'swf_service.R' 'swf_interfaces.R'\n'swf_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:19:27 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 12:20:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:16:42 UTC; unix"
+      }
+    },
+    "paws.common": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.common",
+        "Type": "Package",
+        "Title": "Paws Low-Level Amazon Web Services API",
+        "Version": "0.8.3",
+        "Authors@R": "c(\n        person(\"David\", \"Kretch\", email = \"david.kretch@gmail.com\", role = \"aut\"),\n        person(\"Adam\", \"Banker\", email = \"adam.banker39@gmail.com\", role = \"aut\"),\n        person(\"Dyfan\", \"Jones\", email = \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n        person(\"Amazon.com, Inc.\", role = \"cph\")\n    )",
+        "Description": "Functions for making low-level API requests to Amazon Web Services\n    <https://aws.amazon.com>. The functions handle building, signing, and\n    sending requests, and receiving responses. They are designed to help build \n    higher-level interfaces to individual services, such as Simple Storage\n    Service (S3).",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Encoding": "UTF-8",
+        "LinkingTo": "Rcpp",
+        "Imports": "base64enc, curl, digest, httr2, jsonlite, methods, utils,\nstats, Rcpp, xml2",
+        "Suggests": "covr, crayon, mockery, withr, rstudioapi, testthat (>= 3.0.0)",
+        "SystemRequirements": "pandoc (>= 1.12.3) - http://pandoc.org",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'RcppExports.R' 'util.R' 'cache.R' 'struct.R' 'handlers.R'\n'iniutil.R' 'config.R' 'logging.R' 'dateutil.R'\n'credential_sso.R' 'credential_sts.R' 'url.R' 'net.R'\n'credential_providers.R' 'credentials.R' 'client.R' 'convert.R'\n'service.R' 'custom_dynamodb.R' 'custom_rds.R' 'head_bucket.R'\n'http_status.R' 'error.R' 'custom_s3.R' 'handlers_core.R'\n'handlers_ec2query.R' 'handlers_jsonrpc.R' 'handlers_query.R'\n'handlers_rest.R' 'handlers_restjson.R' 'tags.R' 'xmlutil.R'\n'handlers_restxml.R' 'handlers_stream.R' 'idempotency.R'\n'jsonutil.R' 'mock_bindings.R' 'onLoad.R' 'paginate.R'\n'populate.R' 'populateutil.R' 'queryutil.R' 'request.R'\n'retry.R' 'service_parameter_helper.R' 'signer_v4.R'\n'signer_s3.R' 'signer_s3v4.R' 'signer_v1.R' 'signer_v2.R'\n'time.R'",
+        "Config/testthat/edition": "3",
+        "NeedsCompilation": "yes",
+        "Packaged": "2025-04-17 12:40:52 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-04-17 13:40:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-17 15:06:40 UTC; unix",
+        "Archs": "paws.common.so.dSYM"
+      }
+    },
+    "paws.compute": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.compute",
+        "Title": "'Amazon Web Services' Compute Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' compute services,\n    including 'Elastic Compute Cloud' ('EC2'), 'Lambda'\n    functions-as-a-service, containers, batch processing, and more\n    <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.compute",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'apprunner_service.R' 'apprunner_interfaces.R'\n'apprunner_operations.R' 'batch_service.R' 'batch_interfaces.R'\n'batch_operations.R' 'braket_service.R' 'braket_interfaces.R'\n'braket_operations.R' 'computeoptimizer_service.R'\n'computeoptimizer_interfaces.R' 'computeoptimizer_operations.R'\n'ec2_service.R' 'ec2_interfaces.R' 'ec2_operations.R'\n'ec2instanceconnect_service.R'\n'ec2instanceconnect_interfaces.R'\n'ec2instanceconnect_operations.R' 'ecr_service.R'\n'ecr_interfaces.R' 'ecr_operations.R' 'ecrpublic_service.R'\n'ecrpublic_interfaces.R' 'ecrpublic_operations.R'\n'ecs_service.R' 'ecs_interfaces.R' 'ecs_operations.R'\n'eks_service.R' 'eks_interfaces.R' 'eks_operations.R'\n'elasticbeanstalk_service.R' 'elasticbeanstalk_interfaces.R'\n'elasticbeanstalk_operations.R' 'emrcontainers_service.R'\n'emrcontainers_interfaces.R' 'emrcontainers_operations.R'\n'emrserverless_service.R' 'emrserverless_interfaces.R'\n'emrserverless_operations.R' 'imagebuilder_service.R'\n'imagebuilder_interfaces.R' 'imagebuilder_operations.R'\n'lambda_service.R' 'lambda_interfaces.R' 'lambda_operations.R'\n'lightsail_service.R' 'lightsail_interfaces.R'\n'lightsail_operations.R' 'proton_service.R'\n'proton_interfaces.R' 'proton_operations.R'\n'reexports_paws.common.R'\n'serverlessapplicationrepository_service.R'\n'serverlessapplicationrepository_interfaces.R'\n'serverlessapplicationrepository_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:20:04 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 14:00:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:19:16 UTC; unix"
+      }
+    },
+    "paws.cost.management": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.cost.management",
+        "Title": "'Amazon Web Services' Cost Management Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' cost management services,\n    including cost and usage reports, budgets, pricing, and more\n    <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.cost.management",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'billing_service.R' 'billing_interfaces.R'\n'billing_operations.R' 'billingconductor_service.R'\n'billingconductor_interfaces.R' 'billingconductor_operations.R'\n'budgets_service.R' 'budgets_interfaces.R'\n'budgets_operations.R' 'costandusagereportservice_service.R'\n'costandusagereportservice_interfaces.R'\n'costandusagereportservice_operations.R'\n'costexplorer_service.R' 'costexplorer_interfaces.R'\n'costexplorer_operations.R' 'marketplacecatalog_service.R'\n'marketplacecatalog_interfaces.R'\n'marketplacecatalog_operations.R'\n'marketplacecommerceanalytics_service.R'\n'marketplacecommerceanalytics_interfaces.R'\n'marketplacecommerceanalytics_operations.R'\n'marketplaceentitlementservice_service.R'\n'marketplaceentitlementservice_interfaces.R'\n'marketplaceentitlementservice_operations.R'\n'marketplacemetering_service.R'\n'marketplacemetering_interfaces.R'\n'marketplacemetering_operations.R'\n'paymentcryptographycontrolplane_service.R'\n'paymentcryptographycontrolplane_interfaces.R'\n'paymentcryptographycontrolplane_operations.R'\n'paymentcryptographydataplane_service.R'\n'paymentcryptographydataplane_interfaces.R'\n'paymentcryptographydataplane_operations.R' 'pricing_service.R'\n'pricing_interfaces.R' 'pricing_operations.R'\n'reexports_paws.common.R' 'savingsplans_service.R'\n'savingsplans_interfaces.R' 'savingsplans_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:20:23 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 14:20:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:16:34 UTC; unix"
+      }
+    },
+    "paws.customer.engagement": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.customer.engagement",
+        "Title": "'Amazon Web Services' Customer Engagement Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' customer engagement\n    services, including 'Simple Email Service', 'Connect' contact center\n    service, and more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.customer.engagement",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'connect_service.R' 'connect_interfaces.R'\n'connect_operations.R' 'connectcampaignservice_service.R'\n'connectcampaignservice_interfaces.R'\n'connectcampaignservice_operations.R'\n'connectcampaignservicev2_service.R'\n'connectcampaignservicev2_interfaces.R'\n'connectcampaignservicev2_operations.R'\n'connectcases_service.R' 'connectcases_interfaces.R'\n'connectcases_operations.R' 'connectcontactlens_service.R'\n'connectcontactlens_interfaces.R'\n'connectcontactlens_operations.R'\n'connectparticipant_service.R'\n'connectparticipant_interfaces.R'\n'connectparticipant_operations.R'\n'connectwisdomservice_service.R'\n'connectwisdomservice_interfaces.R'\n'connectwisdomservice_operations.R'\n'customerprofiles_service.R' 'customerprofiles_interfaces.R'\n'customerprofiles_operations.R' 'pinpoint_service.R'\n'pinpoint_interfaces.R' 'pinpoint_operations.R'\n'pinpointemail_service.R' 'pinpointemail_interfaces.R'\n'pinpointemail_operations.R' 'pinpointsmsvoice_service.R'\n'pinpointsmsvoice_interfaces.R' 'pinpointsmsvoice_operations.R'\n'pinpointsmsvoicev2_service.R'\n'pinpointsmsvoicev2_interfaces.R'\n'pinpointsmsvoicev2_operations.R' 'reexports_paws.common.R'\n'ses_service.R' 'ses_interfaces.R' 'ses_operations.R'\n'sesv2_service.R' 'sesv2_interfaces.R' 'sesv2_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:20:49 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 15:00:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:18:02 UTC; unix"
+      }
+    },
+    "paws.database": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.database",
+        "Title": "'Amazon Web Services' Database Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' database services,\n    including 'Relational Database Service' ('RDS'), 'DynamoDB' 'NoSQL'\n    database, and more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.database",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'dax_service.R' 'dax_interfaces.R' 'dax_operations.R'\n'docdb_service.R' 'docdb_interfaces.R' 'docdb_operations.R'\n'docdbelastic_service.R' 'docdbelastic_interfaces.R'\n'docdbelastic_operations.R' 'dynamodb_service.R'\n'dynamodb_interfaces.R' 'dynamodb_operations.R'\n'dynamodbstreams_service.R' 'dynamodbstreams_interfaces.R'\n'dynamodbstreams_operations.R' 'elasticache_service.R'\n'elasticache_interfaces.R' 'elasticache_operations.R'\n'keyspaces_service.R' 'keyspaces_interfaces.R'\n'keyspaces_operations.R' 'lakeformation_service.R'\n'lakeformation_interfaces.R' 'lakeformation_operations.R'\n'memorydb_service.R' 'memorydb_interfaces.R'\n'memorydb_operations.R' 'neptune_service.R'\n'neptune_interfaces.R' 'neptune_operations.R'\n'neptunedata_service.R' 'neptunedata_interfaces.R'\n'neptunedata_operations.R' 'qldb_service.R' 'qldb_interfaces.R'\n'qldb_operations.R' 'qldbsession_service.R'\n'qldbsession_interfaces.R' 'qldbsession_operations.R'\n'rds_service.R' 'rds_operations.R' 'rds_custom.R'\n'rds_interfaces.R' 'rdsdataservice_service.R'\n'rdsdataservice_interfaces.R' 'rdsdataservice_operations.R'\n'redshift_service.R' 'redshift_interfaces.R'\n'redshift_operations.R' 'redshiftdataapiservice_service.R'\n'redshiftdataapiservice_interfaces.R'\n'redshiftdataapiservice_operations.R'\n'redshiftserverless_service.R'\n'redshiftserverless_interfaces.R'\n'redshiftserverless_operations.R' 'reexports_paws.common.R'\n'simpledb_service.R' 'simpledb_interfaces.R'\n'simpledb_operations.R' 'timestreamquery_service.R'\n'timestreamquery_interfaces.R' 'timestreamquery_operations.R'\n'timestreamwrite_service.R' 'timestreamwrite_interfaces.R'\n'timestreamwrite_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:21:20 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 14:40:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:18:27 UTC; unix"
+      }
+    },
+    "paws.developer.tools": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.developer.tools",
+        "Title": "'Amazon Web Services' Developer Tools Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' developer tools services,\n    including version control, continuous integration and deployment, and\n    more <https://aws.amazon.com/products/developer-tools/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.developer.tools",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'cloud9_service.R' 'cloud9_interfaces.R' 'cloud9_operations.R'\n'cloudcontrolapi_service.R' 'cloudcontrolapi_interfaces.R'\n'cloudcontrolapi_operations.R' 'codeartifact_service.R'\n'codeartifact_interfaces.R' 'codeartifact_operations.R'\n'codebuild_service.R' 'codebuild_interfaces.R'\n'codebuild_operations.R' 'codecatalyst_service.R'\n'codecatalyst_interfaces.R' 'codecatalyst_operations.R'\n'codecommit_service.R' 'codecommit_interfaces.R'\n'codecommit_operations.R' 'codeconnections_service.R'\n'codeconnections_interfaces.R' 'codeconnections_operations.R'\n'codedeploy_service.R' 'codedeploy_interfaces.R'\n'codedeploy_operations.R' 'codeguruprofiler_service.R'\n'codeguruprofiler_interfaces.R' 'codeguruprofiler_operations.R'\n'codegurureviewer_service.R' 'codegurureviewer_interfaces.R'\n'codegurureviewer_operations.R' 'codegurusecurity_service.R'\n'codegurusecurity_interfaces.R' 'codegurusecurity_operations.R'\n'codepipeline_service.R' 'codepipeline_interfaces.R'\n'codepipeline_operations.R' 'codestarconnections_service.R'\n'codestarconnections_interfaces.R'\n'codestarconnections_operations.R'\n'codestarnotifications_service.R'\n'codestarnotifications_interfaces.R'\n'codestarnotifications_operations.R' 'devopsguru_service.R'\n'devopsguru_interfaces.R' 'devopsguru_operations.R'\n'drs_service.R' 'drs_interfaces.R' 'drs_operations.R'\n'fis_service.R' 'fis_interfaces.R' 'fis_operations.R'\n'reexports_paws.common.R' 'wellarchitected_service.R'\n'wellarchitected_interfaces.R' 'wellarchitected_operations.R'\n'xray_service.R' 'xray_interfaces.R' 'xray_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:21:36 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 15:10:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:18:35 UTC; unix"
+      }
+    },
+    "paws.end.user.computing": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.end.user.computing",
+        "Title": "'Amazon Web Services' End User Computing Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' end user computing\n    services, including collaborative document editing, mobile intranet,\n    and more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.end.user.computing",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'appstream_service.R' 'appstream_interfaces.R'\n'appstream_operations.R' 'chatbot_service.R'\n'chatbot_interfaces.R' 'chatbot_operations.R'\n'ivschat_service.R' 'ivschat_interfaces.R'\n'ivschat_operations.R' 'reexports_paws.common.R'\n'workdocs_service.R' 'workdocs_interfaces.R'\n'workdocs_operations.R' 'workmail_service.R'\n'workmail_interfaces.R' 'workmail_operations.R'\n'workmailmessageflow_service.R'\n'workmailmessageflow_interfaces.R'\n'workmailmessageflow_operations.R' 'workspaces_service.R'\n'workspaces_interfaces.R' 'workspaces_operations.R'\n'workspacesweb_service.R' 'workspacesweb_interfaces.R'\n'workspacesweb_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:21:47 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 15:30:01 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:18:08 UTC; unix"
+      }
+    },
+    "paws.machine.learning": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.machine.learning",
+        "Title": "'Amazon Web Services' Machine Learning Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' machine learning services,\n    including 'SageMaker' managed machine learning service, natural\n    language processing, speech recognition, translation, and more\n    <https://aws.amazon.com/machine-learning/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.machine.learning",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'augmentedairuntime_service.R'\n'augmentedairuntime_interfaces.R'\n'augmentedairuntime_operations.R' 'bedrock_service.R'\n'bedrock_interfaces.R' 'bedrock_operations.R'\n'bedrockagent_service.R' 'bedrockagent_interfaces.R'\n'bedrockagent_operations.R' 'bedrockagentruntime_service.R'\n'bedrockagentruntime_interfaces.R'\n'bedrockagentruntime_operations.R'\n'bedrockdataautomation_service.R'\n'bedrockdataautomation_interfaces.R'\n'bedrockdataautomation_operations.R'\n'bedrockdataautomationruntime_service.R'\n'bedrockdataautomationruntime_interfaces.R'\n'bedrockdataautomationruntime_operations.R'\n'bedrockruntime_service.R' 'bedrockruntime_interfaces.R'\n'bedrockruntime_operations.R' 'comprehend_service.R'\n'comprehend_interfaces.R' 'comprehend_operations.R'\n'comprehendmedical_service.R' 'comprehendmedical_interfaces.R'\n'comprehendmedical_operations.R'\n'forecastqueryservice_service.R'\n'forecastqueryservice_interfaces.R'\n'forecastqueryservice_operations.R' 'forecastservice_service.R'\n'forecastservice_interfaces.R' 'forecastservice_operations.R'\n'frauddetector_service.R' 'frauddetector_interfaces.R'\n'frauddetector_operations.R'\n'lexmodelbuildingservice_service.R'\n'lexmodelbuildingservice_interfaces.R'\n'lexmodelbuildingservice_operations.R' 'lexmodelsv2_service.R'\n'lexmodelsv2_interfaces.R' 'lexmodelsv2_operations.R'\n'lexruntimeservice_service.R' 'lexruntimeservice_interfaces.R'\n'lexruntimeservice_operations.R' 'lexruntimev2_service.R'\n'lexruntimev2_interfaces.R' 'lexruntimev2_operations.R'\n'lookoutequipment_service.R' 'lookoutequipment_interfaces.R'\n'lookoutequipment_operations.R' 'lookoutmetrics_service.R'\n'lookoutmetrics_interfaces.R' 'lookoutmetrics_operations.R'\n'machinelearning_service.R' 'machinelearning_interfaces.R'\n'machinelearning_operations.R' 'panorama_service.R'\n'panorama_interfaces.R' 'panorama_operations.R'\n'personalize_service.R' 'personalize_interfaces.R'\n'personalize_operations.R' 'personalizeevents_service.R'\n'personalizeevents_interfaces.R'\n'personalizeevents_operations.R' 'personalizeruntime_service.R'\n'personalizeruntime_interfaces.R'\n'personalizeruntime_operations.R' 'polly_service.R'\n'polly_interfaces.R' 'polly_operations.R'\n'reexports_paws.common.R' 'rekognition_service.R'\n'rekognition_interfaces.R' 'rekognition_operations.R'\n'sagemaker_service.R' 'sagemaker_interfaces.R'\n'sagemaker_operations.R' 'sagemakeredgemanager_service.R'\n'sagemakeredgemanager_interfaces.R'\n'sagemakeredgemanager_operations.R'\n'sagemakerfeaturestoreruntime_service.R'\n'sagemakerfeaturestoreruntime_interfaces.R'\n'sagemakerfeaturestoreruntime_operations.R'\n'sagemakergeospatialcapabilities_service.R'\n'sagemakergeospatialcapabilities_interfaces.R'\n'sagemakergeospatialcapabilities_operations.R'\n'sagemakermetrics_service.R' 'sagemakermetrics_interfaces.R'\n'sagemakermetrics_operations.R' 'sagemakerruntime_service.R'\n'sagemakerruntime_interfaces.R' 'sagemakerruntime_operations.R'\n'textract_service.R' 'textract_interfaces.R'\n'textract_operations.R' 'transcribeservice_service.R'\n'transcribeservice_interfaces.R'\n'transcribeservice_operations.R' 'translate_service.R'\n'translate_interfaces.R' 'translate_operations.R'\n'voiceid_service.R' 'voiceid_interfaces.R'\n'voiceid_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:22:41 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-15 06:50:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:20:27 UTC; unix"
+      }
+    },
+    "paws.management": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.management",
+        "Title": "'Amazon Web Services' Management & Governance Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' management and governance\n    services, including 'CloudWatch' application and infrastructure\n    monitoring, 'Auto Scaling' for automatically scaling resources, and\n    more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.management",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'applicationautoscaling_service.R'\n'applicationautoscaling_interfaces.R'\n'applicationautoscaling_operations.R'\n'applicationcostprofiler_service.R'\n'applicationcostprofiler_interfaces.R'\n'applicationcostprofiler_operations.R'\n'applicationinsights_service.R'\n'applicationinsights_interfaces.R'\n'applicationinsights_operations.R' 'appregistry_service.R'\n'appregistry_interfaces.R' 'appregistry_operations.R'\n'auditmanager_service.R' 'auditmanager_interfaces.R'\n'auditmanager_operations.R' 'autoscaling_service.R'\n'autoscaling_interfaces.R' 'autoscaling_operations.R'\n'autoscalingplans_service.R' 'autoscalingplans_interfaces.R'\n'autoscalingplans_operations.R' 'cloudformation_service.R'\n'cloudformation_interfaces.R' 'cloudformation_operations.R'\n'cloudtrail_service.R' 'cloudtrail_interfaces.R'\n'cloudtrail_operations.R' 'cloudtraildataservice_service.R'\n'cloudtraildataservice_interfaces.R'\n'cloudtraildataservice_operations.R' 'cloudwatch_service.R'\n'cloudwatch_interfaces.R' 'cloudwatch_operations.R'\n'cloudwatchapplicationsignals_service.R'\n'cloudwatchapplicationsignals_interfaces.R'\n'cloudwatchapplicationsignals_operations.R'\n'cloudwatchevidently_service.R'\n'cloudwatchevidently_interfaces.R'\n'cloudwatchevidently_operations.R'\n'cloudwatchinternetmonitor_service.R'\n'cloudwatchinternetmonitor_interfaces.R'\n'cloudwatchinternetmonitor_operations.R'\n'cloudwatchlogs_service.R' 'cloudwatchlogs_interfaces.R'\n'cloudwatchlogs_operations.R'\n'cloudwatchobservabilityaccessmanager_service.R'\n'cloudwatchobservabilityaccessmanager_interfaces.R'\n'cloudwatchobservabilityaccessmanager_operations.R'\n'cloudwatchrum_service.R' 'cloudwatchrum_interfaces.R'\n'cloudwatchrum_operations.R' 'configservice_service.R'\n'configservice_interfaces.R' 'configservice_operations.R'\n'controltower_service.R' 'controltower_interfaces.R'\n'controltower_operations.R' 'finspace_service.R'\n'finspace_interfaces.R' 'finspace_operations.R'\n'health_service.R' 'health_interfaces.R' 'health_operations.R'\n'licensemanager_service.R' 'licensemanager_interfaces.R'\n'licensemanager_operations.R'\n'licensemanagerlinuxsubscriptions_service.R'\n'licensemanagerlinuxsubscriptions_interfaces.R'\n'licensemanagerlinuxsubscriptions_operations.R'\n'licensemanagerusersubscriptions_service.R'\n'licensemanagerusersubscriptions_interfaces.R'\n'licensemanagerusersubscriptions_operations.R'\n'managedgrafana_service.R' 'managedgrafana_interfaces.R'\n'managedgrafana_operations.R' 'opsworks_service.R'\n'opsworks_interfaces.R' 'opsworks_operations.R'\n'opsworkscm_service.R' 'opsworkscm_interfaces.R'\n'opsworkscm_operations.R' 'organizations_service.R'\n'organizations_interfaces.R' 'organizations_operations.R'\n'pi_service.R' 'pi_interfaces.R' 'pi_operations.R'\n'prometheusservice_service.R' 'prometheusservice_interfaces.R'\n'prometheusservice_operations.R' 'reexports_paws.common.R'\n'resiliencehub_service.R' 'resiliencehub_interfaces.R'\n'resiliencehub_operations.R' 'resourcegroups_service.R'\n'resourcegroups_interfaces.R' 'resourcegroups_operations.R'\n'resourcegroupstaggingapi_service.R'\n'resourcegroupstaggingapi_interfaces.R'\n'resourcegroupstaggingapi_operations.R'\n'servicecatalog_service.R' 'servicecatalog_interfaces.R'\n'servicecatalog_operations.R' 'servicequotas_service.R'\n'servicequotas_interfaces.R' 'servicequotas_operations.R'\n'ssm_service.R' 'ssm_interfaces.R' 'ssm_operations.R'\n'ssmcontacts_service.R' 'ssmcontacts_interfaces.R'\n'ssmcontacts_operations.R' 'ssmincidents_service.R'\n'ssmincidents_interfaces.R' 'ssmincidents_operations.R'\n'ssmsap_service.R' 'ssmsap_interfaces.R' 'ssmsap_operations.R'\n'support_service.R' 'support_interfaces.R'\n'support_operations.R' 'supportapp_service.R'\n'supportapp_interfaces.R' 'supportapp_operations.R'\n'synthetics_service.R' 'synthetics_interfaces.R'\n'synthetics_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:22:51 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 16:10:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:21:22 UTC; unix"
+      }
+    },
+    "paws.networking": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.networking",
+        "Title": "'Amazon Web Services' Networking & Content Delivery Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' networking and content\n    delivery services, including 'Route 53' Domain Name System service,\n    'CloudFront' content delivery, load balancing, and more\n    <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.networking",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'apigateway_service.R' 'apigateway_interfaces.R'\n'apigateway_operations.R' 'apigatewaymanagementapi_service.R'\n'apigatewaymanagementapi_interfaces.R'\n'apigatewaymanagementapi_operations.R' 'apigatewayv2_service.R'\n'apigatewayv2_interfaces.R' 'apigatewayv2_operations.R'\n'appfabric_service.R' 'appfabric_interfaces.R'\n'appfabric_operations.R' 'appmesh_service.R'\n'appmesh_interfaces.R' 'appmesh_operations.R'\n'arczonalshift_service.R' 'arczonalshift_interfaces.R'\n'arczonalshift_operations.R' 'backupgateway_service.R'\n'backupgateway_interfaces.R' 'backupgateway_operations.R'\n'cloudfront_service.R' 'cloudfront_interfaces.R'\n'cloudfront_operations.R' 'cloudfrontkeyvaluestore_service.R'\n'cloudfrontkeyvaluestore_interfaces.R'\n'cloudfrontkeyvaluestore_operations.R'\n'directconnect_service.R' 'directconnect_interfaces.R'\n'directconnect_operations.R' 'elb_service.R' 'elb_interfaces.R'\n'elb_operations.R' 'elbv2_service.R' 'elbv2_interfaces.R'\n'elbv2_operations.R' 'globalaccelerator_service.R'\n'globalaccelerator_interfaces.R'\n'globalaccelerator_operations.R' 'networkfirewall_service.R'\n'networkfirewall_interfaces.R' 'networkfirewall_operations.R'\n'networkmanager_service.R' 'networkmanager_interfaces.R'\n'networkmanager_operations.R' 'reexports_paws.common.R'\n'route53_service.R' 'route53_interfaces.R'\n'route53_operations.R' 'route53domains_service.R'\n'route53domains_interfaces.R' 'route53domains_operations.R'\n'route53profiles_service.R' 'route53profiles_interfaces.R'\n'route53profiles_operations.R'\n'route53recoverycluster_service.R'\n'route53recoverycluster_interfaces.R'\n'route53recoverycluster_operations.R'\n'route53recoverycontrolconfig_service.R'\n'route53recoverycontrolconfig_interfaces.R'\n'route53recoverycontrolconfig_operations.R'\n'route53recoveryreadiness_service.R'\n'route53recoveryreadiness_interfaces.R'\n'route53recoveryreadiness_operations.R'\n'route53resolver_service.R' 'route53resolver_interfaces.R'\n'route53resolver_operations.R' 'servicediscovery_service.R'\n'servicediscovery_interfaces.R' 'servicediscovery_operations.R'\n'telconetworkbuilder_service.R'\n'telconetworkbuilder_interfaces.R'\n'telconetworkbuilder_operations.R' 'vpclattice_service.R'\n'vpclattice_interfaces.R' 'vpclattice_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:23:24 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 16:30:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:21:02 UTC; unix"
+      }
+    },
+    "paws.security.identity": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.security.identity",
+        "Title": "'Amazon Web Services' Security, Identity, & Compliance Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' security, identity, and\n    compliance services, including the 'Identity & Access Management'\n    ('IAM') service for managing access to services and resources, and\n    more <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.security.identity",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'accessanalyzer_service.R' 'accessanalyzer_interfaces.R'\n'accessanalyzer_operations.R' 'account_service.R'\n'account_interfaces.R' 'account_operations.R' 'acm_service.R'\n'acm_interfaces.R' 'acm_operations.R' 'acmpca_service.R'\n'acmpca_interfaces.R' 'acmpca_operations.R'\n'cleanroomsml_service.R' 'cleanroomsml_interfaces.R'\n'cleanroomsml_operations.R' 'clouddirectory_service.R'\n'clouddirectory_interfaces.R' 'clouddirectory_operations.R'\n'cloudhsm_service.R' 'cloudhsm_interfaces.R'\n'cloudhsm_operations.R' 'cloudhsmv2_service.R'\n'cloudhsmv2_interfaces.R' 'cloudhsmv2_operations.R'\n'cognitoidentity_service.R' 'cognitoidentity_interfaces.R'\n'cognitoidentity_operations.R'\n'cognitoidentityprovider_service.R'\n'cognitoidentityprovider_interfaces.R'\n'cognitoidentityprovider_operations.R' 'cognitosync_service.R'\n'cognitosync_interfaces.R' 'cognitosync_operations.R'\n'detective_service.R' 'detective_interfaces.R'\n'detective_operations.R' 'directoryservice_service.R'\n'directoryservice_interfaces.R' 'directoryservice_operations.R'\n'fms_service.R' 'fms_interfaces.R' 'fms_operations.R'\n'guardduty_service.R' 'guardduty_interfaces.R'\n'guardduty_operations.R' 'iam_service.R' 'iam_interfaces.R'\n'iam_operations.R' 'iamrolesanywhere_service.R'\n'iamrolesanywhere_interfaces.R' 'iamrolesanywhere_operations.R'\n'identitystore_service.R' 'identitystore_interfaces.R'\n'identitystore_operations.R' 'inspector2_service.R'\n'inspector2_interfaces.R' 'inspector2_operations.R'\n'inspector_service.R' 'inspector_interfaces.R'\n'inspector_operations.R' 'kms_service.R' 'kms_interfaces.R'\n'kms_operations.R' 'macie2_service.R' 'macie2_interfaces.R'\n'macie2_operations.R' 'pcaconnectorad_service.R'\n'pcaconnectorad_interfaces.R' 'pcaconnectorad_operations.R'\n'ram_service.R' 'ram_interfaces.R' 'ram_operations.R'\n'reexports_paws.common.R' 'secretsmanager_service.R'\n'secretsmanager_interfaces.R' 'secretsmanager_operations.R'\n'securityhub_service.R' 'securityhub_interfaces.R'\n'securityhub_operations.R' 'securitylake_service.R'\n'securitylake_interfaces.R' 'securitylake_operations.R'\n'shield_service.R' 'shield_interfaces.R' 'shield_operations.R'\n'sso_service.R' 'sso_interfaces.R' 'sso_operations.R'\n'ssoadmin_service.R' 'ssoadmin_interfaces.R'\n'ssoadmin_operations.R' 'ssooidc_service.R'\n'ssooidc_interfaces.R' 'ssooidc_operations.R' 'sts_service.R'\n'sts_interfaces.R' 'sts_operations.R'\n'verifiedpermissions_service.R'\n'verifiedpermissions_interfaces.R'\n'verifiedpermissions_operations.R' 'waf_service.R'\n'waf_interfaces.R' 'waf_operations.R' 'wafregional_service.R'\n'wafregional_interfaces.R' 'wafregional_operations.R'\n'wafv2_service.R' 'wafv2_interfaces.R' 'wafv2_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:23:34 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 16:50:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:22:21 UTC; unix"
+      }
+    },
+    "paws.storage": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "paws.storage",
+        "Title": "'Amazon Web Services' Storage Services",
+        "Version": "0.9.0",
+        "Authors@R": "c(\n    person(\"David\", \"Kretch\", , \"david.kretch@gmail.com\", role = \"aut\"),\n    person(\"Adam\", \"Banker\", , \"adam.banker39@gmail.com\", role = \"aut\"),\n    person(\"Dyfan\", \"Jones\", , \"dyfan.r.jones@gmail.com\", role = \"cre\"),\n    person(\"Amazon.com, Inc.\", role = \"cph\")\n  )",
+        "Description": "Interface to 'Amazon Web Services' storage services,\n    including 'Simple Storage Service' ('S3') and more\n    <https://aws.amazon.com/>.",
+        "License": "Apache License (>= 2.0)",
+        "URL": "https://github.com/paws-r/paws,\nhttps://paws-r.r-universe.dev/paws.storage",
+        "BugReports": "https://github.com/paws-r/paws/issues",
+        "Imports": "paws.common (>= 0.8.0)",
+        "Suggests": "testthat",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Collate": "'backup_service.R' 'backup_interfaces.R' 'backup_operations.R'\n'dlm_service.R' 'dlm_interfaces.R' 'dlm_operations.R'\n'ebs_service.R' 'ebs_interfaces.R' 'ebs_operations.R'\n'efs_service.R' 'efs_interfaces.R' 'efs_operations.R'\n'finspacedata_service.R' 'finspacedata_interfaces.R'\n'finspacedata_operations.R' 'fsx_service.R' 'fsx_interfaces.R'\n'fsx_operations.R' 'glacier_service.R' 'glacier_interfaces.R'\n'glacier_operations.R' 'omics_service.R' 'omics_interfaces.R'\n'omics_operations.R' 'recyclebin_service.R'\n'recyclebin_interfaces.R' 'recyclebin_operations.R'\n'reexports_paws.common.R' 's3_service.R' 's3_operations.R'\n's3_custom.R' 's3_interfaces.R' 's3control_service.R'\n's3control_interfaces.R' 's3control_operations.R'\n's3outposts_service.R' 's3outposts_interfaces.R'\n's3outposts_operations.R' 's3tables_service.R'\n's3tables_interfaces.R' 's3tables_operations.R'\n'storagegateway_service.R' 'storagegateway_interfaces.R'\n'storagegateway_operations.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-14 09:23:43 UTC; dyfanjones",
+        "Author": "David Kretch [aut],\n  Adam Banker [aut],\n  Dyfan Jones [cre],\n  Amazon.com, Inc. [cph]",
+        "Maintainer": "Dyfan Jones <dyfan.r.jones@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-14 17:10:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 17:20:52 UTC; unix"
+      }
+    },
     "pillar": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
       "description": {
         "Package": "pillar",
         "Title": "Coloured Formatting for Columns",
-        "Version": "1.11.0",
+        "Version": "1.10.2",
         "Authors@R": "\n    c(person(given = \"Kirill\",\n             family = \"M\\u00fcller\",\n             role = c(\"aut\", \"cre\"),\n             email = \"kirill@cynkra.com\",\n             comment = c(ORCID = \"0000-0002-1416-3412\")),\n      person(given = \"Hadley\",\n             family = \"Wickham\",\n             role = \"aut\"),\n      person(given = \"RStudio\",\n             role = \"cph\"))",
         "Description": "Provides 'pillar' and 'colonnade' generics designed\n    for formatting columns of data using the full range of colours\n    provided by modern terminals.",
         "License": "MIT + file LICENSE",
@@ -2244,12 +2992,12 @@
         "Config/gha/extra-packages": "units=?ignore-before-r=4.3.0",
         "Config/Needs/website": "tidyverse/tidytemplate",
         "NeedsCompilation": "no",
-        "Packaged": "2025-07-04 18:25:31 UTC; kirill",
-        "Author": "Kirill Müller [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-1416-3412>),\n  Hadley Wickham [aut],\n  RStudio [cph]",
+        "Packaged": "2025-04-05 12:40:18 UTC; kirill",
+        "Author": "Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>),\n  Hadley Wickham [aut],\n  RStudio [cph]",
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-04 19:20:02 UTC",
-        "Built": "R 4.5.0; ; 2025-07-04 19:58:20 UTC; unix"
+        "Date/Publication": "2025-04-05 13:40:02 UTC",
+        "Built": "R 4.5.0; ; 2025-04-05 15:16:23 UTC; unix"
       }
     },
     "pkgconfig": {
@@ -2442,20 +3190,20 @@
       }
     },
     "purrr": {
-      "Source": "CRAN",
-      "Repository": "https://cran.rstudio.com",
+      "Source": "github",
+      "Repository": null,
       "description": {
         "Package": "purrr",
         "Title": "Functional Programming Tools",
-        "Version": "1.1.0",
+        "Version": "1.0.4.9000",
         "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Lionel\", \"Henry\", , \"lionel@posit.co\", role = \"aut\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"https://ror.org/03wc8by49\"))\n  )",
         "Description": "A complete and consistent functional programming toolkit for\n    R.",
         "License": "MIT + file LICENSE",
         "URL": "https://purrr.tidyverse.org/, https://github.com/tidyverse/purrr",
         "BugReports": "https://github.com/tidyverse/purrr/issues",
-        "Depends": "R (>= 4.1)",
+        "Depends": "R (>= 4.0)",
         "Imports": "cli (>= 3.6.1), lifecycle (>= 1.0.3), magrittr (>= 1.5.0),\nrlang (>= 1.1.1), vctrs (>= 0.6.3)",
-        "Suggests": "carrier (>= 0.2.0), covr, dplyr (>= 0.7.8), httr, knitr,\nlubridate, mirai (>= 2.4.0), rmarkdown, testthat (>= 3.0.0),\ntibble, tidyselect",
+        "Suggests": "carrier (>= 0.1.1.9000), covr, dplyr (>= 0.7.8), httr, knitr,\nlubridate, mirai (>= 2.3.0.9001), rmarkdown, testthat (>=\n3.0.0), tibble, tidyselect",
         "LinkingTo": "cli",
         "VignetteBuilder": "knitr",
         "Biarch": "true",
@@ -2464,15 +3212,25 @@
         "Config/testthat/edition": "3",
         "Config/testthat/parallel": "TRUE",
         "Encoding": "UTF-8",
+        "Roxygen": "list(markdown = TRUE)",
         "RoxygenNote": "7.3.2",
+        "Remotes": "r-lib/carrier, r-lib/mirai",
+        "RemoteType": "github",
+        "RemoteHost": "api.github.com",
+        "RemoteRepo": "purrr",
+        "RemoteUsername": "tidyverse",
+        "RemotePkgRef": "tidyverse/purrr",
+        "RemoteRef": "HEAD",
+        "RemoteSha": "b20890741eb42dcd1d7f062af4ee397b55102213",
+        "GithubRepo": "purrr",
+        "GithubUsername": "tidyverse",
+        "GithubRef": "HEAD",
+        "GithubSHA1": "b20890741eb42dcd1d7f062af4ee397b55102213",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-07-10 12:22:53 UTC; hadleywickham",
+        "Packaged": "2025-06-24 17:59:13 UTC; kylewalker",
         "Author": "Hadley Wickham [aut, cre] (ORCID:\n    <https://orcid.org/0000-0003-4757-117X>),\n  Lionel Henry [aut],\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-07-10 17:50:02 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-07-10 17:59:18 UTC; unix",
-        "Archs": "purrr.so.dSYM"
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-06-24 17:59:16 UTC; unix"
       }
     },
     "ragg": {
@@ -2598,7 +3356,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2025-03-07 17:10:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 23:29:54 UTC; unix",
-        "Archs": "readxl.so.dSYM"
+        "Archs": "readxl.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "readxl",
+        "RemoteRef": "readxl",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.4.5"
       }
     },
     "rematch": {
@@ -2621,7 +3385,13 @@
         "Packaged": "2023-08-30 12:10:51 UTC; gaborcsardi",
         "Repository": "CRAN",
         "Date/Publication": "2023-08-30 16:50:02 UTC",
-        "Built": "R 4.5.0; ; 2025-03-31 21:54:34 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-03-31 21:54:34 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "rematch",
+        "RemoteRef": "rematch",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.0.0"
       }
     },
     "rematch2": {
@@ -2647,7 +3417,44 @@
         "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
         "Repository": "CRAN",
         "Date/Publication": "2020-05-01 06:50:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 20:37:33 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 20:37:33 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "rematch2",
+        "RemoteRef": "rematch2",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.1.2"
+      }
+    },
+    "renv": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "renv",
+        "Type": "Package",
+        "Title": "Project Environments",
+        "Version": "1.1.4",
+        "Authors@R": "c(\n    person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\",\n           comment = c(ORCID = \"0000-0003-2880-7407\")),\n    person(\"Hadley\", \"Wickham\", role = c(\"aut\"), email = \"hadley@rstudio.com\",\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n    )",
+        "Description": "A dependency management toolkit for R. Using 'renv', you can create\n    and manage project-local R libraries, save the state of these libraries to\n    a 'lockfile', and later restore your library as required. Together, these\n    tools can help make your projects more isolated, portable, and reproducible.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://rstudio.github.io/renv/, https://github.com/rstudio/renv",
+        "BugReports": "https://github.com/rstudio/renv/issues",
+        "Imports": "utils",
+        "Suggests": "BiocManager, cli, compiler, covr, cpp11, devtools, gitcreds,\njsonlite, jsonvalidate, knitr, miniUI, modules, packrat, pak,\nR6, remotes, reticulate, rmarkdown, rstudioapi, shiny,\ntestthat, uuid, waldo, yaml, webfakes",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "VignetteBuilder": "knitr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Config/testthat/parallel": "true",
+        "Config/testthat/start-first": "bioconductor,python,install,restore,snapshot,retrieve,remotes",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-03-20 16:43:40 UTC; kevin",
+        "Author": "Kevin Ushey [aut, cre] (<https://orcid.org/0000-0003-2880-7407>),\n  Hadley Wickham [aut] (<https://orcid.org/0000-0003-4757-117X>),\n  Posit Software, PBC [cph, fnd]",
+        "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-03-20 18:10:01 UTC",
+        "Built": "R 4.5.0; ; 2025-03-31 22:17:26 UTC; unix"
       }
     },
     "reprex": {
@@ -2680,7 +3487,13 @@
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
         "Repository": "CRAN",
         "Date/Publication": "2024-07-06 13:50:01 UTC",
-        "Built": "R 4.5.0; ; 2025-04-01 20:40:28 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-01 20:40:28 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "reprex",
+        "RemoteRef": "reprex",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.1.1"
       }
     },
     "rlang": {
@@ -2753,28 +3566,56 @@
       "description": {
         "Package": "rprojroot",
         "Title": "Finding Files in Project Subdirectories",
-        "Version": "2.1.0",
+        "Version": "2.0.4",
         "Authors@R": "\n    person(given = \"Kirill\",\n           family = \"M\\u00fcller\",\n           role = c(\"aut\", \"cre\"),\n           email = \"kirill@cynkra.com\",\n           comment = c(ORCID = \"0000-0002-1416-3412\"))",
         "Description": "Robust, reliable and flexible paths to files below\n    a project root. The 'root' of a project is defined as a directory that\n    matches a certain criterion, e.g., it contains a certain regular file.",
         "License": "MIT + file LICENSE",
         "URL": "https://rprojroot.r-lib.org/, https://github.com/r-lib/rprojroot",
         "BugReports": "https://github.com/r-lib/rprojroot/issues",
         "Depends": "R (>= 3.0.0)",
-        "Suggests": "covr, knitr, lifecycle, rlang, rmarkdown, testthat (>=\n3.2.0), withr",
+        "Suggests": "covr, knitr, lifecycle, mockr, rlang, rmarkdown, testthat (>=\n3.0.0), withr",
         "VignetteBuilder": "knitr",
         "Config/testthat/edition": "3",
         "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2.9000",
-        "Config/autostyle/scope": "line_breaks",
-        "Config/autostyle/strict": "true",
-        "Config/Needs/website": "tidyverse/tidytemplate",
+        "RoxygenNote": "7.2.3",
         "NeedsCompilation": "no",
-        "Packaged": "2025-07-12 07:59:07 UTC; kirill",
-        "Author": "Kirill Müller [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-1416-3412>)",
+        "Packaged": "2023-11-05 06:47:23 UTC; kirill",
+        "Author": "Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>)",
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-07-12 09:00:02 UTC",
-        "Built": "R 4.5.0; ; 2025-07-14 23:30:23 UTC; unix"
+        "Date/Publication": "2023-11-05 10:20:02 UTC",
+        "Built": "R 4.5.0; ; 2025-03-31 21:55:51 UTC; unix"
+      }
+    },
+    "rsconnect": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Type": "Package",
+        "Package": "rsconnect",
+        "Title": "Deploy Docs, Apps, and APIs to 'Posit Connect', 'shinyapps.io',\nand 'RPubs'",
+        "Version": "1.4.0",
+        "Authors@R": "c(\n    person(\"Aron\", \"Atkins\", , \"aron@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Toph\", \"Allen\", role = \"aut\"),\n    person(\"Hadley\", \"Wickham\", role = \"aut\"),\n    person(\"Jonathan\", \"McPherson\", role = \"aut\"),\n    person(\"JJ\", \"Allaire\", role = \"aut\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Description": "Programmatic deployment interface for 'RPubs',\n    'shinyapps.io', and 'Posit Connect'. Supported content types include R\n    Markdown documents, Shiny applications, Plumber APIs, plots, and\n    static web content.",
+        "License": "GPL-2",
+        "URL": "https://rstudio.github.io/rsconnect/,\nhttps://github.com/rstudio/rsconnect",
+        "BugReports": "https://github.com/rstudio/rsconnect/issues",
+        "Depends": "R (>= 3.5.0)",
+        "Imports": "cli, curl, digest, jsonlite, lifecycle, openssl (>= 2.0.0),\nPKI, packrat (>= 0.6), renv (>= 1.0.0), rlang (>= 1.0.0),\nrstudioapi (>= 0.5), tools, yaml (>= 2.1.5), RcppTOML, jose,\nutils",
+        "Suggests": "Biobase, BiocManager, foreign, knitr, MASS, plumber (>=\n0.3.2), quarto, RCurl, reticulate, rmarkdown (>= 1.1), shiny,\ntestthat (>= 3.1.9), webfakes, withr",
+        "VignetteBuilder": "knitr, rmarkdown",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Config/testthat/parallel": "true",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-05-15 19:43:34 UTC; aron",
+        "Author": "Aron Atkins [aut, cre],\n  Toph Allen [aut],\n  Hadley Wickham [aut],\n  Jonathan McPherson [aut],\n  JJ Allaire [aut],\n  Posit Software, PBC [cph, fnd]",
+        "Maintainer": "Aron Atkins <aron@posit.co>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-05-15 20:20:02 UTC",
+        "Built": "R 4.5.0; ; 2025-05-15 21:34:16 UTC; unix"
       }
     },
     "rstudioapi": {
@@ -2869,28 +3710,27 @@
       "description": {
         "Package": "scales",
         "Title": "Scale Functions for Visualization",
-        "Version": "1.4.0",
-        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = \"aut\"),\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"cre\", \"aut\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Dana\", \"Seidel\", role = \"aut\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\"))\n  )",
+        "Version": "1.3.0",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\")),\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"cre\", \"aut\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Dana\", \"Seidel\", role = \"aut\"),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
         "Description": "Graphical scales map data to aesthetics, and provide methods\n    for automatically determining breaks and labels for axes and legends.",
         "License": "MIT + file LICENSE",
         "URL": "https://scales.r-lib.org, https://github.com/r-lib/scales",
         "BugReports": "https://github.com/r-lib/scales/issues",
-        "Depends": "R (>= 4.1)",
-        "Imports": "cli, farver (>= 2.0.3), glue, labeling, lifecycle, R6,\nRColorBrewer, rlang (>= 1.1.0), viridisLite",
+        "Depends": "R (>= 3.6)",
+        "Imports": "cli, farver (>= 2.0.3), glue, labeling, lifecycle, munsell (>=\n0.5), R6, RColorBrewer, rlang (>= 1.0.0), viridisLite",
         "Suggests": "bit64, covr, dichromat, ggplot2, hms (>= 0.5.0), stringi,\ntestthat (>= 3.0.0)",
         "Config/Needs/website": "tidyverse/tidytemplate",
         "Config/testthat/edition": "3",
-        "Config/usethis/last-upkeep": "2025-04-23",
         "Encoding": "UTF-8",
         "LazyLoad": "yes",
-        "RoxygenNote": "7.3.2",
-        "NeedsCompilation": "no",
-        "Packaged": "2025-04-23 18:27:04 UTC; thomas",
-        "Author": "Hadley Wickham [aut],\n  Thomas Lin Pedersen [cre, aut]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Dana Seidel [aut],\n  Posit Software, PBC [cph, fnd] (03wc8by49)",
+        "RoxygenNote": "7.2.3",
+        "NeedsCompilation": "yes",
+        "Packaged": "2023-11-27 20:27:59 UTC; thomas",
+        "Author": "Hadley Wickham [aut],\n  Thomas Lin Pedersen [cre, aut]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Dana Seidel [aut],\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-04-24 11:00:02 UTC",
-        "Built": "R 4.5.0; ; 2025-04-24 11:54:38 UTC; unix"
+        "Date/Publication": "2023-11-28 09:10:06 UTC",
+        "Built": "R 4.5.0; ; 2025-04-01 11:50:13 UTC; unix"
       }
     },
     "selectr": {
@@ -3095,30 +3935,29 @@
         "Type": "Package",
         "Package": "systemfonts",
         "Title": "System Native Font Finding",
-        "Version": "1.2.3",
-        "Authors@R": "c(\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Jeroen\", \"Ooms\", , \"jeroen@berkeley.edu\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-4035-0289\")),\n    person(\"Devon\", \"Govett\", role = \"aut\",\n           comment = \"Author of font-manager\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\"))\n  )",
+        "Version": "1.2.2",
+        "Authors@R": "c(\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Jeroen\", \"Ooms\", , \"jeroen@berkeley.edu\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-4035-0289\")),\n    person(\"Devon\", \"Govett\", role = \"aut\",\n           comment = \"Author of font-manager\"),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
         "Description": "Provides system native access to the font catalogue. As font\n    handling varies between systems it is difficult to correctly locate\n    installed fonts across different operating systems. The 'systemfonts'\n    package provides bindings to the native libraries on Windows, macOS\n    and Linux for finding font files that can then be used further by e.g.\n    graphic devices. The main use is intended to be from compiled code but\n    'systemfonts' also provides access from R.",
         "License": "MIT + file LICENSE",
         "URL": "https://github.com/r-lib/systemfonts,\nhttps://systemfonts.r-lib.org",
         "BugReports": "https://github.com/r-lib/systemfonts/issues",
         "Depends": "R (>= 3.2.0)",
-        "Imports": "base64enc, grid, jsonlite, lifecycle, tools, utils",
         "Suggests": "covr, farver, graphics, knitr, rmarkdown, testthat (>= 2.1.0)",
         "LinkingTo": "cpp11 (>= 0.2.1)",
         "VignetteBuilder": "knitr",
-        "Config/build/compilation-database": "true",
-        "Config/Needs/website": "tidyverse/tidytemplate",
-        "Config/usethis/last-upkeep": "2025-04-23",
         "Encoding": "UTF-8",
         "RoxygenNote": "7.3.2",
         "SystemRequirements": "fontconfig, freetype2",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Imports": "grid, jsonlite, lifecycle, tools, utils",
+        "Config/build/compilation-database": "true",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-04-30 17:13:44 UTC; thomas",
-        "Author": "Thomas Lin Pedersen [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-5147-4711>),\n  Jeroen Ooms [aut] (ORCID: <https://orcid.org/0000-0002-4035-0289>),\n  Devon Govett [aut] (Author of font-manager),\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
+        "Packaged": "2025-04-04 11:59:30 UTC; thomas",
+        "Author": "Thomas Lin Pedersen [aut, cre]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Jeroen Ooms [aut] (<https://orcid.org/0000-0002-4035-0289>),\n  Devon Govett [aut] (Author of font-manager),\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-04-30 17:50:02 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-30 19:17:24 UTC; unix",
+        "Date/Publication": "2025-04-04 13:00:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-04 17:33:42 UTC; unix",
         "Archs": "systemfonts.so.dSYM"
       }
     },
@@ -3128,8 +3967,8 @@
       "description": {
         "Package": "textshaping",
         "Title": "Bindings to the 'HarfBuzz' and 'Fribidi' Libraries for Text\nShaping",
-        "Version": "1.0.1",
-        "Authors@R": "c(\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"cre\", \"aut\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\"))\n  )",
+        "Version": "1.0.0",
+        "Authors@R": "c(\n    person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"cre\", \"aut\"),\n           comment = c(ORCID = \"0000-0002-5147-4711\")),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
         "Description": "Provides access to the text shaping functionality in the\n    'HarfBuzz' library and the bidirectional algorithm in the 'Fribidi'\n    library.  'textshaping' is a low-level utility package mainly for\n    graphic devices that expands upon the font tool-set provided by the\n    'systemfonts' package.",
         "License": "MIT + file LICENSE",
         "URL": "https://github.com/r-lib/textshaping",
@@ -3139,19 +3978,18 @@
         "Suggests": "covr, grDevices, grid, knitr, rmarkdown, testthat (>= 3.0.0)",
         "LinkingTo": "cpp11 (>= 0.2.1), systemfonts (>= 1.0.0)",
         "VignetteBuilder": "knitr",
-        "Config/build/compilation-database": "true",
-        "Config/testthat/edition": "3",
-        "Config/usethis/last-upkeep": "2025-04-23",
         "Encoding": "UTF-8",
         "RoxygenNote": "7.3.2",
         "SystemRequirements": "freetype2, harfbuzz, fribidi",
+        "Config/build/compilation-database": "true",
+        "Config/testthat/edition": "3",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-05-01 07:04:17 UTC; thomas",
-        "Author": "Thomas Lin Pedersen [cre, aut] (ORCID:\n    <https://orcid.org/0000-0002-5147-4711>),\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
+        "Packaged": "2025-01-20 08:47:24 UTC; thomas",
+        "Author": "Thomas Lin Pedersen [cre, aut]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-05-01 07:30:02 UTC",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-05-01 08:28:29 UTC; unix",
+        "Date/Publication": "2025-01-20 11:00:01 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 06:41:02 UTC; unix",
         "Archs": "textshaping.so.dSYM"
       }
     },
@@ -3278,7 +4116,13 @@
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
         "Repository": "CRAN",
         "Date/Publication": "2023-02-22 09:20:06 UTC",
-        "Built": "R 4.5.0; ; 2025-04-02 18:23:11 UTC; unix"
+        "Built": "R 4.5.0; ; 2025-04-02 18:23:11 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "tidyverse",
+        "RemoteRef": "tidyverse",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.0.0"
       }
     },
     "timechange": {
@@ -3306,7 +4150,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2024-01-18 09:20:02 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-01-26 08:44:27 UTC; unix",
-        "Archs": "timechange.so.dSYM"
+        "Archs": "timechange.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "timechange",
+        "RemoteRef": "timechange",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.3.0"
       }
     },
     "tinytex": {
@@ -3361,7 +4211,13 @@
         "Repository": "CRAN",
         "Date/Publication": "2023-03-04 23:30:07 UTC",
         "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-03-31 22:00:29 UTC; unix",
-        "Archs": "triebeard.so.dSYM"
+        "Archs": "triebeard.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "triebeard",
+        "RemoteRef": "triebeard",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.4.1"
       }
     },
     "tzdb": {
@@ -3401,9 +4257,10 @@
         "Package": "urltools",
         "Type": "Package",
         "Title": "Vectorised Tools for URL Handling and Parsing",
-        "Version": "1.7.3.1",
+        "Version": "1.7.3",
         "Date": "2019-04-14",
-        "Authors@R": "c(person(given = \"Os\",\n                    family = \"Keyes\",\n                    role = c(\"aut\", \"cre\"),\n                    email = \"ironholds@gmail.com\"),\n             person(given = \"Jay\",\n                    family = \"Jacobs\",\n                    role = \"aut\"),\n             person(given = \"Drew\",\n                    family = \"Schmidt\",\n                    role = \"aut\"),\n             person(given = \"Mark\",\n                    family = \"Greenaway\",\n                    role = \"ctb\"),\n             person(given = \"Bob\",\n                    family = \"Rudis\",\n                    role = \"ctb\"),\n             person(given = \"Alex\",\n                    family = \"Pinto\",\n                    role = \"ctb\"),\n             person(given = \"Maryam\",\n                    family = \"Khezrzadeh\",\n                    role = \"ctb\"),\n             person(given = \"Peter\",\n                    family = \"Meilstrup\",\n                    role = \"ctb\"),\n             person(given = c(\"Adam\", \"M.\"),\n                    family = \"Costello\",\n                    role = \"cph\"),\n             person(given = \"Jeff\",\n                    family = \"Bezanson\",\n                    role = \"cph\"),\n             person(given = \"Peter\",\n                    family = \"Meilstrup\",\n                    role = \"ctb\"),\n             person(given = \"Xueyuan\",\n                    family = \"Jiang\",\n                    role = \"ctb\"))",
+        "Author": "Os Keyes [aut, cre], Jay Jacobs [aut, cre], Drew Schmidt [aut],\n    Mark Greenaway [ctb], Bob Rudis [ctb], Alex Pinto [ctb], Maryam Khezrzadeh [ctb], Peter Meilstrup [ctb],\n    Adam M. Costello [cph], Jeff Bezanson [cph], Peter Meilstrup [ctb], Xueyuan Jiang [ctb]",
+        "Maintainer": "Os Keyes <ironholds@gmail.com>",
         "Description": "A toolkit for all URL-handling needs, including encoding and decoding,\n    parsing, parameter extraction and modification. All functions are\n    designed to be both fast and entirely vectorised. It is intended to be\n    useful for people dealing with web-related datasets, such as server-side\n    logs, although may be useful for other situations involving large sets of\n    URLs.",
         "License": "MIT + file LICENSE",
         "LazyData": "TRUE",
@@ -3417,13 +4274,17 @@
         "Encoding": "UTF-8",
         "Depends": "R (>= 2.10)",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-06-12 07:48:37 UTC; hornik",
+        "Packaged": "2019-04-14 22:25:08 UTC; ironholds",
         "Repository": "CRAN",
-        "Date/Publication": "2025-06-12 08:37:42 UTC",
-        "Author": "Os Keyes [aut, cre],\n  Jay Jacobs [aut],\n  Drew Schmidt [aut],\n  Mark Greenaway [ctb],\n  Bob Rudis [ctb],\n  Alex Pinto [ctb],\n  Maryam Khezrzadeh [ctb],\n  Peter Meilstrup [ctb],\n  Adam M. Costello [cph],\n  Jeff Bezanson [cph],\n  Peter Meilstrup [ctb],\n  Xueyuan Jiang [ctb]",
-        "Maintainer": "Os Keyes <ironholds@gmail.com>",
-        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-06-12 09:32:49 UTC; unix",
-        "Archs": "urltools.so.dSYM"
+        "Date/Publication": "2019-04-14 23:02:47 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-04-01 06:39:04 UTC; unix",
+        "Archs": "urltools.so.dSYM",
+        "RemoteType": "standard",
+        "RemotePkgRef": "urltools",
+        "RemoteRef": "urltools",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "1.7.3"
       }
     },
     "utf8": {
@@ -3712,13 +4573,16 @@
   },
   "files": {
     "app.R": {
-      "checksum": "435b655f0b454584760e0b273e970ac3"
+      "checksum": "17762e369178f057a855717dacef9fb3"
     },
     "pop_age.rds": {
       "checksum": "fed1c3c79b9dad9a866da20fa3c31e09"
     },
-    "www/styles/hfv-theme.css": {
-      "checksum": "09489c5365701b67ca00f33557e15d28"
+    "write_data.R": {
+      "checksum": "4888b08fa630d36c93e3b6257cc4a82f"
+    },
+    "write_manifest.R": {
+      "checksum": "c409950623494923d8d17440244b2b1a"
     }
   },
   "users": null

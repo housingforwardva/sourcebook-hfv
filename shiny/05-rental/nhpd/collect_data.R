@@ -1,6 +1,5 @@
 library(tidyverse)
 library(readxl)
-library(stringr)
 
 # Download subsidy-level data from National Housing Preservation Datbase, 
 # filtering for State = "VA"

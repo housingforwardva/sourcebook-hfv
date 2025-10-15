@@ -3712,25 +3712,10 @@
   },
   "files": {
     "app.R": {
-      "checksum": "64ea03d04265c2ec2ffa5216e194bb4e"
+      "checksum": "7125a7e1573ae041826966098baa6553"
     },
     "total_pop.rds": {
       "checksum": "5ea9e37aa99f2aee08915d3936302248"
-    },
-    "www/styles/components.scss": {
-      "checksum": "f2dafa4fc57468799db98f3e9d6e50fc"
-    },
-    "www/styles/hfv-theme.css": {
-      "checksum": "09489c5365701b67ca00f33557e15d28"
-    },
-    "www/styles/hfv-theme.scss": {
-      "checksum": "e3def82a2b99037b7f59efe00704d01c"
-    },
-    "www/styles/responsive.scss": {
-      "checksum": "7574d9c4dd66e1bfd5c5a980058d0d85"
-    },
-    "www/styles/variables.scss": {
-      "checksum": "24343ccf5759cdc8bfddfffc1522194d"
     }
   },
   "users": null

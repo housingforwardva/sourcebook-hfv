@@ -9,12 +9,71 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
-# library(sass)        # For SCSS compilation - removed
+library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
-# HUD AMI VISUALIZATION
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Define HFV color palette
+hfv_colors <- list(
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA", 
+  shadow = "#011E41",
+  shadow_light = "#102C54",  # Lighter shade of shadow color
+  berry = "#B1005F",
+  desert = "#E0592A"
+)
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -32,53 +91,21 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# =============================================================================
-
-# Load the data
-hud_il <- read_rds("./data.rds") %>% 
-    mutate(ami = factor(ami, levels = c("Extremely low-income",
-                                        "Very low-income",
-                                        "Low-income"))) %>% 
-    mutate(ami_pct = case_when(
-      ami == "Extremely low-income" ~ "30% AMI",
-      ami == "Very low-income" ~ "50% AMI",
-      ami == "Low-income" ~ "80% AMI"
-    ))
-
-
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A",
-  grey = "#E8E9EB"
-)
-
-# =============================================================================
-# USER INTERFACE
-# =============================================================================
-
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(),
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("HUD AMI Limits", class = "hfv-title")
-    ),
+      class = "hfv-container",
+
+      # Header using HFV styling
+      div(
+        class = "hfv-header",
+        h4("HUD AMI Limits", class = "hfv-title")
+      ),
 
     # Layout using bslib layout_columns
     layout_columns(
@@ -146,26 +173,56 @@ ui <- page_fillable(
       )
     )
   )
-)
+  )
+}
 
-# =============================================================================
-# SERVER FUNCTION
-# =============================================================================
-
+# Server function
 server <- function(input, output, session) {
- 
+
+  # Parse geography from URL - only locality level supported
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    # This app only supports locality-level data
+    # If state or CBSA is in URL, we'll ignore it and use default
+    list(
+      locality = query$locality  # Will be NULL if not provided
+    )
+  })
+  # Load the data
+  hud_il <- reactive({
+    read_rds(here("data", "rds", "va_hud_ami.rds")) %>% 
+      mutate(ami = factor(ami, levels = c("Extremely low-income",
+                                          "Very low-income",
+                                          "Low-income"))) %>% 
+      mutate(ami_pct = case_when(
+        ami == "Extremely low-income" ~ "30% AMI",
+        ami == "Very low-income" ~ "50% AMI",
+        ami == "Low-income" ~ "80% AMI"
+      ))
+  })
   
-  # Get available counties
+  # Get available counties and initialize from URL if provided
   observe({
-    counties <- unique(hud_il$county_name) %>% sort()
-    updateSelectInput(session, "county", 
+    counties <- unique(hud_il()$county_name) %>% sort()
+    geo <- current_geo()
+
+    # If locality is provided in URL, use it; otherwise default to Richmond city
+    default_county <- if(!is.null(geo$locality) && geo$locality %in% counties) {
+      geo$locality
+    } else if("Richmond city" %in% counties) {
+      "Richmond city"
+    } else {
+      counties[1]
+    }
+
+    updateSelectInput(session, "county",
                       choices = counties,
-                      selected = if("Richmond city" %in% counties) "Richmond city" else counties[1])
+                      selected = default_county)
   })
   
   # Get available household sizes
   observe({
-    hh_sizes <- unique(hud_il$hh_size) %>% sort()
+    hh_sizes <- unique(hud_il()$hh_size) %>% sort()
     updateSelectInput(session, "hh_size", 
                       choices = hh_sizes,
                       selected = if("One-person" %in% hh_sizes) "One-person" else hh_sizes[1])
@@ -175,7 +232,7 @@ server <- function(input, output, session) {
   filtered_data <- reactive({
     req(input$county, input$hh_size)
     
-    hud_il %>%
+    hud_il() %>%
       filter(county_name == input$county,
              hh_size == input$hh_size)
   })
@@ -282,4 +339,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

@@ -1,25 +1,81 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(ggiraph) # For interactive ggplots
+library(here) # For here() function in file paths
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(bslib) # For modern UI components
+library(cowplot) # For adding logo to plots
+library(scales) # For number_format
+library(shinyjs) # For dynamic UI updates
+library(magick) # For image handling
+library(sass) # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
-# INCOME DISTRIBUTION BY TENURE VISUALIZATION
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch(
+  {
+    # For local development and server rendering, we'll use fallback fonts
+    # The web fonts are handled by the HTML dependencies in girafe
+    message("Google Fonts registered for web rendering")
+  },
+  error = function(e) {
+    message("Font registration warning: ", e$message)
+  }
+)
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (
+    !file.exists(css_file) ||
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))
+  ) {
+    message("🔄 Compiling HFV styles...")
+
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+
+    # Compile SCSS to CSS
+    tryCatch(
+      {
+        sass(
+          list(sass_file(scss_file)),
+          output = css_file,
+          options = sass_options(
+            output_style = "expanded",
+            source_map_embed = FALSE
+          )
+        )
+        message("✅ HFV styles compiled successfully!")
+      },
+      error = function(e) {
+        warning("❌ Failed to compile SCSS: ", e$message)
+        warning("📝 Using fallback inline styles...")
+      }
+    )
+  }
+
+  return(file.exists(css_file))
+}
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -31,225 +87,185 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# =============================================================================
-
-# Load data
-  inc_dist <- read_rds("./data.rds")
-  
-  # Define income order once
-  income_order <- c("Under $10,000", "$10,000 to $19,999", "$20,000 to $34,999",
-                    "$35,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999",
-                    "$100,000 to $149,999","$150,000 or more")
-  
-    years <- unique(inc_dist$year)
-
-    cbsas <- inc_dist %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
-
-    counties <- inc_dist %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-  
-  # Create state-level data
-  state_data <-  inc_dist %>% 
-      group_by(year, tenure, income_range) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      mutate(income = factor(income_range, levels = income_order))
-
-  # Create CBSA-level data
-  cbsa_data <- inc_dist %>% 
-      group_by(year, cbsa_title, tenure, income_range) %>% 
-      summarise(estimate = sum(estimate), .groups = "drop") %>% 
-      mutate(income = factor(income_range, levels = income_order))
-
-  
-  # Create local-level data
-  local_data <- inc_dist %>% 
-    mutate(income = factor(income_range, levels = income_order))
-
-
-# =============================================================================
-# USER INTERFACE
-# =============================================================================
-
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(), # Initialize shinyjs
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Income Distribution by Tenure", class = "hfv-title")
-    ),
-    
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      class = "hfv-container",
+
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Filters", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Year select
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput("year", "Select Year:", 
-                      choices = years, 
-                      selected = max(years), 
-                      width = "100%",
-                      selectize = FALSE)
-        ),
-        
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = cbsas, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("county", "Locality:", choices = counties, width = "100%", selectize = FALSE)
-          )
-        ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
-        div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "U.S. Census Bureau. American Community Survey 5-Year Estimates. Table B25118",
-            style = "margin-bottom: 0;"
-          )
-        )
+        class = "hfv-header",
+        h4("Income Distribution by Tenure", class = "hfv-title")
       ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
+
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
+        ),
+        gap = "16px",
+
+        # Sidebar Panel with HFV styling
+        div(
+          class = "hfv-sidebar",
+
+          h5(
+            "Dashboard Controls",
+            class = "text-primary",
+            style = "margin-bottom: 16px;"
+          ),
+
+          # Year select
+          div(
+            style = "margin-bottom: 16px;",
+            selectInput(
+              "year",
+              "Select Year:",
+              choices = NULL,
+              selected = NULL,
+              width = "100%",
+              selectize = FALSE
             )
           ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"),
+              br(),
+              "U.S. Census Bureau. American Community Survey 5-Year Estimates. Table B25118",
+              style = "margin-bottom: 0;"
             )
           )
+        ),
+
+        # Main Panel with single plot
+        div(
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
-# =============================================================================
-# SERVER FUNCTION
-# =============================================================================
+}
 
+# Server function
 server <- function(input, output, session) {
-  
-  # Create title text
-  title_text <- reactive({
-    paste("Income Distribution in", input$year)
+  # Load data
+  inc_dist <- reactive({
+    read_rds("data.rds")
   })
 
-  filtered_state <- reactive({
-    req(input$year)
-
-    state_data |> 
-      filter(year == input$year)
-  
-    }
+  # Define income order once
+  income_order <- c(
+    "Under $10,000",
+    "$10,000 to $19,999",
+    "$20,000 to $34,999",
+    "$35,000 to $49,999",
+    "$50,000 to $74,999",
+    "$75,000 to $99,999",
+    "$100,000 to $149,999",
+    "$150,000 or more"
   )
 
-  filtered_local <- reactive({
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
+
+  # Update year filter choices
+  observe({
+    years <- unique(inc_dist()$year)
+    updateSelectInput(session, "year", choices = years, selected = max(years))
+  })
+
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(input$year)
+    geo <- current_geo()
 
-    local_data |> 
-      filter(year == input$year) |> 
-      filter(name_long == input$county)
-  
+    if (geo$type == "state") {
+      inc_dist() %>%
+        group_by(year, tenure, income_range) %>%
+        summarise(estimate = sum(estimate), .groups = "drop") %>%
+        filter(year == input$year) %>%
+        mutate(income = factor(income_range, levels = income_order))
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      inc_dist() %>%
+        group_by(year, cbsa_title, tenure, income_range) %>%
+        summarise(estimate = sum(estimate), .groups = "drop") %>%
+        filter(year == input$year, cbsa_title == geo$cbsa) %>%
+        mutate(income = factor(income_range, levels = income_order))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      inc_dist() %>%
+        filter(year == input$year, name_long == geo$locality) %>%
+        mutate(income = factor(income_range, levels = income_order))
+    } else {
+      NULL
     }
-  )
+  })
 
-    filtered_cbsa <- reactive({
-    req(input$year)
-
-    cbsa_data |> 
-      filter(year == input$year) |> 
-      filter(cbsa_title == input$cbsa)
-  
+  # Create title text
+  title_text <- reactive({
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Income Distribution in Virginia", input$year)
+    } else if (geo$type == "cbsa") {
+      paste("Income Distribution in", geo$cbsa, input$year)
+    } else {
+      paste("Income Distribution in", geo$locality, input$year)
     }
-  )
+  })
 
-  
   # Create a plot function for income distribution
   create_plot <- function(data) {
     # Add tooltip text to the data
     data <- data %>%
-      mutate(tooltip = paste0(
-        "Income: ", income, "\n",
-        "Tenure: ", tenure, "\n",
-        "Households: ", format(estimate, big.mark = ",")
-      ))
-    
+      mutate(
+        tooltip = paste0(
+          "Income: ",
+          income,
+          "\n",
+          "Tenure: ",
+          tenure,
+          "\n",
+          "Households: ",
+          format(estimate, big.mark = ",")
+        )
+      )
+
     # Create a pure, base ggplot with no theme customizations that could cause conflicts
-    p <- ggplot(data, 
-                aes(x = income, 
-                    y = estimate, 
-                    fill = tenure)) +
+    p <- ggplot(data, aes(x = income, y = estimate, fill = tenure)) +
       geom_col_interactive(
         aes(tooltip = tooltip, data_id = paste(income, tenure)),
         position = "stack"
       ) +
       facet_wrap(~tenure, ncol = 1) +
       # Use Housing Forward Virginia colors
-      scale_fill_manual(values = c("Homeowner" = "#40C0C0", "Renter" = "#011E41")) +
-      scale_y_continuous(labels = scales::number_format(big.mark = ","),
-                         expand = expansion(mult = c(0, 0.1))) +
+      scale_fill_manual(
+        values = c("Homeowner" = "#40C0C0", "Renter" = "#011E41")
+      ) +
+      scale_y_continuous(
+        labels = scales::number_format(big.mark = ","),
+        expand = expansion(mult = c(0, 0.1))
+      ) +
       labs(
         title = title_text(),
         caption = " ", # Add empty caption to leave space for logo
@@ -259,6 +275,7 @@ server <- function(input, output, session) {
       theme_minimal(base_family = "Open Sans") +
       theme(
         legend.position = "none",
+        strip.text = element_blank(),
         plot.title.position = "plot",
         plot.title = element_text(size = 14, face = "bold"),
         axis.title = element_blank(),
@@ -269,10 +286,10 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
-    
+
     # Add logo directly using external URL
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     # Add logo to the plot using the URL
     p_with_logo <- ggdraw(p) +
       draw_image(
@@ -282,10 +299,10 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
+
     return(p_with_logo)
   }
-  
+
   # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
@@ -308,20 +325,12 @@ server <- function(input, output, session) {
       )
     )
   }
-  
-  # Render the state plot
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state())))
-  })
-  
-  # Render the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa())))
-  })
-  
-  # Render the local plot
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local())))
+
+  # Render the plot
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(create_plot(data)))
   })
 
   # Handle responsive window events
@@ -330,5 +339,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

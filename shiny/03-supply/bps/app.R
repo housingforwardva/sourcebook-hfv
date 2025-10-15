@@ -9,13 +9,66 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
+library(sass)        # For SCSS compilation
 library(gdtools)
+library(tidycensus)
 library(gfonts)
 
+# Load data - ONLY load from the specified path, no simulated data
+bps <- read_rds("./bps.rds")
+
 # =============================================================================
-# Building Permit Trends Visualization
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
 
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
@@ -30,23 +83,6 @@ hfv_theme <- bs_theme(
   heading_font = "Poppins, Helvetica Neue, Helvetica, Arial, sans-serif",
   font_scale = 0.8
 )
-
-# Define HFV color palette (matching SCSS variables)
-hfv_colors <- list(
-  sky = "#40C0C0",           # Primary teal
-  grass = "#259591",         # Dark teal 
-  lilac = "#8B85CA",         # Purple
-  shadow = "#011E41",        # Dark navy
-  shadow_light = "#102C54",  # Lighter navy
-  berry = "#B1005F",         # Magenta
-  desert = "#E0592A"         # Orange
-)
-
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# ============================================================================= 
-# Load the data (only once)
-bps <- read_rds("./data.rds")
 
 # Prepare aggregated datasets with recategorized building types
 # First, create a function to recode building types
@@ -95,13 +131,10 @@ locality <- bps %>%
     .groups = 'drop'
   )
 
-# =============================================================================
-# USER INTERFACE
-# ============================================================================= 
-
-ui <- page_fillable(
+# Define UI
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -163,30 +196,6 @@ ui <- page_fillable(
           )
         ),
 
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput(
-              "cbsa",
-              "Metro Area:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput(
-              "locality",
-              "Locality:",
-              choices = NULL,
-              width = "100%",
-              selectize = FALSE
-            )
-          )
-        ),
 
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -202,71 +211,26 @@ ui <- page_fillable(
         )
       ),
 
-      # Main Panel with tabs
+      # Main Panel
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
-# =============================================================================
-# SERVER FUNCTION 
-# =============================================================================
-
+# Define server logic
 server <- function(input, output, session) {
-
-  # Update metro area choices
-  observe({
-    cbsa_choices <- sort(unique(cbsa$cbsa_title))
-    updateSelectInput(
-      session,
-      "cbsa",
-      choices = cbsa_choices,
-      selected = "Richmond, VA"
-    )
-  })
-
-  # Update locality choices
-  observe({
-    locality_choices <- sort(unique(locality$name_long))
-    updateSelectInput(
-      session,
-      "locality",
-      choices = locality_choices,
-      selected = "Richmond City"
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
     )
   })
 
@@ -276,14 +240,15 @@ server <- function(input, output, session) {
     data %>% filter(type %in% input$types)
   }
 
-  # Generate title based on current tab and selections
+  # Generate title based on current geography
   get_title <- reactive({
-    if (input$tabs == "state") {
+    geo <- current_geo()
+    if (geo$type == "state") {
       "Virginia Building Permits"
-    } else if (input$tabs == "cbsa") {
-      paste(input$cbsa, "Building Permits")
+    } else if (geo$type == "cbsa") {
+      paste(geo$cbsa, "Building Permits")
     } else {
-      paste(input$locality, "Building Permits")
+      paste(geo$locality, "Building Permits")
     }
   })
 
@@ -415,50 +380,25 @@ server <- function(input, output, session) {
     )
   }
 
-  # Create the state plot
-  output$state_plot <- renderGirafe({
+  # Create the plot
+  output$plot <- renderGirafe({
     req(input$metric, input$types)
+    geo <- current_geo()
 
-    # Filter and prepare the data
-    plot_data <- filter_data(state)
-    metric_col <- input$metric
+    # Get data based on geography
+    if (geo$type == "state") {
+      plot_data <- filter_data(state)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      plot_data <- filter_data(cbsa) %>%
+        filter(cbsa_title == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      plot_data <- filter_data(locality) %>%
+        filter(name_long == geo$locality)
+    } else {
+      return(NULL)
+    }
 
-    # Create the plot
-    create_plot(
-      plot_data,
-      metric_col,
-      get_title(),
-      get_subtitle()
-    )
-  })
-
-  # Create the CBSA plot
-  output$cbsa_plot <- renderGirafe({
-    req(input$metric, input$cbsa, input$types)
-
-    # Filter and prepare data
-    plot_data <- filter_data(cbsa) %>%
-      filter(cbsa_title == input$cbsa)
-
-    metric_col <- input$metric
-
-    # Create the plot
-    create_plot(
-      plot_data,
-      metric_col,
-      get_title(),
-      get_subtitle()
-    )
-  })
-
-  # Create the locality plot
-  output$local_plot <- renderGirafe({
-    req(input$metric, input$locality, input$types)
-
-    # Filter and prepare data
-    plot_data <- filter_data(locality) %>%
-      filter(name_long == input$locality)
-
+    req(nrow(plot_data) > 0)
     metric_col <- input$metric
 
     # Create the plot
@@ -477,4 +417,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

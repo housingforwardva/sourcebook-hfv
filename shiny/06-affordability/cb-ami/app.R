@@ -10,11 +10,72 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
+library(sass)        # For SCSS compilation
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
-# COST BURDEN BY AMI VISUALIZATION
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
+# Register fonts with systemfonts using Google Fonts URLs
+tryCatch({
+  # For local development and server rendering, we'll use fallback fonts
+  # The web fonts are handled by the HTML dependencies in girafe
+  message("Google Fonts registered for web rendering")
+}, error = function(e) {
+  message("Font registration warning: ", e$message)
+})
+
+# Compile HFV styles if needed (for deployment compatibility)
+compile_hfv_styles_if_needed <- function() {
+  css_file <- "www/styles/hfv-theme.css"
+  scss_file <- "www/styles/hfv-theme.scss"
+  
+  # Only compile if CSS doesn't exist or SCSS is newer
+  if (!file.exists(css_file) || 
+      (file.exists(scss_file) && file.mtime(scss_file) > file.mtime(css_file))) {
+    
+    message("🔄 Compiling HFV styles...")
+    
+    # Ensure the CSS directory exists
+    dir.create(dirname(css_file), recursive = TRUE, showWarnings = FALSE)
+    
+    # Compile SCSS to CSS
+    tryCatch({
+      sass(
+        list(sass_file(scss_file)),
+        output = css_file,
+        options = sass_options(
+          output_style = "expanded",
+          source_map_embed = FALSE
+        )
+      )
+      message("✅ HFV styles compiled successfully!")
+    }, error = function(e) {
+      warning("❌ Failed to compile SCSS: ", e$message)
+      warning("📝 Using fallback inline styles...")
+    })
+  }
+  
+  return(file.exists(css_file))
+}
+
+# Define HFV color palette
+hfv_colors <- list(
+  sky = "#40C0C0",
+  grass = "#259591",
+  lilac = "#8B85CA", 
+  shadow = "#011E41",
+  shadow_light = "#102C54",  # Lighter shade of shadow color
+  berry = "#B1005F",
+  desert = "#E0592A",
+  grey = "#E8E9EB"
+)
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -32,280 +93,203 @@ hfv_theme <- bs_theme(
   font_scale = 0.8
 )
 
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# =============================================================================
-
-# Define the order of cost burden levels
-cost_burden_order <- c("Not cost-burdened", "No or negative income", "Cost-burdened", "Severely cost-burdened")
-
-# Load the data
-cb7 <- read_rds("./data.rds") %>% 
-  mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order))) %>% 
-  mutate(household_income = factor(household_income, 
-                                   levels = c("30% AMI or less", 
-                                              "31 to 50% AMI", 
-                                              "51 to 80% AMI", 
-                                              "81 to 100% AMI",
-                                              "101% AMI or greater")))
-
-# Load lookup table
-lookup <- read_csv(here("data", "local_lookup.csv")) %>% 
-  mutate(fips = fips_full)
-
-# Join data with lookup
-cb7_join <- cb7 %>% 
-  left_join(lookup, by = "fips")
-
-# Pre-compute state, CBSA, and local data
-state_data <- cb7 %>% 
-  group_by(year, tenure, household_income, cost_burden, cb_group) %>% 
-  summarise(estimate = sum(estimate),
-            moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
-
-cbsa_data <- cb7_join %>% 
-  group_by(year, cbsa_title, tenure, household_income, cost_burden, cb_group) %>% 
-  summarise(estimate = sum(estimate),
-            moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
-
-local_data <- cb7_join %>% 
-  group_by(year, name_long, tenure, household_income, cost_burden, cb_group) %>% 
-  summarise(estimate = sum(estimate),
-            moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
-
-# Define HFV color palette
-hfv_colors <- list(
-  sky = "#40C0C0",
-  grass = "#259591",
-  lilac = "#8B85CA", 
-  shadow = "#011E41",
-  shadow_light = "#102C54",  # Lighter shade of shadow color
-  berry = "#B1005F",
-  desert = "#E0592A",
-  grey = "#E8E9EB"
-)
-
-# =============================================================================
-# USER INTERFACE
-# =============================================================================
-
 # Define UI
-ui <- page_fillable(
-  theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
-  useShinyjs(), # Initialize shinyjs
+ui <- function(request) {
+  page_fillable(
+    theme = hfv_theme,
+    useShinyjs(),
 
-  # Main container using HFV classes
-  div(
-    class = "hfv-container",
-    
-    # Header using HFV styling
+    # Main container using HFV classes
     div(
-      class = "hfv-header",
-      h4("Cost Burden by Income Level (AMI)", class = "hfv-title")
-    ),
+      class = "hfv-container",
 
-    # Layout using bslib layout_columns
-    layout_columns(
-      col_widths = c(
-        lg = c(3, 9),
-        md = c(4, 8), 
-        sm = 12
-      ),
-      gap = "16px",
-      
-      # Sidebar Panel with HFV styling
+      # Header using HFV styling
       div(
-        class = "hfv-sidebar",
-        
-        h5("Dashboard Controls", 
-           class = "text-primary", style = "margin-bottom: 16px;"),
-        
-        # Year select
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput(
-            "year",
-            "Select Year:",
-            choices = NULL,
-            selected = NULL,
-            width = "100%",
-            selectize = TRUE
-          )
-        ),
+        class = "hfv-header",
+        h4("Cost Burden by Income Level (AMI)", class = "hfv-title")
+      ),
 
-        # Tenure select
-        div(
-          style = "margin-bottom: 16px;",
-          selectInput(
-            "tenure",
-            "Select Tenure:",
-            choices = c("Owner", "Renter"),
-            selected = "Renter",
-            width = "100%",
-            selectize = TRUE
-          )
+      # Layout using bslib layout_columns
+      layout_columns(
+        col_widths = c(
+          lg = c(3, 9),
+          md = c(4, 8),
+          sm = 12
         ),
+        gap = "16px",
 
-        # Geography selectors
+        # Sidebar Panel with HFV styling
         div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
+          class = "hfv-sidebar",
+
+          h5("Dashboard Controls",
+             class = "text-primary", style = "margin-bottom: 16px;"),
+
+          # Year select
+          div(
+            style = "margin-bottom: 16px;",
             selectInput(
-              "cbsa",
-              "Metro Area:",
+              "year",
+              "Select Year:",
               choices = NULL,
+              selected = NULL,
               width = "100%",
               selectize = TRUE
             )
           ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
+
+          # Tenure select
+          div(
+            style = "margin-bottom: 16px;",
             selectInput(
-              "locality",
-              "Locality:",
-              choices = NULL,
+              "tenure",
+              "Select Tenure:",
+              choices = c("Homeowner", "Renter"),
+              selected = "Renter",
               width = "100%",
               selectize = TRUE
             )
+          ),
+
+          # Divider
+          hr(style = "margin: 24px 0; border-color: #ced4da;"),
+
+          # Data source
+          div(
+            style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
+            p(
+              strong("Data Source:"), br(),
+              "U.S. Department of Housing and Urban Development (HUD), Comprehensive Housing Affordability Strategy (CHAS) data",
+              style = "margin-bottom: 0;"
+            )
           )
         ),
-        
-        # Divider
-        hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
-        # Data source
+
+        # Main Panel with single plot
         div(
-          style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
-          p(
-            strong("Data Source:"), br(),
-            "U.S. Department of Housing and Urban Development (HUD), Comprehensive Housing Affordability Strategy (CHAS) data",
-            style = "margin-bottom: 0;"
-          )
-        )
-      ),
-        
-      # Main Panel with tabs
-      div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
+          class = "hfv-chart-container",
+          style = "height: 450px; margin-top: 16px;",
+          girafeOutput("plot", height = "100%")
         )
       )
     )
   )
-)
+}
 
-# =============================================================================
-# SERVER FUNCTION
-# =============================================================================
+# Define the order of cost burden levels
+cost_burden_order <- c("Not cost-burdened", "No or negative income", "Cost-burdened", "Severely cost-burdened")
+
+# Server function
 server <- function(input, output, session) {
-
+  # Load the data
+  cb7 <- reactive({
+    read_rds(here("data", "rds", "table7_chas.rds")) %>% 
+      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order))) %>% 
+      mutate(household_income = factor(household_income, 
+                                       levels = c("30% AMI or less", 
+                                                  "31 to 50% AMI", 
+                                                  "51 to 80% AMI", 
+                                                  "81 to 100% AMI",
+                                                  "101% AMI or greater")))
+  })
+  
+  # Load lookup table
+  lookup <- reactive({
+    read_csv(here("data", "local_lookup.csv")) %>% 
+      mutate(fips = fips_full)
+  })
+  
+  # Join data with lookup
+  cb7_join <- reactive({
+    cb7() %>% 
+      left_join(lookup(), by = "fips")
+  })
+  
+  # Pre-compute state, CBSA, and local data
+  state_data <- reactive({
+    cb7() %>% 
+      group_by(year, tenure, household_income, cost_burden, cb_group) %>% 
+      summarise(estimate = sum(estimate),
+                moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
+  })
+  
+  cbsa_data <- reactive({
+    cb7_join() %>% 
+      group_by(year, cbsa_title, tenure, household_income, cost_burden, cb_group) %>% 
+      summarise(estimate = sum(estimate),
+                moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
+  })
+  
+  local_data <- reactive({
+    cb7_join() %>% 
+      group_by(year, name_long, tenure, household_income, cost_burden, cb_group) %>% 
+      summarise(estimate = sum(estimate),
+                moe = sqrt(sum(moe^2, na.rm = TRUE)), .groups = "drop")
+  })
+  
   # Get available years
   observe({
-    years <- unique(cb7$year)
+    years <- unique(cb7()$year)
     updateSelectInput(session, "year", 
                       choices = sort(years, decreasing = TRUE),
                       selected = max(years))
   })
   
-  # Get available CBSAs
-  cbsa_list <- reactive({
-    cbsa_data %>% 
-      filter(year == input$year) %>%
-      pull(cbsa_title) %>%
-      unique() %>%
-      sort()
+  # Parse geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
   })
-  
-  locality_list <- reactive({
-    local_data %>% 
-      filter(year == input$year) %>%
-      pull(name_long) %>%
-      unique() %>%
-      sort()
-  })
-  
-  # Initialize dropdowns
-  observe({
-    # CBSAs
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsa_list(),
-                      selected = if("Richmond, VA" %in% cbsa_list()) "Richmond, VA" else cbsa_list()[1])
-    
-    # Localities
-    updateSelectInput(session, "locality", 
-                      choices = locality_list(),
-                      selected = if("Richmond City" %in% locality_list()) "Richmond City" else locality_list()[1])
-  })
-  
-  # Filter data for plots
-  filtered_state <- reactive({
+
+  # Filter data based on current geography
+  filtered_data <- reactive({
     req(input$year, input$tenure)
-    
-    state_data %>%
-      filter(year == input$year,
-             tenure == input$tenure) %>%
-      group_by(household_income) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      cbsa_data() %>%
+        filter(cbsa_title == geo$cbsa,
+               year == input$year,
+               tenure == input$tenure) %>%
+        group_by(household_income) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      local_data() %>%
+        filter(name_long == geo$locality,
+               year == input$year,
+               tenure == input$tenure) %>%
+        group_by(household_income) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    } else {
+      state_data() %>%
+        filter(year == input$year,
+               tenure == input$tenure) %>%
+        group_by(household_income) %>%
+        mutate(percent = estimate/sum(estimate)) %>%
+        ungroup() %>%
+        mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+    }
   })
-  
-  filtered_cbsa <- reactive({
-    req(input$cbsa, input$year, input$tenure)
-    
-    cbsa_data %>%
-      filter(cbsa_title == input$cbsa,
-             year == input$year,
-             tenure == input$tenure) %>%
-      group_by(household_income) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
-  })
-  
-  filtered_local <- reactive({
-    req(input$locality, input$year, input$tenure)
-    
-    local_data %>%
-      filter(name_long == input$locality,
-             year == input$year,
-             tenure == input$tenure) %>%
-      group_by(household_income) %>%
-      mutate(percent = estimate/sum(estimate)) %>%
-      ungroup() %>%
-      mutate(cost_burden = fct_reorder(factor(cost_burden, levels = cost_burden_order), match(cost_burden, cost_burden_order)))
+
+  # Plot title based on geography
+  plot_title <- reactive({
+    geo <- current_geo()
+
+    if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      paste("Cost Burden by Income Level in", geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      paste("Cost Burden by Income Level in", geo$locality)
+    } else {
+      "Virginia Cost Burden by Income Level"
+    }
   })
   
   # Function to create plots
@@ -396,19 +380,9 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render the plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_state(), "Virginia Cost Burden by Income Level")))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    title_text <- paste("Cost Burden by Income Level in", input$cbsa)
-    suppressWarnings(create_interactive_plot(create_plot(filtered_cbsa(), title_text)))
-  })
-  
-  output$local_plot <- renderGirafe({
-    title_text <- paste("Cost Burden by Income Level in", input$locality)
-    suppressWarnings(create_interactive_plot(create_plot(filtered_local(), title_text)))
+  # Render the plot
+  output$plot <- renderGirafe({
+    suppressWarnings(create_interactive_plot(create_plot(filtered_data(), plot_title())))
   })
 
   # Handle responsive window events
@@ -417,5 +391,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server, enableBookmarking = "url")

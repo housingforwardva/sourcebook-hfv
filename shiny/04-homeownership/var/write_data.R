@@ -12,6 +12,6 @@ s3_response <- s3$get_object(
 
 var_data <- readRDS(rawConnection(s3_response$Body))
 
-write_rds(var_data, "shiny/04-homeownership/var/data.rds")
+write_rds(var_data, "shiny/04-homeownership/var/home-sales.rds")
 
 

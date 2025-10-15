@@ -11,12 +11,19 @@ library(cowplot)     # For adding logo to plots
 library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
+library(sass)        # For SCSS compilation
 library(gdtools)
 library(gfonts)
 
+
 # =============================================================================
-# AVERAGE HOUSEHOLD SIZE VISUALIZATION
+# HFV STYLING SYSTEM INTEGRATION
 # =============================================================================
+
+# Register Google Fonts for ggiraph plots and system
+register_gfont("Open Sans")
+register_gfont("Poppins")
+
 
 # Create HFV bslib theme (colors are defined in SCSS files)
 hfv_theme <- bs_theme(
@@ -45,42 +52,10 @@ hfv_colors <- list(
   desert = "#E0592A"
 )
 
-# =============================================================================
-# LOAD DATA OUTSIDE SERVER
-# ============================================================================= 
-
-  # Load the data
-  avg_size <- read_rds("b25010_data.rds")
-  
-  # Get available years
-  year_list <- sort(unique(avg_size$year))
-
-  
-  # Get available localities
-  locality_list <- avg_size %>%
-      filter(geography == "county") %>%
-      pull(NAME) %>%
-      unique() %>%
-      sort()
-
-  
-  # Get available CBSAs
-  # NOTE THAT CBSAs are based on Census Bureau geography
-  cbsa_list <-  avg_size %>%
-      filter(geography == "cbsa") %>%
-      pull(NAME) %>%
-      unique() %>%
-      sort()
-
-
-# =============================================================================
-# USER INTERFACE
-# ============================================================================= 
-
 # Define UI
-ui <- page_fillable(
+ui <- function(request) {
+  page_fillable(
   theme = hfv_theme,
-  includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
   useShinyjs(), # Initialize shinyjs
 
   # Main container using HFV classes
@@ -113,24 +88,12 @@ ui <- page_fillable(
         div(
           style = "margin-bottom: 16px;",
           selectInput("tenure", "Tenure:", 
-                      choices = c("All households", "Homeowner", "Renter"),
-                      selected = "All households",
+                      choices = c("All", "Homeowner", "Renter"),
+                      selected = "All",
                       width = "100%", 
                       selectize = FALSE)
         ),
         
-        # Geography selectors
-        div(
-          style = "margin-bottom: 16px;",
-          conditionalPanel(
-            condition = "input.tabs == 'cbsa'",
-            selectInput("cbsa", "Metro Area:", choices = NULL, width = "100%", selectize = FALSE)
-          ),
-          conditionalPanel(
-            condition = "input.tabs == 'local'",
-            selectInput("locality", "Locality:", choices = NULL, width = "100%", selectize = FALSE)
-          )
-        ),
         
         # Year range checkbox (optional feature)
         div(
@@ -184,77 +147,53 @@ ui <- page_fillable(
         )
       ),
         
-      # Main Panel with tabs
+      # Main Panel with single plot
       div(
-        navset_tab(
-          id = "tabs",
-          
-          nav_panel(
-            title = "State",
-            value = "state",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("state_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Metro Area",
-            value = "cbsa", 
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("cbsa_plot", height = "100%")
-            )
-          ),
-          
-          nav_panel(
-            title = "Locality",
-            value = "local",
-            div(
-              class = "hfv-chart-container",
-              style = "height: 450px; margin-top: 16px;",
-              girafeOutput("local_plot", height = "100%")
-            )
-          )
-        )
+        class = "hfv-chart-container",
+        style = "height: 450px; margin-top: 16px;",
+        girafeOutput("plot", height = "100%")
       )
     )
   )
-)
+  )
+}
 
-# =============================================================================
-# SERVER FUNCTION
-# ============================================================================= 
-
+# Server function
 server <- function(input, output, session) {
-
+  # Load the data
+  avg_size <- reactive({
+    read_rds("avg_hh_size.rds") %>% 
+      mutate(tenure = case_when(
+        tenure == "Owner" ~ "Homeowner",
+        TRUE ~ tenure
+      ))
+  })
+  
+  # Get available years
+  year_list <- reactive({
+    sort(unique(avg_size()$year))
+  })
+  
+  # Get current geography from URL
+  current_geo <- reactive({
+    query <- parseQueryString(session$clientData$url_search)
+    list(
+      type = query$geo %||% "state",
+      cbsa = query$cbsa,
+      locality = query$locality
+    )
+  })
   
   # Initialize dropdowns
   observe({
     # Years
-    years <- year_list
-
+    years <- year_list()
     updateSelectInput(session, "year_start", 
                       choices = years,
                       selected = min(years))
     updateSelectInput(session, "year_end", 
                       choices = years,
                       selected = max(years))
-    
-    # CBSAs
-    cbsas <- cbsa_list
-
-    updateSelectInput(session, "cbsa", 
-                      choices = cbsas,
-                      selected = if("Richmond, VA" %in% cbsas) "Richmond, VA" else cbsas[1])
-    
-    # Localities
-    localities <- locality_list
-    updateSelectInput(session, "locality", 
-                      choices = localities,
-                      selected = if("Richmond City" %in% localities) "Richmond City" else localities[1])
   })
   
   # Ensure end year is not earlier than start year
@@ -267,14 +206,28 @@ server <- function(input, output, session) {
     }
   })
   
-  # Filter data based on selections
-  filtered_state <- reactive({
+  # Single reactive for filtered data based on current geography
+  filtered_data <- reactive({
     req(input$tenure)
+    geo <- current_geo()
     
-    data <- avg_size %>%
-      filter(geography == "state", 
-            NAME == "Virginia",
-             tenure == input$tenure)
+    if (geo$type == "state") {
+      data <- avg_size() %>%
+        filter(geography == "state",
+               tenure == input$tenure)
+    } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
+      data <- avg_size() %>%
+        filter(geography == "cbsa",
+               tenure == input$tenure,
+               name == geo$cbsa)
+    } else if (geo$type == "locality" && !is.null(geo$locality)) {
+      data <- avg_size() %>%
+        filter(geography == "locality",
+               tenure == input$tenure,
+               name == geo$locality)
+    } else {
+      return(NULL)
+    }
     
     # Apply year filter if needed
     if (!input$show_all_years) {
@@ -285,63 +238,24 @@ server <- function(input, output, session) {
     }
     
     # Calculate min/max points for labeling
-    data %>%
-      mutate(label_point = year == min(year) | year == max(year) | 
-               estimate == max(estimate) | estimate == min(estimate))
-  })
-  
-  filtered_cbsa <- reactive({
-    req(input$tenure, input$cbsa)
-    
-    data <- avg_size %>%
-      filter(geography == "cbsa",
-             tenure == input$tenure,
-             NAME == input$cbsa)
-    
-    # Apply year filter if needed
-    if (!input$show_all_years) {
-      req(input$year_start, input$year_end)
-      data <- data %>%
-        filter(year >= input$year_start, 
-               year <= input$year_end)
+    if (nrow(data) > 0) {
+      data %>%
+        mutate(label_point = year == min(year) | year == max(year) | 
+                 estimate == max(estimate) | estimate == min(estimate))
+    } else {
+      data
     }
-    
-    # Calculate min/max points for labeling
-    data %>%
-      mutate(label_point = year == min(year) | year == max(year) | 
-               estimate == max(estimate) | estimate == min(estimate))
-  })
-  
-  filtered_locality <- reactive({
-    req(input$tenure, input$locality)
-    
-    data <- avg_size %>%
-      filter(geography == "county",
-             tenure == input$tenure,
-             NAME == input$locality)
-    
-    # Apply year filter if needed
-    if (!input$show_all_years) {
-      req(input$year_start, input$year_end)
-      data <- data %>%
-        filter(year >= input$year_start, 
-               year <= input$year_end)
-    }
-    
-    # Calculate min/max points for labeling
-    data %>%
-      mutate(label_point = year == min(year) | year == max(year) | 
-               estimate == max(estimate) | estimate == min(estimate))
   })
   
   # Create title text
   title_text <- reactive({
-    if (input$tabs == "state") {
-      paste(input$tenure, "Average Household Size in Virginia")
-    } else if (input$tabs == "cbsa") {
-      paste(input$tenure, "Average Household Size in", input$cbsa)
+    geo <- current_geo()
+    if (geo$type == "state") {
+      paste("Virginia", input$tenure, "Average Household Size")
+    } else if (geo$type == "cbsa") {
+      paste(input$tenure, "Average Household Size in", geo$cbsa)
     } else {
-      paste(input$tenure, "Average Household Size in", input$locality)
+      paste(input$tenure, "Average Household Size in", geo$locality)
     }
   })
   
@@ -471,17 +385,11 @@ server <- function(input, output, session) {
     )
   }
   
-  # Render plots
-  output$state_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(filtered_state()))
-  })
-  
-  output$cbsa_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(filtered_cbsa()))
-  })
-  
-  output$local_plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(filtered_locality()))
+  # Render single plot based on current geography
+  output$plot <- renderGirafe({
+    data <- filtered_data()
+    req(data)
+    suppressWarnings(create_interactive_plot(data))
   })
 
   # Handle responsive window events
@@ -491,4 +399,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")
