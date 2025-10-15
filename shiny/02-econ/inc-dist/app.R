@@ -164,9 +164,7 @@ ui <- function(request) {
 # Server function
 server <- function(input, output, session) {
   # Load data
-  inc_dist <- reactive({
-    read_rds("data.rds")
-  })
+  inc_dist <- read_rds("data.rds")
 
   # Define income order once
   income_order <- c(
@@ -192,7 +190,7 @@ server <- function(input, output, session) {
 
   # Update year filter choices
   observe({
-    years <- unique(inc_dist()$year)
+    years <- unique(inc_dist$year)
     updateSelectInput(session, "year", choices = years, selected = max(years))
   })
 
@@ -202,19 +200,19 @@ server <- function(input, output, session) {
     geo <- current_geo()
 
     if (geo$type == "state") {
-      inc_dist() %>%
+      inc_dist %>%
         group_by(year, tenure, income_range) %>%
         summarise(estimate = sum(estimate), .groups = "drop") %>%
         filter(year == input$year) %>%
         mutate(income = factor(income_range, levels = income_order))
     } else if (geo$type == "cbsa" && !is.null(geo$cbsa)) {
-      inc_dist() %>%
+      inc_dist %>%
         group_by(year, cbsa_title, tenure, income_range) %>%
         summarise(estimate = sum(estimate), .groups = "drop") %>%
         filter(year == input$year, cbsa_title == geo$cbsa) %>%
         mutate(income = factor(income_range, levels = income_order))
     } else if (geo$type == "locality" && !is.null(geo$locality)) {
-      inc_dist() %>%
+      inc_dist %>%
         filter(year == input$year, name_long == geo$locality) %>%
         mutate(income = factor(income_range, levels = income_order))
     } else {
