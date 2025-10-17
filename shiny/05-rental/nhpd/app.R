@@ -20,7 +20,7 @@ library(gfonts)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -36,18 +36,17 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-va_subsidies <- read_rds("./data.rds") |> 
+va_subsidies <- read_rds("data.rds") |>
   filter(subsidy_status == "Active/Inconclusive")
-  
+
 cbsa_list <- sort(unique(va_subsidies$cbsa_title))
-  
+
 locality_list <- sort(unique(va_subsidies$name_long))
 
 
 # =============================================================================
 # USER INTERFACE
-# ============================================================================= 
-
+# =============================================================================
 
 ui <- function(request) {
   page_fillable(
@@ -77,8 +76,7 @@ ui <- function(request) {
         div(
           class = "hfv-sidebar",
 
-          h5("Filters",
-             class = "text-primary", style = "margin-bottom: 16px;"),
+          h5("Filters", class = "text-primary", style = "margin-bottom: 16px;"),
 
           # Divider
           hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -87,7 +85,8 @@ ui <- function(request) {
           div(
             style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
             p(
-              strong("Data Source:"), br(),
+              strong("Data Source:"),
+              br(),
               "National Housing Preservation Database.",
               style = "margin-bottom: 0;"
             )
@@ -106,11 +105,10 @@ ui <- function(request) {
 }
 
 # =============================================================================
-# SERVER FUNCTION 
+# SERVER FUNCTION
 # =============================================================================
 
 server <- function(input, output, session) {
-
   # Parse geography from URL
   current_geo <- reactive({
     query <- parseQueryString(session$clientData$url_search)
@@ -130,11 +128,19 @@ server <- function(input, output, session) {
       base_data %>%
         filter(cbsa_title == geo$cbsa) %>%
         group_by(cbsa_title, subsidy_name, subsidy_status) %>%
-        summarise(value = sum(assisted_units, na.rm = TRUE), .groups = "drop") %>%
-        mutate(tooltip = paste0(
-          "Subsidy Name: ", subsidy_name, "\n",
-          "Assisted units: ", value
-        )) %>%
+        summarise(
+          value = sum(assisted_units, na.rm = TRUE),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          tooltip = paste0(
+            "Subsidy Name: ",
+            subsidy_name,
+            "\n",
+            "Assisted units: ",
+            value
+          )
+        ) %>%
         group_by(subsidy_name) %>%
         mutate(max_value_per_subsidy = max(value)) %>%
         ungroup()
@@ -142,22 +148,38 @@ server <- function(input, output, session) {
       base_data %>%
         filter(name_long == geo$locality) %>%
         group_by(name_long, subsidy_name, subsidy_status) %>%
-        summarise(value = sum(assisted_units, na.rm = TRUE), .groups = "drop") %>%
-        mutate(tooltip = paste0(
-          "Subsidy Name: ", subsidy_name, "\n",
-          "Assisted units: ", value
-        )) %>%
+        summarise(
+          value = sum(assisted_units, na.rm = TRUE),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          tooltip = paste0(
+            "Subsidy Name: ",
+            subsidy_name,
+            "\n",
+            "Assisted units: ",
+            value
+          )
+        ) %>%
         group_by(subsidy_name) %>%
         mutate(max_value_per_subsidy = max(value)) %>%
         ungroup()
     } else {
       base_data %>%
         group_by(subsidy_name, subsidy_status) %>%
-        summarise(value = sum(assisted_units, na.rm = TRUE), .groups = "drop") %>%
-        mutate(tooltip = paste0(
-          "Subsidy Name: ", subsidy_name, "\n",
-          "Assisted units: ", value
-        )) %>%
+        summarise(
+          value = sum(assisted_units, na.rm = TRUE),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          tooltip = paste0(
+            "Subsidy Name: ",
+            subsidy_name,
+            "\n",
+            "Assisted units: ",
+            value
+          )
+        ) %>%
         group_by(subsidy_name) %>%
         mutate(max_value_per_subsidy = max(value)) %>%
         ungroup()
@@ -176,16 +198,23 @@ server <- function(input, output, session) {
       "Federally-Assisted Rental Housing in Virginia"
     }
   })
-  
+
   # Single function to create all plots
   create_subsidy_plot <- function(data, title_text, subtitle_text = NULL) {
     req(nrow(data) > 0)
-    
+
     # Add tooltips
-    plot_data <- data 
-    
+    plot_data <- data
+
     # Create base plot
-    p <- ggplot(plot_data, aes(x = reorder(subsidy_name, max_value_per_subsidy), y = value, fill = subsidy_status)) +
+    p <- ggplot(
+      plot_data,
+      aes(
+        x = reorder(subsidy_name, max_value_per_subsidy),
+        y = value,
+        fill = subsidy_status
+      )
+    ) +
       geom_col_interactive(
         aes(tooltip = tooltip, data_id = subsidy_name),
         position = "stack"
@@ -206,41 +235,43 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5)
       )
-    
+
     # Add logo (single implementation)
     add_hfv_logo(p)
   }
-  
+
   # Helper function for logo (extracted to reduce duplication)
   add_hfv_logo <- function(plot) {
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     ggdraw(plot) +
       draw_image(
         logo_url,
-        x = 0.85, y = 0.05,
-        width = 0.15, height = 0.15
+        x = 0.85,
+        y = 0.05,
+        width = 0.15,
+        height = 0.15
       )
   }
-  
-create_interactive_plot <- function(plot_obj) {
-  girafe(
-    ggobj = plot_obj,
-    width_svg = 8,
-    height_svg = 5,
-    options = list(
-      opts_hover(css = "fill-opacity:0.8;"),
-      opts_tooltip(
-        opacity = 0.9,
-        css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
-        use_fill = TRUE
-      ),
-      opts_sizing(rescale = TRUE),
-      opts_selection(type = "none")
+
+  create_interactive_plot <- function(plot_obj) {
+    girafe(
+      ggobj = plot_obj,
+      width_svg = 8,
+      height_svg = 5,
+      options = list(
+        opts_hover(css = "fill-opacity:0.8;"),
+        opts_tooltip(
+          opacity = 0.9,
+          css = "background-color:#011E41;color:white;padding:8px;border-radius:3px;",
+          use_fill = TRUE
+        ),
+        opts_sizing(rescale = TRUE),
+        opts_selection(type = "none")
+      )
     )
-  )
-}
-  
+  }
+
   # Render the plot
   output$plot <- renderGirafe({
     data <- filtered_data()
@@ -248,7 +279,7 @@ create_interactive_plot <- function(plot_obj) {
     plot <- create_subsidy_plot(data, plot_title())
     create_interactive_plot(plot)
   })
-  
+
   # Mobile optimization
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())

@@ -1,14 +1,14 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(ggiraph) # For interactive ggplots
+library(here) # For here() function in file paths
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(bslib) # For modern UI components
+library(cowplot) # For adding logo to plots
+library(scales) # For number_format
+library(shinyjs) # For dynamic UI updates
+library(magick) # For image handling
 library(gdtools)
 library(gfonts)
 
@@ -20,7 +20,7 @@ library(gfonts)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -36,15 +36,15 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-vacancy <- read_rds("./data.rds")
+vacancy <- read_rds("data.rds")
 
-state_data <- vacancy |> 
+state_data <- vacancy |>
   filter(geography == "state")
 
-cbsa_data <- vacancy |> 
+cbsa_data <- vacancy |>
   filter(geography == "cbsa")
 
-local_data <- vacancy |> 
+local_data <- vacancy |>
   filter(geography == "county")
 
 cbsa_list <- sort(unique(cbsa_data$cbsa_title))
@@ -78,8 +78,7 @@ ui <- function(request) {
 
         div(
           class = "hfv-sidebar",
-          h5("Filters",
-            class = "text-primary", style = "margin-bottom: 16px;"),
+          h5("Filters", class = "text-primary", style = "margin-bottom: 16px;"),
 
           # Divider
           hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -88,12 +87,14 @@ ui <- function(request) {
           div(
             style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
             p(
-              strong("Data Source:"), br(),
+              strong("Data Source:"),
+              br(),
               "U.S. Census Bureau, American Community Survey 5-Year Estimates",
               style = "margin-bottom: 0;"
             ),
             p(
-              strong("Note:"), "Vacancy rate calculated as (Total Units - Renter Occupied) / Total Units",
+              strong("Note:"),
+              "Vacancy rate calculated as (Total Units - Renter Occupied) / Total Units",
               style = "margin-bottom: 0; margin-top: 8px;"
             )
           )
@@ -114,7 +115,6 @@ ui <- function(request) {
 # SERVER FUNCTION
 # =============================================================================
 server <- function(input, output, session) {
-
   # Parse geography from URL
   current_geo <- reactive({
     query <- parseQueryString(session$clientData$url_search)
@@ -152,21 +152,23 @@ server <- function(input, output, session) {
       "Rental Vacancy Rate in Virginia"
     }
   })
-  
+
   # Create a plot function for vacancy rate
   create_plot <- function(data, title_text) {
     # Add tooltip text to the data
     data <- data %>%
-      mutate(tooltip = paste0(
-        "Year: ", year, "\n",
-        "Vacancy Rate: ", scales::percent(rate, accuracy = 0.1)
-      ))
-    
+      mutate(
+        tooltip = paste0(
+          "Year: ",
+          year,
+          "\n",
+          "Vacancy Rate: ",
+          scales::percent(rate, accuracy = 0.1)
+        )
+      )
+
     # Create a pure, base ggplot with no theme customizations that could cause conflicts
-    p <- ggplot(data, 
-                aes(x = year, 
-                    y = rate,
-                  group = 1)) +
+    p <- ggplot(data, aes(x = year, y = rate, group = 1)) +
       geom_line_interactive(
         aes(tooltip = tooltip, data_id = year),
         color = "#40C0C0",
@@ -177,8 +179,10 @@ server <- function(input, output, session) {
         color = "#40C0C0",
         size = 3
       ) +
-      scale_y_continuous(labels = scales::percent_format(accuracy = 0.1),
-                         expand = expansion(mult = c(0.05, 0.1))) +
+      scale_y_continuous(
+        labels = scales::percent_format(accuracy = 0.1),
+        expand = expansion(mult = c(0.05, 0.1))
+      ) +
       scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
       labs(
         title = title_text,
@@ -199,10 +203,10 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
-    
+
     # Add logo directly using external URL
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     # Add logo to the plot using the URL
     p_with_logo <- ggdraw(p) +
       draw_image(
@@ -212,10 +216,10 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
+
     return(p_with_logo)
   }
-  
+
   # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
@@ -238,17 +242,19 @@ server <- function(input, output, session) {
       )
     )
   }
-  
+
   # Render the plot
   output$plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_data(), plot_title())))
+    suppressWarnings(create_interactive_plot(create_plot(
+      filtered_data(),
+      plot_title()
+    )))
   })
 
   # Handle responsive window events
   observe({
     session$sendCustomMessage(type = "plot-redraw", message = list())
   })
-
 }
 # Run the application
 shinyApp(ui = ui, server = server, enableBookmarking = "url")

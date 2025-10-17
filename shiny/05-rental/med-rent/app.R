@@ -1,14 +1,14 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(ggiraph) # For interactive ggplots
+library(here) # For here() function in file paths
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(bslib) # For modern UI components
+library(cowplot) # For adding logo to plots
+library(scales) # For number_format
+library(shinyjs) # For dynamic UI updates
+library(magick) # For image handling
 library(gdtools)
 library(gfonts)
 
@@ -20,7 +20,7 @@ library(gfonts)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -37,15 +37,15 @@ hfv_theme <- bs_theme(
 # =============================================================================
 
 # Load the data
-data <- read_rds("./data.rds")
+data <- read_rds("data.rds")
 
-state_med_rent_data <- data |> 
+state_med_rent_data <- data |>
   filter(geography == "state")
 
-cbsa_med_rent_data <- data |> 
+cbsa_med_rent_data <- data |>
   filter(geography == "cbsa")
 
-local_med_rent_data <- data |> 
+local_med_rent_data <- data |>
   filter(geography == "county")
 
 # Get available options
@@ -87,17 +87,21 @@ ui <- function(request) {
         div(
           class = "hfv-sidebar",
 
-          h5("Filters",
-             class = "text-primary", style = "margin-bottom: 16px;"),
+          h5("Filters", class = "text-primary", style = "margin-bottom: 16px;"),
 
           # Dollar type selector
           div(
             style = "margin-bottom: 16px;",
-            radioButtons("dollar_type", "Dollar Type:",
-                         choices = list("Current Dollars" = "estimate",
-                                        "Inflation-Adjusted Dollars" = "adjusted"),
-                         selected = "estimate",
-                         inline = FALSE)
+            radioButtons(
+              "dollar_type",
+              "Dollar Type:",
+              choices = list(
+                "Current Dollars" = "estimate",
+                "Inflation-Adjusted Dollars" = "adjusted"
+              ),
+              selected = "estimate",
+              inline = FALSE
+            )
           ),
 
           # Divider
@@ -107,7 +111,8 @@ ui <- function(request) {
           div(
             style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
             p(
-              strong("Data Source:"), br(),
+              strong("Data Source:"),
+              br(),
               "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25064",
               style = "margin-bottom: 0;"
             )
@@ -130,7 +135,6 @@ ui <- function(request) {
 # =============================================================================
 
 server <- function(input, output, session) {
-
   # Parse geography from URL
   current_geo <- reactive({
     query <- parseQueryString(session$clientData$url_search)
@@ -163,9 +167,11 @@ server <- function(input, output, session) {
 
   # Y-axis label based on dollar type
   y_label <- reactive({
-    ifelse(input$dollar_type == "adjusted",
-           "Inflation-Adjusted Dollars",
-           "Current Dollars")
+    ifelse(
+      input$dollar_type == "adjusted",
+      "Inflation-Adjusted Dollars",
+      "Current Dollars"
+    )
   })
 
   # Plot title based on geography
@@ -180,28 +186,35 @@ server <- function(input, output, session) {
       "Median Gross Rent in Virginia"
     }
   })
-  
+
   # Function to create interactive line plots
   create_line_plot <- function(data, title_text) {
     req(nrow(data) > 0)
-    
+
     # Get selected column for y-axis
     y_var <- input$dollar_type
-    
+
     # Create tooltips
     plot_data <- data %>%
-      mutate(tooltip = paste0(
-        "Year: ", year, "\n",
-        "Rent: ", scales::dollar(get(y_var))
-      ))
-    
+      mutate(
+        tooltip = paste0(
+          "Year: ",
+          year,
+          "\n",
+          "Rent: ",
+          scales::dollar(get(y_var))
+        )
+      )
+
     # Create base plot
-    p <- ggplot(plot_data,
-                aes(
-                  x = year,
-                  y = .data[[y_var]],
-                  group = 1
-                )) +
+    p <- ggplot(
+      plot_data,
+      aes(
+        x = year,
+        y = .data[[y_var]],
+        group = 1
+      )
+    ) +
       geom_line_interactive(
         aes(tooltip = tooltip, data_id = year),
         color = "#40C0C0",
@@ -230,23 +243,25 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
-    
+
     # Handle different x-axis scales between locality and other levels
-    if("locality" %in% names(data)) {
-      p <- p + scale_x_discrete(
-        breaks = unique(plot_data$year),
-        labels = unique(plot_data$year)
-      )
+    if ("locality" %in% names(data)) {
+      p <- p +
+        scale_x_discrete(
+          breaks = unique(plot_data$year),
+          labels = unique(plot_data$year)
+        )
     } else {
-      p <- p + scale_x_continuous(
-        breaks = unique(plot_data$year),
-        labels = unique(plot_data$year)
-      )
+      p <- p +
+        scale_x_continuous(
+          breaks = unique(plot_data$year),
+          labels = unique(plot_data$year)
+        )
     }
-    
+
     # Add logo directly using external URL
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     # Add logo to the plot using the URL
     p_with_logo <- ggdraw(p) +
       draw_image(
@@ -256,10 +271,10 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
+
     return(p_with_logo)
   }
-  
+
   # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
@@ -282,10 +297,13 @@ server <- function(input, output, session) {
       )
     )
   }
-  
+
   # Render the plot
   output$plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_line_plot(filtered_data(), plot_title())))
+    suppressWarnings(create_interactive_plot(create_line_plot(
+      filtered_data(),
+      plot_title()
+    )))
   })
 
   # Handle responsive window events

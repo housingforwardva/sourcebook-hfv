@@ -1,14 +1,14 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(ggiraph) # For interactive ggplots
+library(here) # For here() function in file paths
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(bslib) # For modern UI components
+library(cowplot) # For adding logo to plots
+library(scales) # For number_format
+library(shinyjs) # For dynamic UI updates
+library(magick) # For image handling
 library(gdtools)
 library(gfonts)
 
@@ -20,7 +20,7 @@ library(gfonts)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -36,43 +36,43 @@ hfv_theme <- bs_theme(
 # LOAD DATA OUTSIDE SERVER
 # =============================================================================
 
-data <- read_rds("./data.rds")
+data <- read_rds("data.rds")
 
 # Define proper rent range factor order
 rent_range_levels <- c(
   "No cash rent",
   "Less than $500",
-  "$500 to $749", 
+  "$500 to $749",
   "$750 to $999",
   "$1,000 to $1,249",
-  "$1,250 to $1,499", 
+  "$1,250 to $1,499",
   "$1,500 to $1,999",
   "$2,000 or more"
 )
 
 # Apply factor ordering to data
-data <- data |> 
-  filter(!is.na(rent_range)) |> 
+data <- data |>
+  filter(!is.na(rent_range)) |>
   mutate(rent_range = factor(rent_range, levels = rent_range_levels))
 
-state_data <- data |> 
-    group_by(year, rent_range) |> 
-    summarise(estimate = sum(estimate)) |> 
-  ungroup()
-  
-cbsa_data <- data  |> 
-    group_by(year, cbsa_title, rent_range) |> 
-    summarise(estimate = sum(estimate))|> 
+state_data <- data |>
+  group_by(year, rent_range) |>
+  summarise(estimate = sum(estimate)) |>
   ungroup()
 
-local_data <- data  |> 
-    group_by(year, name_long, rent_range) |> 
-    summarise(estimate = sum(estimate))|> 
+cbsa_data <- data |>
+  group_by(year, cbsa_title, rent_range) |>
+  summarise(estimate = sum(estimate)) |>
+  ungroup()
+
+local_data <- data |>
+  group_by(year, name_long, rent_range) |>
+  summarise(estimate = sum(estimate)) |>
   ungroup()
 
 
 cbsa_list <- sort(unique(cbsa_data$cbsa_title))
-  
+
 locality_list <- sort(unique(local_data$name_long))
 
 year_list <- sort(unique(cbsa_data$year), decreasing = TRUE)
@@ -106,12 +106,17 @@ ui <- function(request) {
 
         div(
           class = "hfv-sidebar",
-          h5("Filters",
-            class = "text-primary", style = "margin-bottom: 16px;"),
+          h5("Filters", class = "text-primary", style = "margin-bottom: 16px;"),
 
           div(
             style = "margin-bottom: 16px;",
-            selectInput("year", "Select Year:", choices = NULL, width = "100%", selectize = FALSE)
+            selectInput(
+              "year",
+              "Select Year:",
+              choices = NULL,
+              width = "100%",
+              selectize = FALSE
+            )
           ),
 
           # Divider
@@ -121,7 +126,8 @@ ui <- function(request) {
           div(
             style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
             p(
-              strong("Data Source:"), br(),
+              strong("Data Source:"),
+              br(),
               "U.S. Census Bureau, American Community Survey 5-Year Estimates, Table B25063",
               style = "margin-bottom: 0;"
             )
@@ -140,13 +146,10 @@ ui <- function(request) {
 }
 
 
-
-
 # =============================================================================
 # SERVER FUNCTION
 # =============================================================================
 server <- function(input, output, session) {
-
   # Parse geography from URL
   current_geo <- reactive({
     query <- parseQueryString(session$clientData$url_search)
@@ -159,9 +162,12 @@ server <- function(input, output, session) {
 
   # Initialize year dropdown
   observe({
-    updateSelectInput(session, "year",
-                      choices = year_list,
-                      selected = year_list[1])
+    updateSelectInput(
+      session,
+      "year",
+      choices = year_list,
+      selected = year_list[1]
+    )
   })
 
   # Filter data based on current geography
@@ -194,28 +200,31 @@ server <- function(input, output, session) {
       paste("Virginia Gross Rent Distribution (", input$year, ")")
     }
   })
-  
 
-
- # Create a plot function for gross rent distribution
+  # Create a plot function for gross rent distribution
   create_plot <- function(data, title_text) {
     # Add tooltip text to the data
     data <- data %>%
-      mutate(tooltip = paste0(
-        "Rent Range: ", rent_range, "\n",
-        "Households: ", format(estimate, big.mark = ",")
-      ))
-    
+      mutate(
+        tooltip = paste0(
+          "Rent Range: ",
+          rent_range,
+          "\n",
+          "Households: ",
+          format(estimate, big.mark = ",")
+        )
+      )
+
     # Create a pure, base ggplot with no theme customizations that could cause conflicts
-    p <- ggplot(data, 
-                aes(x = rent_range, 
-                    y = estimate)) +
+    p <- ggplot(data, aes(x = rent_range, y = estimate)) +
       geom_col_interactive(
         aes(tooltip = tooltip, data_id = rent_range),
         fill = "#40C0C0"
       ) +
-      scale_y_continuous(labels = scales::number_format(big.mark = ","),
-                         expand = expansion(mult = c(0, 0.1))) +
+      scale_y_continuous(
+        labels = scales::number_format(big.mark = ","),
+        expand = expansion(mult = c(0, 0.1))
+      ) +
       labs(
         title = title_text,
         caption = " ", # Add empty caption to leave space for logo
@@ -236,10 +245,10 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 5, 30, 5) # Extra bottom margin for logo
       )
-    
+
     # Add logo directly using external URL
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     # Add logo to the plot using the URL
     p_with_logo <- ggdraw(p) +
       draw_image(
@@ -249,10 +258,10 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
+
     return(p_with_logo)
   }
-  
+
   # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
@@ -278,7 +287,10 @@ server <- function(input, output, session) {
 
   # Render the plot
   output$plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_plot(filtered_data(), plot_title())))
+    suppressWarnings(create_interactive_plot(create_plot(
+      filtered_data(),
+      plot_title()
+    )))
   })
 
   # Handle responsive window events
