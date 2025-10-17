@@ -1,16 +1,17 @@
 library(shiny)
 library(tidyverse)
-library(ggiraph)     # For interactive ggplots
-library(here)        # For here() function in file paths
-library(grid)        # For grobs
-library(png)         # For reading PNG files
-library(bslib)       # For modern UI components
-library(cowplot)     # For adding logo to plots
-library(scales)      # For number_format
-library(shinyjs)     # For dynamic UI updates
-library(magick)      # For image handling
+library(ggiraph) # For interactive ggplots
+library(here) # For here() function in file paths
+library(grid) # For grobs
+library(png) # For reading PNG files
+library(bslib) # For modern UI components
+library(cowplot) # For adding logo to plots
+library(scales) # For number_format
+library(shinyjs) # For dynamic UI updates
+library(magick) # For image handling
 library(gdtools)
 library(arrow)
+library(gfonts)
 
 # =============================================================================
 # MEDIAN DAYS ON MARKET VISUALIZATION
@@ -20,7 +21,7 @@ library(arrow)
 hfv_colors <- list(
   sky = "#40C0C0",
   grass = "#259591",
-  lilac = "#8B85CA", 
+  lilac = "#8B85CA",
   shadow = "#011E41",
   shadow_light = "#102C54",
   berry = "#B1005F",
@@ -32,7 +33,7 @@ hfv_colors <- list(
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -63,7 +64,7 @@ locality_list <- unique(sort(data$name[data$geography == "Locality"]))
 ui <- function(request) {
   page_fillable(
     theme = hfv_theme,
-    includeCSS("www/styles/hfv-theme.css"),  # Add custom theme css
+    includeCSS("www/styles/hfv-theme.css"), # Add custom theme css
     useShinyjs(), # Initialize shinyjs
 
     # Main container using HFV classes
@@ -89,8 +90,7 @@ ui <- function(request) {
         div(
           class = "hfv-sidebar",
 
-          h5("Filters",
-             class = "text-primary", style = "margin-bottom: 16px;"),
+          h5("Filters", class = "text-primary", style = "margin-bottom: 16px;"),
 
           # Divider
           hr(style = "margin: 24px 0; border-color: #ced4da;"),
@@ -99,7 +99,8 @@ ui <- function(request) {
           div(
             style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
             p(
-              strong("Data Source:"), br(),
+              strong("Data Source:"),
+              br(),
               "Virginia Association of REALTORS",
               style = "margin-bottom: 0;"
             )
@@ -123,7 +124,6 @@ ui <- function(request) {
 
 # Server function
 server <- function(input, output, session) {
-
   # Parse geography from URL
   current_geo <- reactive({
     query <- parseQueryString(session$clientData$url_search)
@@ -162,17 +162,20 @@ server <- function(input, output, session) {
       "Virginia Median Days on Market"
     }
   })
-  
+
   # Function to create denial rate plots
   create_dom_plot <- function(data, title_text) {
     req(nrow(data) > 0)
-    
+
     # Create tooltips and prepare data for x-axis labels
     plot_data <- data %>%
       mutate(
         tooltip = paste0(
-          "Quarter: ", quarter, "\n",
-          "DOM: ", med_dom
+          "Quarter: ",
+          quarter,
+          "\n",
+          "DOM: ",
+          med_dom
         ),
         # Extract year from quarter for labeling
         year = str_extract(quarter, "\\d{4}"),
@@ -180,20 +183,17 @@ server <- function(input, output, session) {
         # Create a flag for Q1 quarters to show labels
         show_label = ifelse(quarter_num == "Q1", year, "")
       )
-    
+
     # Create base plot
-    p <- ggplot(plot_data,
-                aes(x = quarter,
-                    y = med_dom,
-                    fill = med_dom)) +
+    p <- ggplot(plot_data, aes(x = quarter, y = med_dom, fill = med_dom)) +
       geom_col_interactive(
         aes(tooltip = tooltip, data_id = med_dom),
         width = 0.7
       ) +
       # Add continuous color scale based on #259591
       scale_fill_gradient(
-        low = "#b9dfdcff",   # Light version of #259591
-        high = "#259591",   # Your specified color
+        low = "#b9dfdcff", # Light version of #259591
+        high = "#259591", # Your specified color
         name = "Days on Market"
       ) +
       # Custom x-axis labels - only show Q1 years
@@ -217,10 +217,10 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, margin = margin(t = 20)),
         plot.margin = margin(5, 20, 30, 5) # Extra bottom margin for logo
       )
-    
+
     # Add logo
     logo_url <- "https://housingforwardva.org/wp-content/uploads/2024/08/HousingForward-VA-Logo-Files-Horizontal-Gradient-RGB.png"
-    
+
     p_with_logo <- ggdraw(p) +
       draw_image(
         logo_url,
@@ -229,10 +229,10 @@ server <- function(input, output, session) {
         width = 0.15,
         height = 0.15
       )
-    
+
     return(p_with_logo)
   }
-  
+
   # Convert to interactive girafe for each plot
   create_interactive_plot <- function(plot_obj) {
     girafe(
@@ -255,10 +255,13 @@ server <- function(input, output, session) {
       )
     )
   }
-  
+
   # Render the plot
   output$plot <- renderGirafe({
-    suppressWarnings(create_interactive_plot(create_dom_plot(filtered_data(), plot_title())))
+    suppressWarnings(create_interactive_plot(create_dom_plot(
+      filtered_data(),
+      plot_title()
+    )))
   })
 
   # Handle responsive window events
