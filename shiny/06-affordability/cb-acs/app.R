@@ -11,6 +11,7 @@ library(scales)      # For number_format
 library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(gdtools)
+library(gfonts)
 
 # =============================================================================
 # COST BURDEN BY AMI VISUALIZATION

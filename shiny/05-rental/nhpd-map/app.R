@@ -8,6 +8,7 @@ library(air)
 library(here)
 library(bslib)
 library(shinyjs)
+library(gfonts)
 
 # =============================================================================
 # NATIONAL HOUSING PRESERVATION DATABASE MAP

@@ -15,6 +15,7 @@ library(mapgl)
 library(rmapshaper)
 library(sf)
 library(plotly)
+library(gfonts)
 
 # =============================================================================
 # HFV STYLING SYSTEM INTEGRATION
