@@ -11,6 +11,7 @@ library(shinyjs)     # For dynamic UI updates
 library(magick)      # For image handling
 library(gdtools)
 library(arrow)
+library(gfonts)
 
 # =============================================================================
 # MEDIAN DAYS ON MARKET VISUALIZATION
