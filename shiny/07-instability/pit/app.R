@@ -69,9 +69,10 @@ compile_hfv_styles_if_needed <- function() {
 }
 
 # Load and prepare data
-pit <- read_csv("../../../data/pit_data_virginia_longer.csv") |> 
-  select(coc_num = co_c_number, coc_name = co_c_name, year, category, value) |> 
-  filter(category == "Total Sheltered Homeless" | category == "Total Unsheltered Homeless")
+pit <- read_rds("data.rds") |>
+  select(coc_num = co_c_number, coc_name = co_c_name, year, category, value) |>
+  filter(category == "Total Sheltered Homeless" | category == "Total Unsheltered Homeless") |>
+  mutate(year = as.numeric(year))
 
 # Create a state only data frame that aggregates to that geographic-level
 state_pit <- pit |> 
