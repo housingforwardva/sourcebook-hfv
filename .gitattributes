@@ -1,4 +1,4 @@
 hmda_va.rds filter=lfs diff=lfs merge=lfs -text
 tract_data_simplified.rds filter=lfs diff=lfs merge=lfs -text
 tract_map_data.rds filter=lfs diff=lfs merge=lfs -text
-data.rds filter=lfs diff=lfs merge=lfs -text
+shiny/06-affordability/hud-ami/data.rds filter=lfs diff=lfs merge=lfs -text
