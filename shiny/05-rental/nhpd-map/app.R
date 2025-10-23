@@ -18,7 +18,7 @@ library(gfonts)
 hfv_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
-  fg = "#333333", 
+  fg = "#333333",
   primary = "#40C0C0",
   secondary = "#011E41",
   success = "#259591",
@@ -38,11 +38,13 @@ hfv_theme <- bs_theme(
 juris <- read_rds("va_co_shape.rds")
 
 
-nhpd <- read_rds("data.rds") |> 
-  mutate(property_name = case_when(
-    is.na(property_name) ~ "No name provided",
-    TRUE ~ property_name
-  ))
+nhpd <- read_rds("data.rds") |>
+  mutate(
+    property_name = case_when(
+      is.na(property_name) ~ "No name provided",
+      TRUE ~ property_name
+    )
+  )
 
 
 # =============================================================================
@@ -59,7 +61,10 @@ ui <- page_fillable(
 
     div(
       class = "hfv-header",
-      h4("Virginia Federally-Assisted Rental Housing Property Explorer", class = "hfv-title")
+      h4(
+        "Virginia Federally-Assisted Rental Housing Property Explorer",
+        class = "hfv-title"
+      )
     ),
 
     layout_columns(
@@ -70,38 +75,46 @@ ui <- page_fillable(
       ),
       gap = "16px",
 
-      div( 
+      div(
         class = "hfv-sidebar",
-        h5("Information",
-          class = "text-primary", style = "margin-bottom: 16px;"),
+        h5(
+          "Information",
+          class = "text-primary",
+          style = "margin-bottom: 16px;"
+        ),
 
         div(
           style = "margin-bottom: 16px;",
-          p("This map shows federally subsidized rental housing properties in Virginia from the National Housing Preservation Database.",
-            style = "font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px;"),
-          p("Click on any dot to view property details including subsidies, units, and status.",
-            style = "font-size: 0.85rem; color: #6c757d; line-height: 1.4;")
+          p(
+            "This map shows federally subsidized rental housing properties in Virginia from the National Housing Preservation Database.",
+            style = "font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px;"
+          ),
+          p(
+            "Click on any dot to view property details including subsidies, units, and status.",
+            style = "font-size: 0.85rem; color: #6c757d; line-height: 1.4;"
+          )
         ),
-        
+
         # Divider
         hr(style = "margin: 24px 0; border-color: #ced4da;"),
-        
+
         # Data source
         div(
           style = "font-size: 0.75rem; color: #6c757d; line-height: 1.4;",
           p(
-            strong("Data Source:"), br(),
+            strong("Data Source:"),
+            br(),
             "National Housing Preservation Database.",
             style = "margin-bottom: 0;"
           )
         )
       ),
-        
+
       # Main Panel with map
       div(
         class = "hfv-chart-container",
         style = "height: 600px; margin-top: 16px;",
-        mapboxglOutput("nhpd_map", height = "100%")
+        maplibreOutput("nhpd_map", height = "100%")
       )
     )
   )
@@ -111,19 +124,19 @@ ui <- page_fillable(
 # SERVER FUNCTION
 # =============================================================================
 server <- function(input, output, session) {
-  
   # Render the NHPD map
-  output$nhpd_map <- renderMapboxgl({
-    mapboxgl(bounds = juris) |> 
+  output$nhpd_map <- renderMaplibre({
+    maplibre(bounds = juris, style = openfreemap_style("bright")) |>
       add_fill_layer(
         id = "juris",
         source = juris,
         fill_opacity = 0.1,
         fill_outline_color = "#011E41",
         hover_options = list(
-            fill_color = "#1B365D",
-            fill_opacity = 0.5
-          )) |> 
+          fill_color = "#1B365D",
+          fill_opacity = 0.5
+        )
+      ) |>
       add_circle_layer(
         id = "properties",
         source = nhpd,
@@ -136,26 +149,32 @@ server <- function(input, output, session) {
           'color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; ',
           'max-width: 280px; position: relative;">',
 
-# Property name with housing icon
-'<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; ',
-'color: white; ',  # Add this line to make the text white
-'display: flex; align-items: center; gap: 6px;">',
-'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">', # Change stroke="currentColor" to stroke="white"
-'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
-'<polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
-get_column("property_name"),
-'</h3>',
+          # Property name with housing icon
+          '<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; ',
+          'color: white; ', # Add this line to make the text white
+          'display: flex; align-items: center; gap: 6px;">',
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">', # Change stroke="currentColor" to stroke="white"
+          '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
+          '<polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
+          get_column("property_name"),
+          '</h3>',
 
           # Address
           '<div style="font-size: 12px; opacity: 0.9; margin-bottom: 10px;">',
-          get_column("property_address"), '<br>',
-          get_column("city"), ', ', get_column("state"), ' ', get_column("zip_code"),
+          get_column("property_address"),
+          '<br>',
+          get_column("city"),
+          ', ',
+          get_column("state"),
+          ' ',
+          get_column("zip_code"),
           '</div>',
 
           # Status badge
           '<div style="background: rgba(255,255,255,0.2); padding: 6px 8px; border-radius: 4px; ',
           'margin-bottom: 10px; font-size: 11px; font-weight: 600; text-align: center;">',
-          'Status: ', get_column("property_status"),
+          'Status: ',
+          get_column("property_status"),
           '</div>',
 
           # Stats grid - 3 columns
@@ -201,14 +220,14 @@ get_column("property_name"),
           '</div>',
 
           '</div>'
-        )) |> 
+        )
+      ) |>
       add_geocoder_control(
-      position = "top-right", 
-      placeholder = "Enter an address"
-    )
+        position = "top-right",
+        placeholder = "Enter an address"
+      )
   })
-
 }
 
-# Run the application 
+# Run the application
 shinyApp(ui = ui, server = server)
